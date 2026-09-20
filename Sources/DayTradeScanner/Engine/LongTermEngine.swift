@@ -114,6 +114,8 @@ final class LongTermEngine {
                 revenueTTMYearAgo: fundamentals.revenueTTMYearAgo,
                 netIncomeTTM: fundamentals.netIncomeTTM,
                 netMarginYearAgo: netMarginYearAgo,
+                revenueTTMSeries: fundamentals.revenueTTMSeries,
+                netIncomeTTMSeries: fundamentals.netIncomeTTMSeries,
                 totalAssets: fundamentals.totalAssets,
                 totalLiabilities: fundamentals.totalLiabilities,
                 priceVsSMA200Percent: priceVsSMA200,

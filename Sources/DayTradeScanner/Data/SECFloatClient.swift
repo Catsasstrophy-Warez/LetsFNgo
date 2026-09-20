@@ -507,6 +507,13 @@ actor SECFloatClient {
         var totalAssets: Double?
         var totalLiabilities: Double?
         var entityName: String?
+        /// Rolling trailing-twelve-month revenue, oldest to newest, one point
+        /// per quarter — for a trend sparkline. Comes from the same quarterly
+        /// facts `quarterlyTTM` already fetches for the single current TTM
+        /// figure, just windowed across more of the series instead of only
+        /// the most recent four quarters.
+        var revenueTTMSeries: [Double] = []
+        var netIncomeTTMSeries: [Double] = []
     }
 
     private struct ConceptResponse: Decodable {
@@ -543,16 +550,18 @@ actor SECFloatClient {
         var result = Fundamentals()
 
         for concept in Self.revenueConceptCandidates {
-            guard let (ttm, yearAgo, name) = await quarterlyTTM(padded: padded, taxonomy: "us-gaap", concept: concept) else { continue }
+            guard let (ttm, yearAgo, name, series) = await quarterlyTTM(padded: padded, taxonomy: "us-gaap", concept: concept) else { continue }
             result.revenueTTM = ttm
             result.revenueTTMYearAgo = yearAgo
+            result.revenueTTMSeries = series
             result.entityName = name
             break
         }
 
-        if let (ttm, yearAgo, name) = await quarterlyTTM(padded: padded, taxonomy: "us-gaap", concept: "NetIncomeLoss") {
+        if let (ttm, yearAgo, name, series) = await quarterlyTTM(padded: padded, taxonomy: "us-gaap", concept: "NetIncomeLoss") {
             result.netIncomeTTM = ttm
             result.netIncomeTTMYearAgo = yearAgo
+            result.netIncomeTTMSeries = series
             if result.entityName == nil { result.entityName = name }
         }
 
@@ -570,7 +579,7 @@ actor SECFloatClient {
         padded: String,
         taxonomy: String,
         concept: String
-    ) async -> (ttm: Double, yearAgo: Double?, entityName: String)? {
+    ) async -> (ttm: Double, yearAgo: Double?, entityName: String, series: [Double])? {
         guard let url = URL(string: "https://data.sec.gov/api/xbrl/companyconcept/\(padded)/\(taxonomy)/\(concept).json"),
               let data = try? await fetch(url),
               let decoded = try? JSONDecoder().decode(ConceptResponse.self, from: data),
@@ -607,7 +616,22 @@ actor SECFloatClient {
         let yearAgoSlice = sortedQuarters.dropFirst(4).prefix(4)
         let yearAgo = yearAgoSlice.count == 4 ? yearAgoSlice.map(\.value).reduce(0, +) : nil
 
-        return (ttm, yearAgo, decoded.entityName)
+        // Rolling TTM at each of up to the last 8 quarter-ends, oldest to
+        // newest — a trend sparkline, not just this-quarter-vs-a-year-ago.
+        // Ascending chronological order here since sortedQuarters is
+        // descending.
+        let ascending = sortedQuarters.sorted { $0.key < $1.key }
+        var series: [Double] = []
+        if ascending.count >= 4 {
+            for endIndex in stride(from: ascending.count - 1, through: 3, by: -1) {
+                let window = ascending[(endIndex - 3)...endIndex]
+                series.append(window.map(\.value).reduce(0, +))
+                if series.count >= 8 { break }
+            }
+            series.reverse()
+        }
+
+        return (ttm, yearAgo, decoded.entityName, series)
     }
 
     /// Most recent instantaneous (balance-sheet) value for a concept.

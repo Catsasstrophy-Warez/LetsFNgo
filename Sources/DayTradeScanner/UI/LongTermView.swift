@@ -141,6 +141,33 @@ struct LongTermDetailView: View {
                     Text("Each axis is this score's normalized component — further from center is better on every axis, including balance sheet and float where the underlying model scores risk negatively.")
                 }
 
+                Section {
+                    FundamentalHealthBadges(snapshot: snapshot)
+                } header: {
+                    Text("Health check")
+                }
+
+                if snapshot.revenueTTMSeries.count >= 2 {
+                    Section {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Revenue, TTM").font(.caption).foregroundStyle(.secondary)
+                            FundamentalSparklineView(values: snapshot.revenueTTMSeries, color: Palette.cyan)
+                                .frame(height: 44)
+                        }
+                        if snapshot.netIncomeTTMSeries.count >= 2 {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Net income, TTM").font(.caption).foregroundStyle(.secondary)
+                                FundamentalSparklineView(values: snapshot.netIncomeTTMSeries, color: Palette.amber)
+                                    .frame(height: 44)
+                            }
+                        }
+                    } header: {
+                        Text("Trend")
+                    } footer: {
+                        Text("Rolling trailing-twelve-month totals, one point per quarter, from the same SEC XBRL history already fetched for the current TTM figure.")
+                    }
+                }
+
                 Section("Growth & profitability") {
                     if let growth = snapshot.revenueGrowthYoY {
                         MetricRow(label: "Revenue growth, YoY", value: Fmt.percent(growth), tint: Palette.direction(growth))

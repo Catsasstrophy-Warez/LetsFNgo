@@ -50,6 +50,13 @@ struct FundamentalSnapshot: Codable, Hashable, Sendable {
         return marketCap / revenueTTM
     }
 
+    /// Rolling trailing-twelve-month revenue/net income, oldest to newest,
+    /// one point per quarter (up to 8) — for a trend sparkline rather than
+    /// only this-quarter-vs-a-year-ago. Empty when SEC XBRL didn't return
+    /// enough quarterly history to compute a series.
+    let revenueTTMSeries: [Double]
+    let netIncomeTTMSeries: [Double]
+
     // Balance sheet
     let totalAssets: Double?
     let totalLiabilities: Double?
