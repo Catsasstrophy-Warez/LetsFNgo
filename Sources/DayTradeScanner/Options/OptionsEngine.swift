@@ -27,6 +27,7 @@ final class OptionsEngine {
 
     private let rest: AlpacaREST
     private let paperLog: OptionsPaperTradeLog
+    let ivHistory: IVHistoryStore
     private var refreshTask: Task<Void, Never>?
     /// Volume/OI history per contract, so the unusual-activity detector can
     /// compare today's pace against this contract's own recent average
@@ -37,9 +38,10 @@ final class OptionsEngine {
 
     static let refreshInterval: Duration = .seconds(60)
 
-    init(rest: AlpacaREST, paperLog: OptionsPaperTradeLog) {
+    init(rest: AlpacaREST, paperLog: OptionsPaperTradeLog, ivHistory: IVHistoryStore = IVHistoryStore()) {
         self.rest = rest
         self.paperLog = paperLog
+        self.ivHistory = ivHistory
     }
 
     func start() {
@@ -98,6 +100,24 @@ final class OptionsEngine {
         refreshProgress = 1.0
 
         markOpenPaperTrades()
+        recordIVHistory()
+    }
+
+    /// Records today's front-month at-the-money IV per underlying, so IV
+    /// Rank/Percentile has a growing local history to compare against.
+    /// Averages call and put IV at the nearest expiration's ATM strike —
+    /// the same pairing `ImpliedMoveCalculator` uses — rather than picking
+    /// one side arbitrarily.
+    private func recordIVHistory() {
+        for (underlying, chain) in chains {
+            guard let nearestExpiration = chain.expirations.first,
+                  let call = chain.atmContract(for: nearestExpiration, type: .call),
+                  let put = chain.atmContract(for: nearestExpiration, type: .put) else { continue }
+            let ivs = [call.impliedVolatility, put.impliedVolatility].compactMap { $0 }
+            guard !ivs.isEmpty else { continue }
+            let atmIV = ivs.reduce(0, +) / Double(ivs.count)
+            ivHistory.record(symbol: underlying, atmIV: atmIV)
+        }
     }
 
     /// Whether `underlying`'s chain can still grow — false once it's already

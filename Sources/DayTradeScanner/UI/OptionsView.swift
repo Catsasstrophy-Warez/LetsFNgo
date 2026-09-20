@@ -274,6 +274,8 @@ struct OptionChainDetailView: View {
                         }
                     }
 
+                    ivRankSection
+
                     Section {
                         Picker("Expiration", selection: $selectedExpiration) {
                             ForEach(chain.expirations, id: \.self) { date in
@@ -359,6 +361,32 @@ struct OptionChainDetailView: View {
             selectedLegs.remove(at: index)
         } else {
             selectedLegs.append(StrategyLeg(contract: contract, signedQuantity: 1))
+        }
+    }
+
+    /// Where today's front-month ATM IV sits against this underlying's own
+    /// trailing year, built from the local history this app records on
+    /// every chain refresh. Nothing here comes from a paid IV history feed.
+    private var ivRankSection: some View {
+        Group {
+            if let reading = engine.ivHistory.reading(for: underlying) {
+                Section {
+                    HStack {
+                        Text("IV Rank").font(.subheadline)
+                        Spacer()
+                        Text("\(Int(reading.rank * 100))")
+                            .font(.subheadline.monospacedDigit().weight(.semibold))
+                    }
+                    HStack {
+                        Text("IV Percentile").font(.subheadline)
+                        Spacer()
+                        Text("\(Int(reading.percentile * 100))")
+                            .font(.subheadline.monospacedDigit().weight(.semibold))
+                    }
+                } footer: {
+                    Text("Built from \(reading.sampleCount) day\(reading.sampleCount == 1 ? "" : "s") of this app's own recorded front-month ATM IV — grows more reliable the longer you keep the app running, since no free source publishes historical IV directly.")
+                }
+            }
         }
     }
 

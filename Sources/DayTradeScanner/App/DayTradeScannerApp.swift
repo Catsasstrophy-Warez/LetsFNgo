@@ -20,12 +20,12 @@ struct DayTradeScannerApp: App {
     init() {
         let container: ModelContainer
         do {
-            container = try ModelContainer(for: PaperTrade.self, OptionsPaperTrade.self)
+            container = try ModelContainer(for: PaperTrade.self, OptionsPaperTrade.self, IVHistoryPoint.self)
         } catch {
             // A corrupt store shouldn't brick the app. Fall back to in-memory
             // so the scanner still runs; the log is rebuilt from the next alert.
             let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-            container = try! ModelContainer(for: PaperTrade.self, OptionsPaperTrade.self, configurations: configuration)
+            container = try! ModelContainer(for: PaperTrade.self, OptionsPaperTrade.self, IVHistoryPoint.self, configurations: configuration)
         }
         self.container = container
 
@@ -45,7 +45,8 @@ struct DayTradeScannerApp: App {
         let sharedSECFloat = SECFloatClient(contactEmail: Settings.shared.secContactEmail)
         _swingEngine = State(initialValue: SwingEngine(rest: sharedREST, secFloat: sharedSECFloat))
         _longTermEngine = State(initialValue: LongTermEngine(rest: sharedREST, secFloat: sharedSECFloat))
-        _optionsEngine = State(initialValue: OptionsEngine(rest: sharedREST, paperLog: optionsLog))
+        let ivHistory = IVHistoryStore()
+        _optionsEngine = State(initialValue: OptionsEngine(rest: sharedREST, paperLog: optionsLog, ivHistory: ivHistory))
         _regimeEngine = State(initialValue: MarketRegimeEngine(rest: sharedREST))
     }
 
@@ -64,6 +65,7 @@ struct DayTradeScannerApp: App {
                 .task {
                     paperLog.attach(context: container.mainContext)
                     optionsPaperLog.attach(context: container.mainContext)
+                    optionsEngine.ivHistory.attach(context: container.mainContext)
                     #if DEBUG
                     if ProcessInfo.processInfo.arguments.contains("--ui-testing") || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { return }
                     #endif
