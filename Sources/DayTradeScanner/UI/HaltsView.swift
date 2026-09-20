@@ -271,6 +271,24 @@ struct RecipePicker: View {
                     .buttonStyle(.plain)
                 }
 
+                if !bestPerforming.isEmpty {
+                    Section {
+                        ForEach(bestPerforming, id: \.name) { recipe in
+                            Button {
+                                engine.applyRecipe(recipe)
+                                dismiss()
+                            } label: {
+                                RecipeRow(recipe: recipe, isSelected: settings.activeRecipeName == recipe.name)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    } header: {
+                        Text("Best performing")
+                    } footer: {
+                        Text("Recipes with at least 5 resolved paper trades, ranked by the same nightly self-reweighting fitness that adjusts each recipe's alert threshold.")
+                    }
+                }
+
                 if !customStore.recipes.isEmpty {
                     Section("Your recipes") {
                         ForEach(customStore.recipes) { recipe in
@@ -357,6 +375,22 @@ struct RecipePicker: View {
                 Text(importMessage ?? "")
             }
         }
+    }
+
+    /// Every recipe (built-in and custom) that has enough resolved
+    /// paper-trade history for `RecipeFitnessEngine` to have an opinion,
+    /// sorted best-first — surfaces fitness as something to act on rather
+    /// than a badge someone has to notice while scrolling past it.
+    private var bestPerforming: [ScanRecipe] {
+        let all = RecipeLibrary.all + customStore.recipes
+        return all
+            .compactMap { recipe -> (ScanRecipe, RecipeFitnessEngine.Fitness)? in
+                guard let fitness = engine.recipeFitness.fitness(for: recipe.name) else { return nil }
+                return (recipe, fitness)
+            }
+            .sorted { $0.1.multiplier > $1.1.multiplier }
+            .prefix(5)
+            .map(\.0)
     }
 
     private var groupedRecipes: [(ScanProfile, [ScanRecipe])] {
