@@ -15,6 +15,14 @@ let package = Package(
             swiftSettings: [
                 .swiftLanguageMode(.v6)
             ]
+        ),
+        .testTarget(
+            name: "DayTradeScannerTests",
+            dependencies: ["DayTradeScanner"],
+            path: "Tests/DayTradeScannerTests",
+            swiftSettings: [
+                .swiftLanguageMode(.v6)
+            ]
         )
     ]
 )

@@ -74,28 +74,55 @@ windowed (non-AR) `RealityView` API — no camera, no ARSession.
 - `TuningView` defined swing/long-term weight and evidence sections that were
   never reachable from `body`; added a horizon picker at the top of Tuning.
 
+## Complete (round 2)
+
+- **Options paper trading** — `Journal/OptionsPaperTradeLog.swift`: a
+  SwiftData `OptionsPaperTrade` model that freezes every leg (`OptionLegRecord`)
+  at entry, independent of `PaperTrade`'s single-price/single-direction shape.
+  Cost basis (`netPremiumAtOpen`) and live mark (`currentValue`) share one
+  sign convention (positive = net debit), so P&L is `currentValue -
+  netPremiumAtOpen` regardless of leg count or side. `OptionsEngine.refresh()`
+  and `loadMoreExpirations(for:)` both call `markOpenPaperTrades()` after
+  building chain data. Wired into `StrategyPayoffView`'s "Log as paper trade"
+  button and a new "Open positions" section on the Options tab, with a
+  per-row Close action.
+- **Chain pagination** — `OptionsEngine` now tracks a per-underlying
+  expiration window (`expirationWindow`, starts at 3, caps at 12) instead of
+  a single hardcoded count, and exposes `hasMoreExpirations(for:)` /
+  `loadMoreExpirations(for:)`. `OptionChainDetailView` gained a "Load more
+  expirations" button that widens just that underlying's chain without
+  re-fetching the whole universe.
+- **Unit tests** — `Tests/DayTradeScannerTests/`, registered as a
+  `testTarget` in `Package.swift` and matching the existing
+  `DayTradeScannerTests` target in `project.yml`:
+  - `GreeksEngineTests.swift`: Black-Scholes price/delta benchmarked against
+    the standard Hull textbook example (S=100,K=100,T=1,r=5%,σ=20% →
+    call≈10.45, put≈5.57), put-call parity, gamma/vega symmetry between a
+    call and put at the same strike, theta sign, zero-time-to-expiry
+    collapsing to intrinsic value, degenerate-input nil handling, and an
+    implied-volatility round trip (price at a known σ → solve → recover σ)
+    for both a call and a put.
+  - `StrategyBuilderTests.swift`: payoff/breakeven arithmetic for a long
+    call, long put, bull call spread, bear put spread, long straddle, and
+    iron condor against hand-computed expected values (e.g. a $10-wide
+    $4-debit vertical → max profit $600, max loss $400, breakeven 104);
+    unbounded vs. capped max-profit/max-loss detection; net-greeks summation
+    across legs with sign.
+  - `UnusualActivityDetectorTests.swift`: no-signal cases (no volume,
+    ordinary volume/OI), scoring monotonicity with ratio, the own-history
+    surge factor (including the "fewer than 3 samples" guard), notional-size
+    and short-dated-expiry contributions, score clamping, and `scan()`'s
+    descending sort both within and across chains.
+
 ## Not yet done / next steps
 
-1. **First Xcode build pass.** Everything above was written against the
-   reviewed source and the Alpaca API docs from memory, across a long
-   session, without a compiler in the loop (this environment has no Xcode
-   toolchain). Before anything else: run `xcodegen generate && xcodebuild`
-   on macOS and fix whatever the type-checker/linker actually flags —
-   expect the usual crop of typos, an Alpaca options-payload field mismatch
-   or two, and possibly a `RealityView` call-site signature drift version to
-   version.
-2. **Options paper trading.** `PaperTradeLog`/`PaperTrade` are still
-   single-price, single-direction — a multi-leg options position doesn't fit
-   that shape. Needs its own `OptionsPaperTrade` model (or a `PaperTrade`
-   subtype) before "log this spread as a paper trade" is wireable from
-   `StrategyPayoffView`.
-3. **Options chain pagination.** `OptionsEngine` currently scopes each chain
-   to the nearest three expirations to keep the request count sane on the
-   free tier; a "load more expirations" action in `OptionChainDetailView` is
-   a natural follow-up once the base pipeline is proven.
-4. **Unit tests.** The scoring/sizing layers already have a track record of
-   deterministic-fixture testing (per the earlier `TEST_REPORT.md`
-   reference); `GreeksEngine`, `StrategyBuilder`'s payoff/breakeven math, and
-   `UnusualActivityDetector` are exactly the kind of pure-function surfaces
-   that deserve the same treatment before shipping.
-5. Bump deployment target to iOS 27 / build with Xcode 27 the day both exist.
+1. **First Xcode build pass.** Everything in this document was written
+   against the reviewed source and the Alpaca API docs from memory, across a
+   long session, without a compiler in the loop (this environment has no
+   Xcode toolchain, though the new unit tests are written to run under plain
+   `swift test` once one is available). Before anything else: run
+   `xcodegen generate && xcodebuild` on macOS and fix whatever the
+   type-checker/linker actually flags — expect the usual crop of typos, an
+   Alpaca options-payload field mismatch or two, and possibly a
+   `RealityView` call-site signature drift version to version.
+2. Bump deployment target to iOS 27 / build with Xcode 27 the day both exist.
