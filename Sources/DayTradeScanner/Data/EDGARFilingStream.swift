@@ -294,12 +294,14 @@ enum EDGARAtomParser {
         /// which would silently fail every single entry in this feed. Try the
         /// plain form first since it's what's actually observed, and the
         /// fractional-seconds form second in case a future entry includes one.
-        private static let dateFormatterPlain: ISO8601DateFormatter = {
+        // See CSVExporter.dateFormatter for why nonisolated(unsafe) is safe
+        // here: configured once, read-only from then on.
+        nonisolated(unsafe) private static let dateFormatterPlain: ISO8601DateFormatter = {
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime]
             return formatter
         }()
-        private static let dateFormatterFractional: ISO8601DateFormatter = {
+        nonisolated(unsafe) private static let dateFormatterFractional: ISO8601DateFormatter = {
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
             return formatter

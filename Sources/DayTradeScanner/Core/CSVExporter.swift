@@ -14,7 +14,11 @@ enum CSVExporter {
         fields.map(escape).joined(separator: ",")
     }
 
-    private static let dateFormatter: ISO8601DateFormatter = {
+    // ISO8601DateFormatter predates Sendable and isn't marked as conforming,
+    // but it's only ever read from after being configured once here —
+    // `nonisolated(unsafe)` is the standard, safe escape hatch for exactly
+    // this shape of "effectively immutable after init" Foundation type.
+    nonisolated(unsafe) private static let dateFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
         return formatter

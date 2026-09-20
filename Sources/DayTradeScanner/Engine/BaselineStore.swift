@@ -60,7 +60,12 @@ actor BaselineStore {
         let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         fileURL = directory.appendingPathComponent("baselines.json")
-        loadFromDisk()
+        // Can't call the actor-isolated loadFromDisk() instance method from
+        // within init (Swift actor initializers may not call their own
+        // isolated methods, only assign properties directly) — a
+        // nonisolated static function that returns a value, assigned here
+        // directly, sidesteps that restriction.
+        baselines = Self.loadBaselinesFromDisk(at: fileURL)
     }
 
     func baseline(for symbol: String) -> VolumeBaseline? { baselines[symbol] }
@@ -247,10 +252,10 @@ actor BaselineStore {
         try? data.write(to: fileURL, options: .atomic)
     }
 
-    private func loadFromDisk() {
+    private nonisolated static func loadBaselinesFromDisk(at fileURL: URL) -> [String: VolumeBaseline] {
         guard let data = try? Data(contentsOf: fileURL),
-              let decoded = try? JSONDecoder().decode([String: VolumeBaseline].self, from: data) else { return }
-        baselines = decoded
+              let decoded = try? JSONDecoder().decode([String: VolumeBaseline].self, from: data) else { return [:] }
+        return decoded
     }
 
     func clear() {

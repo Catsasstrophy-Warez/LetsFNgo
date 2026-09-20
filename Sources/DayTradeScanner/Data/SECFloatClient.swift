@@ -166,7 +166,14 @@ actor SECFloatClient {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         fileURL = directory.appendingPathComponent("sec-float.json")
         mapFileURL = directory.appendingPathComponent("sec-ticker-map.json")
-        loadFromDisk()
+        // Can't call the actor-isolated loadFromDisk() instance method from
+        // init — see BaselineStore's equivalent fix for why. A nonisolated
+        // static function returning the loaded values, assigned directly,
+        // sidesteps the restriction.
+        let loaded = Self.loadFromDisk(recordsURL: fileURL, mapURL: mapFileURL)
+        records = loaded.records
+        tickerToCIK = loaded.tickerToCIK
+        cikToTicker = loaded.cikToTicker
     }
 
     // MARK: - Public lookups
@@ -741,18 +748,26 @@ actor SECFloatClient {
         }
     }
 
-    private func loadFromDisk() {
-        if let data = try? Data(contentsOf: fileURL),
+    private nonisolated static func loadFromDisk(
+        recordsURL: URL,
+        mapURL: URL
+    ) -> (records: [String: FloatRecord], tickerToCIK: [String: Int], cikToTicker: [Int: String]) {
+        var records: [String: FloatRecord] = [:]
+        var tickerToCIK: [String: Int] = [:]
+        var cikToTicker: [Int: String] = [:]
+
+        if let data = try? Data(contentsOf: recordsURL),
            let decoded = try? JSONDecoder().decode([String: FloatRecord].self, from: data) {
             records = decoded
         }
-        if let data = try? Data(contentsOf: mapFileURL),
+        if let data = try? Data(contentsOf: mapURL),
            let decoded = try? JSONDecoder().decode([String: Int].self, from: data) {
             tickerToCIK = decoded
             cikToTicker = Dictionary(decoded.map { ($0.value, $0.key) }, uniquingKeysWith: { a, b in
                 a.count <= b.count ? a : b
             })
         }
+        return (records, tickerToCIK, cikToTicker)
     }
 
     func clear() {

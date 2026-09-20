@@ -36,6 +36,22 @@ actor AlpacaREST {
     private let session: URLSession
     private let decoder: JSONDecoder
 
+    // ISO8601DateFormatter isn't Sendable, so a local instance can't be
+    // captured by JSONDecoder's @Sendable custom-decoding closure under
+    // Swift 6 strict concurrency. Hoisted to nonisolated(unsafe) statics —
+    // configured once below, read-only from every call site after that —
+    // so the closure captures no local, non-Sendable state at all.
+    nonisolated(unsafe) private static let withFractionFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    nonisolated(unsafe) private static let plainFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
     init() {
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
@@ -45,13 +61,9 @@ actor AlpacaREST {
         decoder = JSONDecoder()
         // Alpaca emits RFC 3339 with variable fractional-second precision,
         // which .iso8601 rejects. Parse both shapes.
-        let withFraction = ISO8601DateFormatter()
-        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let plain = ISO8601DateFormatter()
-        plain.formatOptions = [.withInternetDateTime]
         decoder.dateDecodingStrategy = .custom { d in
             let str = try d.singleValueContainer().decode(String.self)
-            if let date = withFraction.date(from: str) ?? plain.date(from: str) { return date }
+            if let date = Self.withFractionFormatter.date(from: str) ?? Self.plainFormatter.date(from: str) { return date }
             throw AlpacaError.decoding("Unparseable timestamp: \(str)")
         }
     }

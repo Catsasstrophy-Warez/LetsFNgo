@@ -30,7 +30,9 @@ actor UniverseBuilder {
         let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         fileURL = directory.appendingPathComponent("volatility-profiles.json")
-        loadFromDisk()
+        // Can't call the actor-isolated loadFromDisk() instance method from
+        // init — see BaselineStore's equivalent fix for why.
+        profiles = Self.loadProfilesFromDisk(at: fileURL)
     }
 
     func profile(for symbol: String) -> VolatilityProfile? { profiles[symbol] }
@@ -267,10 +269,10 @@ actor UniverseBuilder {
         try? data.write(to: fileURL, options: .atomic)
     }
 
-    private func loadFromDisk() {
+    private nonisolated static func loadProfilesFromDisk(at fileURL: URL) -> [String: VolatilityProfile] {
         guard let data = try? Data(contentsOf: fileURL),
-              let decoded = try? JSONDecoder().decode([String: VolatilityProfile].self, from: data) else { return }
-        profiles = decoded
+              let decoded = try? JSONDecoder().decode([String: VolatilityProfile].self, from: data) else { return [:] }
+        return decoded
     }
 
     func clear() {

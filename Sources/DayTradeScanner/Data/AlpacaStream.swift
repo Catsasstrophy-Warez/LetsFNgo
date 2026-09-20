@@ -32,6 +32,20 @@ actor AlpacaStream {
 
     private let decoder: JSONDecoder
 
+    // See AlpacaREST's equivalent statics for why this needs to be
+    // nonisolated(unsafe) hoisted rather than a local captured by the
+    // @Sendable decoding closure below.
+    nonisolated(unsafe) private static let withFractionFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    nonisolated(unsafe) private static let plainFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
     init(kind: StreamKind) {
         self.kind = kind
         let config = URLSessionConfiguration.default
@@ -40,13 +54,9 @@ actor AlpacaStream {
         session = URLSession(configuration: config)
 
         decoder = JSONDecoder()
-        let withFraction = ISO8601DateFormatter()
-        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let plain = ISO8601DateFormatter()
-        plain.formatOptions = [.withInternetDateTime]
         decoder.dateDecodingStrategy = .custom { d in
             let str = try d.singleValueContainer().decode(String.self)
-            guard let date = withFraction.date(from: str) ?? plain.date(from: str) else {
+            guard let date = Self.withFractionFormatter.date(from: str) ?? Self.plainFormatter.date(from: str) else {
                 throw AlpacaError.decoding("Unparseable timestamp: \(str)")
             }
             return date

@@ -1,4 +1,5 @@
 import ActivityKit
+import Foundation
 import Observation
 
 /// Keeps a Live Activity running on the Lock Screen / Dynamic Island for

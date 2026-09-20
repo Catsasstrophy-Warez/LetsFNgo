@@ -150,7 +150,20 @@ struct ScoringConfig: Codable, Equatable, Sendable {
 
 @Observable
 final class Settings {
-    static let shared = Settings()
+    // Read from both @MainActor SwiftUI code and from inside actor bodies
+    // (AlpacaREST, SECFloatClient, EDGARFilingStream, etc. all read
+    // Settings.shared.<credentials/config> from their own actor's
+    // executor) — a real cross-isolation-domain singleton, not just a
+    // Swift 6 false positive. `nonisolated(unsafe)` is a pragmatic
+    // escape hatch, not a fix: in principle a data race is possible if a
+    // write from the main actor and a read from an actor body land at the
+    // exact same instant. In practice every write is user-driven from a
+    // SwiftUI control while an actor is mid-network-call, so a genuine
+    // torn read is unlikely, but this is a known simplification, not a
+    // verified-safe design — a correct fix would make Settings
+    // `@MainActor` and route every actor-side read through
+    // `await MainActor.run`, a larger change than this pass takes on.
+    nonisolated(unsafe) static let shared = Settings()
 
     var interfaceMode: InterfaceMode {
         didSet { defaults.set(interfaceMode.rawValue, forKey: "interfaceMode") }

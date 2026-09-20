@@ -7,7 +7,7 @@ enum MarketClock {
     static let eastern = TimeZone(identifier: "America/New_York")!
     static let regularSessionMinutes = 390   // 9:30 to 16:00
 
-    static var calendar: Calendar = {
+    static let calendar: Calendar = {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = eastern
         return cal
