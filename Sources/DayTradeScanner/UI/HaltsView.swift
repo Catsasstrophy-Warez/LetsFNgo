@@ -384,14 +384,24 @@ struct RecipePicker: View {
 
 struct RecipeRow: View {
     @Environment(Settings.self) private var settings
+    @Environment(ScannerEngine.self) private var engine
     let recipe: ScanRecipe
     let isSelected: Bool
+
+    private var fitness: RecipeFitnessEngine.Fitness? {
+        engine.recipeFitness.fitness(for: recipe.name)
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(recipe.name)
-                    .font(.subheadline.weight(isSelected ? .semibold : .medium))
+                HStack(spacing: 6) {
+                    Text(recipe.name)
+                        .font(.subheadline.weight(isSelected ? .semibold : .medium))
+                    if let fitness {
+                        FitnessBadge(fitness: fitness)
+                    }
+                }
                 Text(recipe.summary)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -422,6 +432,32 @@ struct RecipeRow: View {
             }
         }
         .padding(.vertical, 2)
+    }
+}
+
+/// A recipe's self-reweighted fitness — recomputed at most once a day from
+/// its own resolved paper-trade outcomes — shown as a small hot/cold badge
+/// rather than a raw multiplier, since "1.14×" means nothing at a glance
+/// but a filled-vs-outline flame does.
+struct FitnessBadge: View {
+    let fitness: RecipeFitnessEngine.Fitness
+
+    private var isHot: Bool { fitness.multiplier > 1.02 }
+    private var isCold: Bool { fitness.multiplier < 0.98 }
+
+    var body: some View {
+        if isHot || isCold {
+            HStack(spacing: 2) {
+                Image(systemName: isHot ? "flame.fill" : "arrow.down.circle.fill")
+                Text(String(format: "%.0f%%", fitness.winRate * 100))
+            }
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(Capsule().fill((isHot ? Palette.up : Palette.down).opacity(0.15)))
+            .foregroundStyle(isHot ? Palette.up : Palette.down)
+            .accessibilityLabel(isHot ? "Recently performing well, \(Int(fitness.winRate * 100))% win rate" : "Recently underperforming, \(Int(fitness.winRate * 100))% win rate")
+        }
     }
 }
 

@@ -35,6 +35,7 @@ final class ScannerEngine {
     private let budget = AlertBudgetKeeper()
     private let paperLog: PaperTradeLog
     private let squawk = AudioSquawk()
+    let recipeFitness = RecipeFitnessEngine()
 
     // Discovery state
     private(set) var gappers: [UniverseBuilder.Gapper] = []
@@ -571,6 +572,7 @@ final class ScannerEngine {
     /// rolling window and awards them to the best candidates.
     private func fireAlerts(for candidates: [Candidate]) async {
         budget.update(config: settings.alertBudget)
+        recipeFitness.recomputeIfNeeded(using: paperLog)
 
         // Muted signal types are excluded before the budget even sees them,
         // not just silenced after — a muted component shouldn't consume a
@@ -583,9 +585,17 @@ final class ScannerEngine {
                 return !settings.mutedSignalComponents.contains(topDriver)
             }
 
+        // Self-reweighting: a recipe with a real, resolved track record of
+        // winning gets an easier bar to clear; one that's been losing gets
+        // a harder one. Only the currently active recipe's fitness applies,
+        // since that's the only one actually producing candidates right now.
+        let fitnessMultiplier = recipeFitness.multiplier(for: settings.activeRecipeName)
+        let effectiveThreshold = (settings.scoring.alertThreshold / fitnessMultiplier)
+            .clamped(to: 0.3...0.95)
+
         let grants = budget.evaluate(
             candidates: eligibleCandidates,
-            threshold: settings.scoring.alertThreshold,
+            threshold: effectiveThreshold,
             cooldownMinutes: settings.scoring.alertCooldownMinutes
         )
 
@@ -1095,5 +1105,11 @@ extension Array {
         return stride(from: 0, to: count, by: size).map {
             Array(self[$0..<Swift.min($0 + size, count)])
         }
+    }
+}
+
+private extension Double {
+    func clamped(to range: ClosedRange<Double>) -> Double {
+        min(max(self, range.lowerBound), range.upperBound)
     }
 }
