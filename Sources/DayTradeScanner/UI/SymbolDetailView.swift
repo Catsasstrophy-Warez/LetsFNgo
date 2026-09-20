@@ -98,6 +98,9 @@ struct SymbolDetailView: View {
                 CandleChartView(bars: state.recentBars, vwaps: state.recentVWAPs)
                     .frame(height: 220)
                     .padding(.vertical, 4)
+                if let candidate {
+                    ChartAnnotationStrip(candidate: candidate, state: state)
+                }
             } else if let state, state.recentCloses.count > 2 {
                 VStack(alignment: .leading, spacing: 6) {
                     VWAPSparkline(prices: state.recentCloses, vwaps: state.recentVWAPs, height: 70)
