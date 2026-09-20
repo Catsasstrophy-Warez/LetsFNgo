@@ -24,6 +24,9 @@ struct ScanView: View {
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .top, spacing: 0) {
                 VStack(spacing: 0) {
+                    if settings.credentialsAppearInvalid {
+                        InvalidCredentialsBanner()
+                    }
                     MarketRegimeBanner()
                     HorizonPicker()
                     if settings.tradeHorizon == .dayTrade {

@@ -84,6 +84,12 @@ struct SettingsView: View {
         @Bindable var settings = settings
 
         return Section {
+            if settings.credentialsAppearInvalid {
+                Label("Alpaca rejected these keys on the last request (401). Double-check them below, then Reconnect.", systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(Palette.down)
+            }
+
             TextField("Key ID", text: $settings.alpacaKeyID)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()

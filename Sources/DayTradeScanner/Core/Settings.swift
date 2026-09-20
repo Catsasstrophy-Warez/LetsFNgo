@@ -349,6 +349,17 @@ final class Settings {
 
     var hasCredentials: Bool { !alpacaKeyID.isEmpty && !alpacaSecret.isEmpty }
 
+    /// Set the moment any Alpaca request comes back 401 (see
+    /// AlpacaREST.fetch), cleared the moment one succeeds. Deliberately
+    /// transient/in-memory, not persisted — this is a live signal about
+    /// the request that just happened, not a saved setting. Distinguishes
+    /// "keys are wrong" from every other reason a scan can come up empty
+    /// (no data yet, rate limited, network hiccup), which until now was
+    /// invisible: every engine's poll loop wraps its Alpaca calls in
+    /// `try?`, so a bad key silently produced "nothing" forever with no
+    /// indication of why.
+    var credentialsAppearInvalid: Bool = false
+
     private init() {
         let d = defaults
         interfaceMode = InterfaceMode(rawValue: d.string(forKey: "interfaceMode") ?? "") ?? .simple

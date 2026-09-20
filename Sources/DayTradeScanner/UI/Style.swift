@@ -419,6 +419,32 @@ struct StatusDot: View {
     }
 }
 
+/// Shown wherever a scan screen is visible while `Settings.credentialsAppearInvalid`
+/// is set — a 401 from Alpaca otherwise disappears into every engine's own
+/// `try?`-wrapped poll loop, so a bad or revoked key used to look identical
+/// to "no data yet" with no indication anything was actually wrong.
+struct InvalidCredentialsBanner: View {
+    @State private var showSettings = false
+
+    var body: some View {
+        Button { showSettings = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                Text("Alpaca rejected your keys — tap to fix in Settings")
+                    .font(.caption.weight(.medium))
+                Spacer()
+                Image(systemName: "chevron.right").font(.caption2)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.white)
+        .background(Palette.down)
+        .sheet(isPresented: $showSettings) { SettingsView() }
+    }
+}
+
 /// Empty states are an instruction, not an apology.
 struct EmptyStateView: View {
     let title: String
