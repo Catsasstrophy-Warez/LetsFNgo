@@ -35,12 +35,24 @@ struct DayTradeScannerApp: App {
                 configurations: cloudConfiguration
             )
         } catch {
-            // A corrupt store, a missing iCloud entitlement in this build,
-            // or no signed-in iCloud account shouldn't brick the app — fall
-            // back to a local-only, in-memory store so the scanner still
-            // runs; the log is rebuilt from the next alert.
-            let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-            container = try! ModelContainer(for: PaperTrade.self, OptionsPaperTrade.self, IVHistoryPoint.self, configurations: configuration)
+            // A missing iCloud entitlement in this build or no signed-in
+            // iCloud account shouldn't brick the app — fall back to a
+            // local-only store so the scanner still runs. This still
+            // persists to disk (just without CloudKit sync): an in-memory
+            // fallback would silently drop the user's entire paper-trade
+            // journal, options positions, and IV history on every relaunch,
+            // which is a far worse outcome than losing sync for a session.
+            do {
+                let localConfiguration = ModelConfiguration(isStoredInMemoryOnly: false)
+                container = try ModelContainer(for: PaperTrade.self, OptionsPaperTrade.self, IVHistoryPoint.self, configurations: localConfiguration)
+            } catch {
+                // Only reachable if the on-disk store itself is corrupt in a
+                // way even a fresh local (non-CloudKit) configuration can't
+                // open — truly unrecoverable, so this is the one case worth
+                // falling back further to in-memory rather than crashing.
+                let memoryConfiguration = ModelConfiguration(isStoredInMemoryOnly: true)
+                container = try! ModelContainer(for: PaperTrade.self, OptionsPaperTrade.self, IVHistoryPoint.self, configurations: memoryConfiguration)
+            }
         }
         self.container = container
 
