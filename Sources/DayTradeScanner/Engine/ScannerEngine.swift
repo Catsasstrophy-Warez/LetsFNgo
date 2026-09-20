@@ -488,6 +488,11 @@ final class ScannerEngine {
         extended.socialMessageSurge = socialSurge[state.symbol]
         extended.socialWatchCount = trendingSocial.first { $0.symbol.uppercased() == state.symbol }?.watchlistCount
 
+        if let pattern = PatternDetector.detect(bars: state.recentBars) {
+            extended.patternBreakoutScore = pattern.score
+            extended.patternBreakoutNote = pattern.note
+        }
+
         // Insider clusters and filed 8-Ks, from the live EDGAR filing feed.
         if let cluster = insiderClusters[state.symbol] {
             extended.insiderClusterFilers = cluster.filingCount

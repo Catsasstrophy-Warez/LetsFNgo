@@ -240,6 +240,13 @@ struct ScoringModel: Sendable {
         return clamp((filerTerm * 0.6) + (recencyTerm * 0.4))
     }
 
+    /// Already normalized by `PatternDetector` — clamp defensively rather
+    /// than trust it blindly, the same posture every other normalize
+    /// function here takes toward its own inputs.
+    private func normalizeTrendlineBreak(_ extended: ExtendedSignals) -> Double {
+        clamp(extended.patternBreakoutScore)
+    }
+
     // MARK: - Scalp
 
     private func normalizeMomentumBurst(_ extended: ExtendedSignals) -> Double {
@@ -317,6 +324,7 @@ struct ScoringModel: Sendable {
             .floatTightness: normalizeFloatTightness(snapshot.extended),
             .socialMomentum: normalizeSocialMomentum(snapshot.extended),
             .insiderCluster: normalizeInsiderCluster(snapshot.extended),
+            .trendlineBreak: normalizeTrendlineBreak(snapshot.extended),
             .momentumBurst: normalizeMomentumBurst(snapshot.extended),
             .pullbackQuality: normalizePullback(snapshot.extended),
             .acceleration: normalizeAcceleration(snapshot.extended),

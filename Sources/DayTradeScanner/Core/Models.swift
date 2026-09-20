@@ -227,6 +227,10 @@ enum SignalComponent: String, Codable, CaseIterable, Identifiable, Sendable {
     case socialMomentum
     /// SEC Form 4 cluster buying, sourced from the live EDGAR filing feed.
     case insiderCluster
+    /// Geometric pivot/trendline break, computed purely from this symbol's
+    /// own recent bar shape — the only component that reads chart geometry
+    /// rather than momentum, volume, or fundamentals-adjacent context.
+    case trendlineBreak
 
     var id: String { rawValue }
 
@@ -263,6 +267,7 @@ enum SignalComponent: String, Codable, CaseIterable, Identifiable, Sendable {
         case .haltRisk: return "Halt proximity"
         case .socialMomentum: return "Social momentum"
         case .insiderCluster: return "Insider cluster"
+        case .trendlineBreak: return "Trendline break"
         }
     }
 
@@ -305,6 +310,8 @@ enum SignalComponent: String, Codable, CaseIterable, Identifiable, Sendable {
             return "StockTwits trending rank and message-volume surge, weighted by tagged sentiment. A leading indicator when it shows up before volume does, a crowding hazard when it shows up after."
         case .insiderCluster:
             return "Multiple company insiders filing Form 4 within the same short window, sourced live from SEC EDGAR's own filing feed rather than a third-party summary. Two or three separate filers close together is a stronger signal than any single filing."
+        case .trendlineBreak:
+            return "A fresh break of a trendline fit through this symbol's own recent pivot highs or lows, computed geometrically from its minute bars — the one component that reads chart shape rather than volume, momentum, or float."
         }
     }
 
@@ -325,6 +332,7 @@ enum SignalComponent: String, Codable, CaseIterable, Identifiable, Sendable {
         case .floatTightness: return 0.09
         case .socialMomentum: return 0.05
         case .insiderCluster: return 0.03
+        case .trendlineBreak: return 0.05
         case .momentumBurst: return 0.0
         case .pullbackQuality: return 0.0
         case .acceleration: return 0.0
@@ -396,6 +404,12 @@ struct ExtendedSignals: Codable, Hashable, Sendable {
     /// crowd starts talking, which is the more useful order for a leading
     /// indicator to arrive in.
     var socialWatchCount: Int?
+
+    /// Geometric pivot/trendline break score from `PatternDetector`, 0...1,
+    /// already normalized — computed from this symbol's own recent minute
+    /// bars, not derived from any other signal in this struct.
+    var patternBreakoutScore: Double = 0
+    var patternBreakoutNote: String?
 
     // Insider activity, from the live EDGAR filing feed.
     var insiderClusterFilers: Int = 0
@@ -541,6 +555,10 @@ struct Candidate: Identifiable, Hashable, Sendable {
             case .insiderCluster:
                 if snapshot.extended.insiderClusterFilers >= 2 {
                     parts.append("\(snapshot.extended.insiderClusterFilers) insiders filed today")
+                }
+            case .trendlineBreak:
+                if let note = snapshot.extended.patternBreakoutNote {
+                    parts.append(note)
                 }
             case .extensionRisk, .haltRisk:
                 break   // Hazards are surfaced separately, not buried in the reason.
