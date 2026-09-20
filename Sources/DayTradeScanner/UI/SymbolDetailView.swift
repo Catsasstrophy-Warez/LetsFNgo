@@ -8,6 +8,7 @@ struct SymbolDetailView: View {
     @State private var baseline: VolumeBaseline?
     @State private var showPositionSizer = false
     @State private var haltEvent: HaltMonitor.HaltEvent?
+    @State private var isReplaying = false
 
     private var candidate: Candidate? { engine.candidate(for: symbol) }
     private var state: SymbolState? { engine.state(for: symbol) }
@@ -95,12 +96,19 @@ struct SymbolDetailView: View {
     private var chartSection: some View {
         Section {
             if let state, state.recentBars.count > 2 {
-                CandleChartView(bars: state.recentBars, vwaps: state.recentVWAPs)
-                    .frame(height: 220)
-                    .padding(.vertical, 4)
-                if let candidate {
-                    ChartAnnotationStrip(candidate: candidate, state: state)
+                if isReplaying {
+                    ChartReplayView(bars: state.recentBars, vwaps: state.recentVWAPs)
+                        .padding(.vertical, 4)
+                } else {
+                    CandleChartView(bars: state.recentBars, vwaps: state.recentVWAPs)
+                        .frame(height: 220)
+                        .padding(.vertical, 4)
+                    if let candidate {
+                        ChartAnnotationStrip(candidate: candidate, state: state)
+                    }
                 }
+                Toggle("Replay mode", isOn: $isReplaying)
+                    .font(.caption)
             } else if let state, state.recentCloses.count > 2 {
                 VStack(alignment: .leading, spacing: 6) {
                     VWAPSparkline(prices: state.recentCloses, vwaps: state.recentVWAPs, height: 70)
