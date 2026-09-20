@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    # This app targets RealityKit/Metal/SwiftData, all iOS-only frameworks —
+    # it can't be built as a plain SwiftPM package for the macOS host, so CI
+    # goes through the same XcodeGen + xcodebuild path a contributor would
+    # use locally, against an iOS Simulator destination. Runs on whatever
+    # Xcode version the runner image ships as its default (kept current by
+    # GitHub); no version pin here, since this project only needs a recent
+    # Swift 6 toolchain, not a specific point release.
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project DayTradeScanner.xcodeproj \
+            -scheme DayTradeScanner \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Test
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project DayTradeScanner.xcodeproj \
+            -scheme DayTradeScanner \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -enableCodeCoverage YES \
+            CODE_SIGNING_ALLOWED=NO \
+            -resultBundlePath TestResults.xcresult
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults.xcresult
+          if-no-files-found: ignore
