@@ -333,6 +333,49 @@ struct RevealSection<Content: View>: View {
     }
 }
 
+// MARK: - Narrative
+
+/// Renders a `NarrativeGenerator.Narrative` as a headline plus bull/bear
+/// bullet lists — the shared presentation for the plain-language "why"
+/// summary across all three horizon detail views.
+struct NarrativeSectionView: View {
+    let narrative: NarrativeGenerator.Narrative
+
+    var body: some View {
+        if !narrative.isEmpty {
+            Section {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(narrative.headline)
+                        .font(.subheadline)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    if !narrative.bullish.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(narrative.bullish, id: \.self) { line in
+                                Label(line, systemImage: "arrow.up.right")
+                                    .font(.caption)
+                                    .foregroundStyle(Palette.up)
+                            }
+                        }
+                    }
+                    if !narrative.bearish.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(narrative.bearish, id: \.self) { line in
+                                Label(line, systemImage: "exclamationmark.triangle")
+                                    .font(.caption)
+                                    .foregroundStyle(Palette.down)
+                            }
+                        }
+                    }
+                }
+                .padding(.vertical, 2)
+            } header: {
+                Text("In plain language")
+            }
+        }
+    }
+}
+
 // MARK: - Small building blocks
 
 struct MetricRow: View {

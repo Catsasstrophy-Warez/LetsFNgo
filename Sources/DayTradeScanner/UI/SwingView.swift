@@ -173,6 +173,8 @@ struct SwingDetailView: View {
                     .padding(.vertical, 4)
                 }
 
+                NarrativeSectionView(narrative: NarrativeGenerator.forSwing(candidate))
+
                 Section("Trend") {
                     MetricRow(label: "20-day average", value: Fmt.price(candidate.snapshot.sma20))
                     MetricRow(label: "50-day average", value: Fmt.price(candidate.snapshot.sma50))

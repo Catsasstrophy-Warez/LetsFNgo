@@ -16,6 +16,7 @@ struct SymbolDetailView: View {
         List {
             if let candidate {
                 headerSection(candidate)
+                NarrativeSectionView(narrative: NarrativeGenerator.forDayTrade(candidate))
                 chartSection
                 signalSection(candidate)
                 floatSection

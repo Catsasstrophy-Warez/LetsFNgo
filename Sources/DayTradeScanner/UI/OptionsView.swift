@@ -294,6 +294,10 @@ struct OptionChainDetailView: View {
 
                     if let expiration = selectedExpiration ?? chain.expirations.first {
                         let sides = chain.contracts(for: expiration)
+
+                        impliedMoveSection(expiration: expiration, chain: chain)
+                        gexSection(chain: chain)
+
                         Section("Calls") {
                             ForEach(sides.calls) { contract in
                                 ContractRow(contract: contract, spot: chain.spotPrice, isSelected: isSelected(contract)) {
@@ -348,6 +352,122 @@ struct OptionChainDetailView: View {
         } else {
             selectedLegs.append(StrategyLeg(contract: contract, signedQuantity: 1))
         }
+    }
+
+    /// Expected move ahead of expiration, from the ATM straddle price —
+    /// what a trader sizing a straddle/strangle in the sheet below already
+    /// needs, so it's surfaced right where that decision gets made rather
+    /// than buried in a separate analytics screen.
+    private func impliedMoveSection(expiration: Date, chain: OptionChain) -> some View {
+        Group {
+            if let move = ImpliedMoveCalculator.expectedMove(chain: chain, expiration: expiration) {
+                Section {
+                    HStack {
+                        Text("Implied move to expiration")
+                        Spacer()
+                        Text(String(format: "±%.1f%%", move.percent * 100))
+                            .font(.subheadline.monospacedDigit().weight(.medium))
+                        Text(String(format: "(±%@)", Fmt.price(move.dollars)))
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                } footer: {
+                    Text("ATM straddle price ÷ spot — the market's own pricing of how far this underlying is expected to move by \(expiration.formatted(date: .abbreviated, time: .omitted)), not a forecast.")
+                }
+            }
+        }
+    }
+
+    private func gexSection(chain: OptionChain) -> some View {
+        let result = GammaExposureCalculator.compute(contracts: chain.contracts)
+        return Group {
+            if !result.byStrike.isEmpty {
+                Section {
+                    GEXChartView(result: result, spot: chain.spotPrice)
+                        .frame(height: 160)
+                        .padding(.vertical, 4)
+                    HStack {
+                        Text("Net gamma exposure")
+                        Spacer()
+                        Text(Fmt.compactVolume(abs(result.netTotal)))
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundStyle(result.netTotal >= 0 ? Palette.up : Palette.down)
+                    }
+                    if let flip = result.zeroGammaLevel {
+                        MetricRow(label: "Zero-gamma level", value: Fmt.price(flip))
+                    }
+                } header: {
+                    Text("Gamma exposure")
+                } footer: {
+                    Text("Self-computed from open interest and gamma across all loaded expirations, using the standard retail convention (call OI = dealers assumed short, put OI = dealers assumed long) every free GEX chart uses — not a report of actual dealer positioning. Above the zero-gamma level, hedging flow conventionally dampens moves; below it, hedging flow conventionally amplifies them.")
+                }
+            }
+        }
+    }
+}
+
+/// Bar chart of net gamma exposure by strike, with a marker at spot and, if
+/// found, the zero-gamma crossing. Drawn with `Path` like `PayoffChartView`
+/// — an occasionally-viewed analytics chart, not the high-frequency price
+/// chart the Metal pipeline exists for.
+struct GEXChartView: View {
+    let result: GammaExposureCalculator.Result
+    let spot: Double
+
+    private var strikes: [GammaExposureCalculator.StrikeExposure] { result.byStrike }
+    private var maxAbs: Double { max(strikes.map { abs($0.netGamma) }.max() ?? 1, 1) }
+    private var low: Double { strikes.map(\.strike).min() ?? spot }
+    private var high: Double { strikes.map(\.strike).max() ?? spot }
+    private var span: Double { max(high - low, 0.01) }
+
+    var body: some View {
+        Group {
+            if strikes.isEmpty {
+                EmptyView()
+            } else {
+                GeometryReader { geometry in
+                    let barWidth = max(geometry.size.width / CGFloat(strikes.count) * 0.7, 1)
+
+                    ZStack {
+                        Path { path in
+                            let y = geometry.size.height / 2
+                            path.move(to: CGPoint(x: 0, y: y))
+                            path.addLine(to: CGPoint(x: geometry.size.width, y: y))
+                        }
+                        .stroke(Color.secondary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+
+                        ForEach(strikes) { row in
+                            let x = geometry.size.width * CGFloat((row.strike - low) / span)
+                            let barHeight = CGFloat(abs(row.netGamma) / maxAbs) * (geometry.size.height / 2 - 4)
+                            let y = row.netGamma >= 0
+                                ? geometry.size.height / 2 - barHeight
+                                : geometry.size.height / 2
+                            Rectangle()
+                                .fill(row.netGamma >= 0 ? Palette.up.opacity(0.7) : Palette.down.opacity(0.7))
+                                .frame(width: barWidth, height: max(barHeight, 1))
+                                .position(x: x, y: y + barHeight / 2)
+                        }
+
+                        Path { path in
+                            let x = geometry.size.width * CGFloat((spot - low) / span)
+                            path.move(to: CGPoint(x: x, y: 0))
+                            path.addLine(to: CGPoint(x: x, y: geometry.size.height))
+                        }
+                        .stroke(Palette.cyan, lineWidth: 1.5)
+
+                        if let flip = result.zeroGammaLevel {
+                            Path { path in
+                                let x = geometry.size.width * CGFloat((flip - low) / span)
+                                path.move(to: CGPoint(x: x, y: 0))
+                                path.addLine(to: CGPoint(x: x, y: geometry.size.height))
+                            }
+                            .stroke(Palette.amber, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
+                        }
+                    }
+                }
+            }
+        }
+        .accessibilityLabel("Gamma exposure by strike")
     }
 }
 

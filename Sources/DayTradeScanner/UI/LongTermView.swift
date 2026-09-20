@@ -129,6 +129,8 @@ struct LongTermDetailView: View {
                     .padding(.vertical, 4)
                 }
 
+                NarrativeSectionView(narrative: NarrativeGenerator.forLongTerm(candidate))
+
                 Section("Growth & profitability") {
                     if let growth = snapshot.revenueGrowthYoY {
                         MetricRow(label: "Revenue growth, YoY", value: Fmt.percent(growth), tint: Palette.direction(growth))

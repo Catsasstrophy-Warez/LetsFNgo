@@ -166,6 +166,39 @@ struct OptionStrategy: Identifiable, Sendable {
     }
 }
 
+/// Expected move ahead of expiration, priced by the market itself rather
+/// than forecast: the standard ATM-straddle-derived estimate every options
+/// research platform (Market Chameleon included) surfaces before an
+/// earnings print, and directly useful input for sizing the straddle/
+/// strangle strategies built below — a trader picking those legs already
+/// needs this number.
+enum ImpliedMoveCalculator {
+
+    struct Move: Sendable {
+        let dollars: Double
+        let percent: Double
+    }
+
+    /// Uses the chain's own ATM call and put for the given expiration.
+    /// Nil when either side is missing a usable mid price — a stale or
+    /// illiquid ATM contract shouldn't produce a confident-looking number.
+    static func expectedMove(chain: OptionChain, expiration: Date) -> Move? {
+        guard let call = chain.atmContract(for: expiration, type: .call),
+              let put = chain.atmContract(for: expiration, type: .put),
+              let callMid = call.mid, let putMid = put.mid,
+              callMid > 0, putMid > 0, chain.spotPrice > 0 else { return nil }
+
+        // A straddle at the exact spot price would be the textbook formula;
+        // in practice the ATM strike sits near but not exactly at spot, so
+        // the straddle premium is scaled by spot/strike to correct for that
+        // offset rather than silently ignoring it.
+        let strikeAdjustment = call.strike > 0 ? chain.spotPrice / call.strike : 1
+        let straddlePrice = (callMid + putMid) * strikeAdjustment
+        let percent = straddlePrice / chain.spotPrice
+        return Move(dollars: straddlePrice, percent: percent)
+    }
+}
+
 /// Builds the standard named strategies from a chain, centered on a chosen
 /// expiration and (where relevant) width. Every builder returns nil rather
 /// than a malformed strategy when the chain is missing a needed strike.
