@@ -100,6 +100,12 @@ struct RootView: View {
         .preferredColorScheme(.dark)
         .tint(settings.theme.palette.accent)
         .background(settings.theme.palette.canvas.ignoresSafeArea())
+        .fullScreenCover(isPresented: Binding(
+            get: { !settings.hasCompletedOnboarding },
+            set: { isPresented in if !isPresented { settings.hasCompletedOnboarding = true } }
+        )) {
+            OnboardingView()
+        }
         #if DEBUG
         .sheet(isPresented: $testSizer) {
             PositionSizerView(entryPrice: 50, stopPrice: 48)

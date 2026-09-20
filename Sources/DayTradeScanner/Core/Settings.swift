@@ -231,6 +231,10 @@ final class Settings {
         didSet { defaults.set(haltNotifications, forKey: "haltNotifications") }
     }
 
+    var hasCompletedOnboarding: Bool {
+        didSet { defaults.set(hasCompletedOnboarding, forKey: "hasCompletedOnboarding") }
+    }
+
     /// Named, individually-mutable alert subscriptions — the same idea
     /// Benzinga Pro's "Signals" expose. A component in this set can still
     /// rank and display normally in the scan list; it's excluded only from
@@ -372,6 +376,7 @@ final class Settings {
         maxRankedResults = d.object(forKey: "maxRankedResults") as? Int ?? 20
         activeRecipeName = d.string(forKey: "activeRecipeName")
         haltNotifications = d.object(forKey: "haltNotifications") as? Bool ?? true
+        hasCompletedOnboarding = d.object(forKey: "hasCompletedOnboarding") as? Bool ?? false
         autoAdoptHaltedSymbols = d.object(forKey: "autoAdoptHaltedSymbols") as? Bool ?? true
         audioSquawkEnabled = d.object(forKey: "audioSquawkEnabled") as? Bool ?? false
         squawkHalts = d.object(forKey: "squawkHalts") as? Bool ?? true
