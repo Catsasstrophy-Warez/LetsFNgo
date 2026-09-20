@@ -9,6 +9,7 @@ struct TuningView: View {
 
     @State private var showResetConfirm = false
     @State private var showBacktest = false
+    @State private var showMicroBacktest = false
     /// Which horizon's tuning is shown. Previously the swing and long-term
     /// weight/evidence sections existed but were never added to `body`, so
     /// there was no way to reach them from the UI — this picker is the fix.
@@ -37,6 +38,11 @@ struct TuningView: View {
                     AdvancedOnly { normalizationSection }
                     AdvancedOnly { gatesSection }
                     evidenceSection
+                    Section {
+                        Button("Micro-backtest day-trade scoring") { showMicroBacktest = true }
+                    } footer: {
+                        Text("A short-lookback replay over whatever recent minute-bar history the free feed retains — not a faithful backtest of the live score, since most day-trade components depend on state (volume baselines, live news/social/halt feeds) that can't be reconstructed from bars alone. Uses only the components that can be replayed with real fidelity: VWAP, VWAP z-score, range position, plus approximated relative volume and gap.")
+                    }
                 case .swing:
                     AdvancedOnly { swingWeightsSection }
                     swingEvidenceSection
@@ -67,6 +73,7 @@ struct TuningView: View {
                 }
             }
             .sheet(isPresented: $showBacktest) { BacktestView() }
+            .sheet(isPresented: $showMicroBacktest) { MicroBacktestView() }
             .confirmationDialog("Reset weights to defaults?", isPresented: $showResetConfirm) {
                 Button("Reset weights", role: .destructive) {
                     switch tuningHorizon {

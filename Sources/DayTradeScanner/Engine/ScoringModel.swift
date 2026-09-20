@@ -68,7 +68,7 @@ struct ScoringModel: Sendable {
     /// Log-scaled so the difference between 1× and 2× volume matters more than
     /// the difference between 8× and 9×. Linear scaling makes one halted
     /// runaway dominate the entire list.
-    private func normalizeRVOL(_ rvol: Double) -> Double {
+    internal func normalizeRVOL(_ rvol: Double) -> Double {
         guard rvol > config.rvolFloor else { return 0 }
         let ceiling = max(config.rvolSaturation, config.rvolFloor + 0.1)
         let value = log(rvol / config.rvolFloor) / log(ceiling / config.rvolFloor)
@@ -77,7 +77,7 @@ struct ScoringModel: Sendable {
 
     /// A confirmed cross, decayed linearly. Thirty minutes after a reclaim the
     /// signal is spent — anyone acting on it has already acted.
-    private func normalizeVWAPEvent(_ snapshot: SignalSnapshot) -> Double {
+    internal func normalizeVWAPEvent(_ snapshot: SignalSnapshot) -> Double {
         guard snapshot.vwapEvent != .none,
               let minutes = snapshot.minutesSinceVWAPEvent else { return 0 }
         let decay = max(0, 1 - (Double(minutes) / config.vwapEventDecayMinutes))
@@ -88,7 +88,7 @@ struct ScoringModel: Sendable {
 
     /// Rewards extension from VWAP but rolls off past saturation, because a
     /// symbol 5σ from VWAP is usually late rather than strong.
-    private func normalizeVWAPPosition(_ z: Double) -> Double {
+    internal func normalizeVWAPPosition(_ z: Double) -> Double {
         let magnitude = abs(z)
         let saturation = max(config.vwapZSaturation, 0.1)
         if magnitude <= saturation {
@@ -100,7 +100,7 @@ struct ScoringModel: Sendable {
         return clamp(1.0 - min(overshoot * 0.4, 0.6))
     }
 
-    private func normalizeGap(_ gap: Double) -> Double {
+    internal func normalizeGap(_ gap: Double) -> Double {
         clamp(abs(gap) / max(config.gapSaturation, 0.001))
     }
 
@@ -127,7 +127,7 @@ struct ScoringModel: Sendable {
 
     /// Rewards conviction at either extreme of the day's range. Mid-range is
     /// chop, and chop is where day trades go to die.
-    private func normalizeRangePosition(_ position: Double) -> Double {
+    internal func normalizeRangePosition(_ position: Double) -> Double {
         clamp(abs(position - 0.5) * 2)
     }
 
