@@ -70,6 +70,7 @@ actor AlpacaREST {
 
     private func fetch<T: Decodable>(_ url: URL, as type: T.Type, retries: Int = 2) async throws -> T {
         let request = try authorized(url)
+        await AlpacaRateLimiter.shared.waitForSlot()
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw AlpacaError.decoding("No HTTP response")
