@@ -295,6 +295,25 @@ struct CandleChartView: UIViewRepresentable {
     let bars: [MinuteBar]
     let vwaps: [Double]
 
+    /// A Metal canvas is otherwise either invisible to VoiceOver or read as
+    /// an unlabeled image — this gives it one meaningful summary instead,
+    /// covering the same "what happened" a sighted glance at the candles
+    /// answers: direction over the visible window, current price, and
+    /// position relative to VWAP.
+    var accessibilitySummary: String {
+        guard let first = bars.first, let last = bars.last, first.close > 0 else {
+            return "Price chart, no data yet"
+        }
+        let changePercent = (last.close / first.close - 1) * 100
+        let direction = changePercent >= 0 ? "up" : "down"
+        var parts = [String(format: "Price chart, %d bars, %@ %.1f%% over the visible range, last %@", bars.count, direction, abs(changePercent), Fmt.price(last.close))]
+        if let vwap = vwaps.last, vwap > 0 {
+            let vwapSide = last.close >= vwap ? "above" : "below"
+            parts.append("currently \(vwapSide) VWAP")
+        }
+        return parts.joined(separator: ", ")
+    }
+
     func makeCoordinator() -> ChartMetalCoordinator { ChartMetalCoordinator() }
 
     func makeUIView(context: Context) -> MTKView {
@@ -307,6 +326,10 @@ struct CandleChartView: UIViewRepresentable {
         view.preferredFramesPerSecond = 60
         view.enableSetNeedsDisplay = false
         view.isPaused = false
+        // The SwiftUI-side accessibilityLabel below is the real element;
+        // without this, VoiceOver would additionally stop on the bare MTKView
+        // itself with no label at all.
+        view.isAccessibilityElement = false
 
         let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(ChartMetalCoordinator.handlePan(_:)))
         view.addGestureRecognizer(pan)

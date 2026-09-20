@@ -39,6 +39,7 @@ struct OptionsView: View {
                 ToolbarItem(placement: .principal) { ModeToggle() }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showUniverseEditor = true } label: { Image(systemName: "list.bullet") }
+                        .accessibilityLabel("Edit options universe")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showScreener = true } label: { Image(systemName: "slider.horizontal.3") }
@@ -47,6 +48,7 @@ struct OptionsView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { Task { await engine.refresh() } } label: { Image(systemName: "arrow.clockwise") }
                         .disabled(engine.isRefreshing)
+                        .accessibilityLabel("Refresh option chains")
                 }
             }
             .task { if engine.chains.isEmpty { await engine.refresh() } }

@@ -17,6 +17,19 @@ struct MarketPulse3DView: View {
     let candidates: [Candidate]
     @Environment(\.dismiss) private var dismiss
     @State private var rotation: Double = 0
+    @State private var showAccessibleList = false
+
+    /// The individual bars in the RealityKit scene aren't accessibility
+    /// elements — there's no practical way to make 24 freeform-positioned
+    /// 3D boxes individually VoiceOver-navigable the way a SwiftUI List row
+    /// is. Rather than leave the view silent, this gives VoiceOver one
+    /// meaningful summary (top few by score) and a "List" toolbar action
+    /// below presents the full data as an ordinary accessible list.
+    private var summary: String {
+        guard !candidates.isEmpty else { return "Market pulse, no candidates yet" }
+        let top = candidates.prefix(3).map { "\($0.symbol) at \(Fmt.score($0.score))" }
+        return "Market pulse, \(candidates.count) candidates. Top: \(top.joined(separator: ", "))."
+    }
 
     var body: some View {
         NavigationStack {
@@ -34,11 +47,20 @@ struct MarketPulse3DView: View {
                 DragGesture()
                     .onChanged { value in rotation = Double(value.translation.width) * 0.01 }
             )
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(summary)
             .background(Palette.canvas)
             .navigationTitle("Market Pulse 3D")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("List") { showAccessibleList = true }
+                        .accessibilityHint("Shows the same ranked candidates as an accessible list")
+                }
                 ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } }
+            }
+            .sheet(isPresented: $showAccessibleList) {
+                MarketPulseAccessibleListView(candidates: candidates)
             }
         }
     }
@@ -81,5 +103,34 @@ struct MarketPulse3DView: View {
         root.addChild(light)
 
         return root
+    }
+}
+
+/// The accessible equivalent of the 3D scene above — same top-24 candidates,
+/// same score-driven ordering, as an ordinary VoiceOver-navigable list.
+private struct MarketPulseAccessibleListView: View {
+    let candidates: [Candidate]
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List(candidates.prefix(24)) { candidate in
+                HStack {
+                    Text(candidate.symbol).font(.subheadline.monospaced())
+                    Spacer()
+                    Text(String(format: "%+.1f%%", candidate.snapshot.changePercent * 100))
+                        .foregroundStyle(Palette.direction(candidate.snapshot.changePercent))
+                    Text(Fmt.score(candidate.score))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 40, alignment: .trailing)
+                }
+                .accessibilityElement(children: .combine)
+            }
+            .navigationTitle("Market Pulse — List")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } }
+            }
+        }
     }
 }

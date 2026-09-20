@@ -100,9 +100,12 @@ struct SymbolDetailView: View {
                     ChartReplayView(bars: state.recentBars, vwaps: state.recentVWAPs)
                         .padding(.vertical, 4)
                 } else {
-                    CandleChartView(bars: state.recentBars, vwaps: state.recentVWAPs)
+                    let chart = CandleChartView(bars: state.recentBars, vwaps: state.recentVWAPs)
+                    chart
                         .frame(height: 220)
                         .padding(.vertical, 4)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(chart.accessibilitySummary)
                     if let candidate {
                         ChartAnnotationStrip(candidate: candidate, state: state)
                     }

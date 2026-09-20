@@ -36,8 +36,11 @@ struct ChartReplayView: View {
     var body: some View {
         VStack(spacing: 8) {
             if bars.count > 2 {
-                CandleChartView(bars: visibleBars, vwaps: visibleVWAPs)
+                let chart = CandleChartView(bars: visibleBars, vwaps: visibleVWAPs)
+                chart
                     .frame(height: 220)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Replay, \(chart.accessibilitySummary)")
 
                 if let bar = bars[safe: cursor] {
                     HStack {
@@ -59,14 +62,17 @@ struct ChartReplayView: View {
                 HStack(spacing: 20) {
                     Button { step(-1) } label: { Image(systemName: "backward.frame.fill") }
                         .disabled(cursor <= 0)
+                        .accessibilityLabel("Step back one bar")
                     Button {
                         isPlaying ? stopPlaying() : startPlaying()
                     } label: {
                         Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                     }
                     .disabled(cursor >= bars.count - 1 && !isPlaying)
+                    .accessibilityLabel(isPlaying ? "Pause replay" : "Play replay")
                     Button { step(1) } label: { Image(systemName: "forward.frame.fill") }
                         .disabled(cursor >= bars.count - 1)
+                        .accessibilityLabel("Step forward one bar")
                     Spacer()
                     Button("Jump to live") { cursor = bars.count - 1 }
                         .font(.caption)
