@@ -29,6 +29,7 @@ final class OptionsEngine {
     private let paperLog: OptionsPaperTradeLog
     let ivHistory: IVHistoryStore
     let strategyBot: StrategyBotEngine
+    let positionActivities = PositionActivityManager()
     private var refreshTask: Task<Void, Never>?
     /// Volume/OI history per contract, so the unusual-activity detector can
     /// compare today's pace against this contract's own recent average
@@ -61,9 +62,10 @@ final class OptionsEngine {
         }
     }
 
-    func stop() {
+    func stop() async {
         refreshTask?.cancel()
         refreshTask = nil
+        await positionActivities.endAll()
     }
 
     // MARK: - Refresh
@@ -106,7 +108,7 @@ final class OptionsEngine {
         lastError = builtChains.isEmpty ? "Could not load any option chains." : nil
         refreshProgress = 1.0
 
-        markOpenPaperTrades()
+        await markOpenPaperTrades()
         recordIVHistory()
         await strategyBot.evaluate()
     }
@@ -149,19 +151,20 @@ final class OptionsEngine {
         guard let chain = await fetchChain(for: underlying, expirationCount: nextCount) else { return }
         chains[underlying] = chain
         unusualActivity = UnusualActivityDetector.scan(chains: chains, history: volumeHistory)
-        markOpenPaperTrades()
+        await markOpenPaperTrades()
         await strategyBot.evaluate()
     }
 
     /// Marks every open options paper trade against the current chain data.
     /// Fired after any refresh (full sweep or a single-underlying load) so
     /// the journal's marks are never staler than the last successful fetch.
-    private func markOpenPaperTrades() {
+    private func markOpenPaperTrades() async {
         var mids: [String: Double] = [:]
         for contract in chains.values.flatMap(\.contracts) {
             if let mid = contract.mid { mids[contract.symbol] = mid }
         }
         paperLog.markToMarket(midsByContractSymbol: mids)
+        await positionActivities.sync(with: paperLog.trades)
     }
 
     private func fetchChain(for underlying: String, expirationCount: Int) async -> OptionChain? {

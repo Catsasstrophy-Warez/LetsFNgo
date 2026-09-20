@@ -112,7 +112,7 @@ struct DayTradeScannerApp: App {
                             // the free plan allows one connection per feed.
                             await engine.stop()
                             swingEngine.stop()
-                            optionsEngine.stop()
+                            await optionsEngine.stop()
                             regimeEngine.stop()
                             // Long-term keeps polling in the background where
                             // iOS allows it — a multi-hour cadence has nothing

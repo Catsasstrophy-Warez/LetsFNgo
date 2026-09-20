@@ -33,6 +33,7 @@ targets:
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         NSUserNotificationsUsageDescription: "Used to alert you when a scan candidate crosses your threshold."
+        NSSupportsLiveActivities: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.daytradescanner.app
@@ -55,6 +56,7 @@ targets:
       - sdk: UserNotifications.framework
       - sdk: AVFoundation.framework
       - sdk: WidgetKit.framework
+      - sdk: ActivityKit.framework
       - target: DayTradeScannerWidgetExtension
         embed: true
     scheme:
@@ -78,6 +80,7 @@ targets:
     sources:
       - path: Sources/DayTradeScannerWidget
       - path: Sources/DayTradeScanner/Core/WidgetSharedStore.swift
+      - path: Sources/DayTradeScanner/Core/PositionActivityAttributes.swift
     info:
       path: Sources/DayTradeScannerWidget/Info.plist
       properties:
@@ -99,3 +102,4 @@ targets:
     dependencies:
       - sdk: WidgetKit.framework
       - sdk: SwiftUI.framework
+      - sdk: ActivityKit.framework

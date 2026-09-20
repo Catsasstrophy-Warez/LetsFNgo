@@ -95,5 +95,6 @@ struct TopCandidateWidget: Widget {
 struct DayTradeScannerWidgetBundle: WidgetBundle {
     var body: some Widget {
         TopCandidateWidget()
+        PositionLiveActivity()
     }
 }
