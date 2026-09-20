@@ -78,7 +78,7 @@ enum ScanProfile: String, Codable, CaseIterable, Identifiable, Sendable {
                 .gap: 0.09, .news: 0.12, .shortPressure: 0.04, .rangePosition: 0.03,
                 .volatilityPotential: 0.08, .rangeExpansion: 0.07, .compression: 0.04,
                 .floatTightness: 0.08,
-                .socialMomentum: 0.04, .insiderCluster: 0.02,
+                .socialMomentum: 0.04, .insiderCluster: 0.02, .trendlineBreak: 0.05,
                 .momentumBurst: 0.0, .pullbackQuality: 0.0, .acceleration: 0.0,
                 .extensionRisk: 0.03, .haltRisk: 0.02
             ]
@@ -92,7 +92,7 @@ enum ScanProfile: String, Codable, CaseIterable, Identifiable, Sendable {
                 .gap: 0.0, .news: 0.04, .shortPressure: 0.0, .rangePosition: 0.04,
                 .volatilityPotential: 0.05, .rangeExpansion: 0.04, .compression: 0.0,
                 .floatTightness: 0.03,
-                .socialMomentum: 0.02, .insiderCluster: 0.0,
+                .socialMomentum: 0.02, .insiderCluster: 0.0, .trendlineBreak: 0.05,
                 .momentumBurst: 0.22, .pullbackQuality: 0.15, .acceleration: 0.10,
                 .extensionRisk: 0.03, .haltRisk: 0.04
             ]
@@ -106,7 +106,7 @@ enum ScanProfile: String, Codable, CaseIterable, Identifiable, Sendable {
                 .gap: 0.28, .news: 0.24, .shortPressure: 0.04, .rangePosition: 0.0,
                 .volatilityPotential: 0.12, .rangeExpansion: 0.0, .compression: 0.03,
                 .floatTightness: 0.11,
-                .socialMomentum: 0.08, .insiderCluster: 0.02,
+                .socialMomentum: 0.08, .insiderCluster: 0.02, .trendlineBreak: 0.0,
                 .momentumBurst: 0.0, .pullbackQuality: 0.0, .acceleration: 0.0,
                 .extensionRisk: 0.02, .haltRisk: 0.02
             ]
@@ -120,7 +120,7 @@ enum ScanProfile: String, Codable, CaseIterable, Identifiable, Sendable {
                 .gap: 0.12, .news: 0.14, .shortPressure: 0.08, .rangePosition: 0.04,
                 .volatilityPotential: 0.15, .rangeExpansion: 0.09, .compression: 0.05,
                 .floatTightness: 0.15,
-                .socialMomentum: 0.06, .insiderCluster: 0.05,
+                .socialMomentum: 0.06, .insiderCluster: 0.05, .trendlineBreak: 0.04,
                 .momentumBurst: 0.04, .pullbackQuality: 0.0, .acceleration: 0.03,
                 .extensionRisk: 0.02, .haltRisk: 0.03
             ]
@@ -136,7 +136,7 @@ enum ScanProfile: String, Codable, CaseIterable, Identifiable, Sendable {
                 .gap: 0.0, .news: 0.10, .shortPressure: 0.02, .rangePosition: 0.06,
                 .volatilityPotential: 0.06, .rangeExpansion: 0.03, .compression: 0.0,
                 .floatTightness: 0.09,
-                .socialMomentum: 0.03, .insiderCluster: 0.0,
+                .socialMomentum: 0.03, .insiderCluster: 0.0, .trendlineBreak: 0.0,
                 .momentumBurst: 0.17, .pullbackQuality: 0.04, .acceleration: 0.08,
                 .extensionRisk: 0.02, .haltRisk: 0.06
             ]
