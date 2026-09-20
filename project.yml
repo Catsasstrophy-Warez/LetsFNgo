@@ -1,0 +1,66 @@
+name: DayTradeScanner
+options:
+  bundleIdPrefix: com.daytradescanner
+  deploymentTarget:
+    iOS: "18.0"
+  # Bump to iOS 27 / Xcode 27 deployment targets once Apple ships those SDKs.
+  # Swift 6 language mode and strict concurrency are already enabled below,
+  # so no source changes should be needed when the deployment target moves.
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    TARGETED_DEVICE_FAMILY: "1,2" # iPhone + iPad
+    ENABLE_PREVIEWS: YES
+    SUPPORTS_MACCATALYST: NO
+
+targets:
+  DayTradeScanner:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Sources/DayTradeScanner
+    resources:
+      - path: Sources/DayTradeScanner/Resources
+        optional: true
+    info:
+      path: Sources/DayTradeScanner/Info.plist
+      properties:
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        NSUserNotificationsUsageDescription: "Used to alert you when a scan candidate crosses your threshold."
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.daytradescanner.app
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_EMIT_LOC_STRINGS: YES
+        ENABLE_HARDENED_RUNTIME: YES
+    entitlements:
+      path: Sources/DayTradeScanner/DayTradeScanner.entitlements
+      properties:
+        aps-environment: development
+    dependencies:
+      - sdk: SwiftData.framework
+      - sdk: SwiftUI.framework
+      - sdk: RealityKit.framework
+      - sdk: Metal.framework
+      - sdk: MetalKit.framework
+      - sdk: UserNotifications.framework
+    scheme:
+      testTargets:
+        - DayTradeScannerTests
+      gatherCoverageData: true
+
+  DayTradeScannerTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Tests/DayTradeScannerTests
+    dependencies:
+      - target: DayTradeScanner
