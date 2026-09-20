@@ -233,6 +233,7 @@ struct SettingsView: View {
                 Toggle("Speak halts and resumes", isOn: $settings.squawkHalts)
                 Toggle("Speak new filings", isOn: $settings.squawkFilings)
                 Toggle("Speak top-ranked setups", isOn: $settings.squawkTopSetups)
+                Toggle("Speak strategy bot alerts", isOn: $settings.squawkStrategyBot)
             }
         } header: {
             Text("Audio squawk")

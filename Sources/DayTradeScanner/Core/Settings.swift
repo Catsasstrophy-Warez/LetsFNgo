@@ -252,6 +252,9 @@ final class Settings {
     var squawkTopSetups: Bool {
         didSet { defaults.set(squawkTopSetups, forKey: "squawkTopSetups") }
     }
+    var squawkStrategyBot: Bool {
+        didSet { defaults.set(squawkStrategyBot, forKey: "squawkStrategyBot") }
+    }
 
     /// Stream symbols that halt even when they aren't in the universe. The
     /// halt list is a discovery channel of its own.
@@ -364,6 +367,7 @@ final class Settings {
         squawkHalts = d.object(forKey: "squawkHalts") as? Bool ?? true
         squawkFilings = d.object(forKey: "squawkFilings") as? Bool ?? true
         squawkTopSetups = d.object(forKey: "squawkTopSetups") as? Bool ?? false
+        squawkStrategyBot = d.object(forKey: "squawkStrategyBot") as? Bool ?? true
         secContactEmail = d.string(forKey: "secContactEmail") ?? ""
         accountEquity = d.object(forKey: "accountEquity") as? Double ?? 25_000
         defaultRiskPercent = d.object(forKey: "defaultRiskPercent") as? Double ?? 0.01

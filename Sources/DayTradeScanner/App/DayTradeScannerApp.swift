@@ -46,7 +46,8 @@ struct DayTradeScannerApp: App {
         _swingEngine = State(initialValue: SwingEngine(rest: sharedREST, secFloat: sharedSECFloat))
         _longTermEngine = State(initialValue: LongTermEngine(rest: sharedREST, secFloat: sharedSECFloat))
         let ivHistory = IVHistoryStore()
-        _optionsEngine = State(initialValue: OptionsEngine(rest: sharedREST, paperLog: optionsLog, ivHistory: ivHistory))
+        let strategyBot = StrategyBotEngine(paperLog: optionsLog, squawk: AudioSquawk())
+        _optionsEngine = State(initialValue: OptionsEngine(rest: sharedREST, paperLog: optionsLog, ivHistory: ivHistory, strategyBot: strategyBot))
         _regimeEngine = State(initialValue: MarketRegimeEngine(rest: sharedREST))
     }
 

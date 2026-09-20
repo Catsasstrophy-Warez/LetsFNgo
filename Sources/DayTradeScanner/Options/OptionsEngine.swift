@@ -28,6 +28,7 @@ final class OptionsEngine {
     private let rest: AlpacaREST
     private let paperLog: OptionsPaperTradeLog
     let ivHistory: IVHistoryStore
+    let strategyBot: StrategyBotEngine
     private var refreshTask: Task<Void, Never>?
     /// Volume/OI history per contract, so the unusual-activity detector can
     /// compare today's pace against this contract's own recent average
@@ -38,10 +39,16 @@ final class OptionsEngine {
 
     static let refreshInterval: Duration = .seconds(60)
 
-    init(rest: AlpacaREST, paperLog: OptionsPaperTradeLog, ivHistory: IVHistoryStore = IVHistoryStore()) {
+    init(
+        rest: AlpacaREST,
+        paperLog: OptionsPaperTradeLog,
+        ivHistory: IVHistoryStore = IVHistoryStore(),
+        strategyBot: StrategyBotEngine? = nil
+    ) {
         self.rest = rest
         self.paperLog = paperLog
         self.ivHistory = ivHistory
+        self.strategyBot = strategyBot ?? StrategyBotEngine(paperLog: paperLog)
     }
 
     func start() {
@@ -101,6 +108,7 @@ final class OptionsEngine {
 
         markOpenPaperTrades()
         recordIVHistory()
+        await strategyBot.evaluate()
     }
 
     /// Records today's front-month at-the-money IV per underlying, so IV
@@ -142,6 +150,7 @@ final class OptionsEngine {
         chains[underlying] = chain
         unusualActivity = UnusualActivityDetector.scan(chains: chains, history: volumeHistory)
         markOpenPaperTrades()
+        await strategyBot.evaluate()
     }
 
     /// Marks every open options paper trade against the current chain data.

@@ -54,6 +54,7 @@ struct OptionsView: View {
 
     private var list: some View {
         List {
+            strategyBotSection
             positionsSection
             unusualActivitySection
 
@@ -77,6 +78,34 @@ struct OptionsView: View {
             }
         }
         .refreshable { await engine.refresh() }
+    }
+
+    private var strategyBotSection: some View {
+        Group {
+            if !engine.strategyBot.recentAlerts.isEmpty {
+                Section {
+                    ForEach(engine.strategyBot.recentAlerts.prefix(8)) { alert in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("\(alert.underlying) — \(alert.kind.title)")
+                                    .font(.caption.weight(.medium))
+                                Text(alert.detail)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(alert.firedAt.formatted(date: .omitted, time: .shortened))
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                } header: {
+                    Text("Strategy bot")
+                } footer: {
+                    Text("Mechanical lifecycle checkpoints on your open positions: profit target, 21 DTE, expiration day, and stop loss. Each fires once per position.")
+                }
+            }
+        }
     }
 
     private var positionsSection: some View {
