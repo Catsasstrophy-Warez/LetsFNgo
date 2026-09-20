@@ -34,6 +34,7 @@ final class ScannerEngine {
     private let edgarStream: EDGARFilingStream
     private let budget = AlertBudgetKeeper()
     private let paperLog: PaperTradeLog
+    private let squawk = AudioSquawk()
 
     // Discovery state
     private(set) var gappers: [UniverseBuilder.Gapper] = []
@@ -586,6 +587,9 @@ final class ScannerEngine {
             if settings.notificationsEnabled {
                 await Notifier.post(candidate: candidate, wasPreemption: grant.wasPreemption)
             }
+            if settings.audioSquawkEnabled, settings.squawkTopSetups {
+                squawk.speakTopSetup(candidate)
+            }
             if settings.autoPaperTradeOnAlert {
                 let setup = SetupType.classify(
                     candidate,
@@ -865,6 +869,9 @@ final class ScannerEngine {
         if settings.notificationsEnabled, settings.haltNotifications {
             await Notifier.postHalt(event)
         }
+        if settings.audioSquawkEnabled, settings.squawkHalts {
+            squawk.speakHalt(event)
+        }
     }
 
     func refreshHalts() async {
@@ -938,6 +945,9 @@ final class ScannerEngine {
                 filedReports8K[symbol] = event
             }
             recentFiled8Ks = await edgarStream.recentCurrentReports
+        }
+        if settings.audioSquawkEnabled, settings.squawkFilings {
+            squawk.speakFiling(event)
         }
     }
 

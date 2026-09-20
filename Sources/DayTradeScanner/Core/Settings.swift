@@ -231,6 +231,28 @@ final class Settings {
         didSet { defaults.set(haltNotifications, forKey: "haltNotifications") }
     }
 
+    /// Spoken-aloud alerts for halts, fresh 8-K filings, and top-ranked
+    /// setups — a "squawk box," the trading-desk term for the speaker that
+    /// reads out order flow so a trader doesn't have to keep eyes on a
+    /// screen. Off by default: this is a much louder, more intrusive
+    /// notification style than a silent banner.
+    var audioSquawkEnabled: Bool {
+        didSet { defaults.set(audioSquawkEnabled, forKey: "audioSquawkEnabled") }
+    }
+
+    /// Which event families get spoken. Halts and filings are opt-out by
+    /// default once squawk is on; top-setup alerts are opt-in since those
+    /// fire far more often and would otherwise talk over everything else.
+    var squawkHalts: Bool {
+        didSet { defaults.set(squawkHalts, forKey: "squawkHalts") }
+    }
+    var squawkFilings: Bool {
+        didSet { defaults.set(squawkFilings, forKey: "squawkFilings") }
+    }
+    var squawkTopSetups: Bool {
+        didSet { defaults.set(squawkTopSetups, forKey: "squawkTopSetups") }
+    }
+
     /// Stream symbols that halt even when they aren't in the universe. The
     /// halt list is a discovery channel of its own.
     var autoAdoptHaltedSymbols: Bool {
@@ -338,6 +360,10 @@ final class Settings {
         activeRecipeName = d.string(forKey: "activeRecipeName")
         haltNotifications = d.object(forKey: "haltNotifications") as? Bool ?? true
         autoAdoptHaltedSymbols = d.object(forKey: "autoAdoptHaltedSymbols") as? Bool ?? true
+        audioSquawkEnabled = d.object(forKey: "audioSquawkEnabled") as? Bool ?? false
+        squawkHalts = d.object(forKey: "squawkHalts") as? Bool ?? true
+        squawkFilings = d.object(forKey: "squawkFilings") as? Bool ?? true
+        squawkTopSetups = d.object(forKey: "squawkTopSetups") as? Bool ?? false
         secContactEmail = d.string(forKey: "secContactEmail") ?? ""
         accountEquity = d.object(forKey: "accountEquity") as? Double ?? 25_000
         defaultRiskPercent = d.object(forKey: "defaultRiskPercent") as? Double ?? 0.01

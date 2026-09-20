@@ -51,6 +51,7 @@ targets:
       - sdk: Metal.framework
       - sdk: MetalKit.framework
       - sdk: UserNotifications.framework
+      - sdk: AVFoundation.framework
     scheme:
       testTargets:
         - DayTradeScannerTests

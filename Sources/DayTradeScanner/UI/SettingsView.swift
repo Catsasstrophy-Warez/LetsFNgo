@@ -23,6 +23,7 @@ struct SettingsView: View {
                 swingUniverseSection
                 longTermUniverseSection
                 behaviourSection
+                squawkSection
                 positionSizingSection
                 secFloatSection
                 baselineSection
@@ -220,6 +221,23 @@ struct SettingsView: View {
             Text("Behaviour")
         } footer: {
             Text("Pre-market bars are thin and erratic. Leaving them out anchors VWAP to the same open everyone else is watching. Halt notifications bypass the alert budget — a halt on something you may be holding isn't an opportunity to be rationed.")
+        }
+    }
+
+    private var squawkSection: some View {
+        @Bindable var settings = settings
+
+        return Section {
+            Toggle("Audio squawk box", isOn: $settings.audioSquawkEnabled)
+            if settings.audioSquawkEnabled {
+                Toggle("Speak halts and resumes", isOn: $settings.squawkHalts)
+                Toggle("Speak new filings", isOn: $settings.squawkFilings)
+                Toggle("Speak top-ranked setups", isOn: $settings.squawkTopSetups)
+            }
+        } header: {
+            Text("Audio squawk")
+        } footer: {
+            Text("Reads alerts aloud, trading-desk squawk-box style, so you don't have to keep eyes on the screen. Top-setup squawking is off by default since it fires far more often than halts or filings.")
         }
     }
 
