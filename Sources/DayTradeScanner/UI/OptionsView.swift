@@ -705,7 +705,7 @@ struct StrategyPayoffView: View {
                         .padding(.vertical, 4)
                 }
 
-                Section("Risk") {
+                Section {
                     MetricRow(label: "Net premium", value: Fmt.price(strategy.netPremium), tint: strategy.netPremium < 0 ? Palette.down : Palette.up)
                     if let maxProfit = strategy.maxProfit {
                         MetricRow(label: "Max profit", value: Fmt.price(maxProfit), tint: Palette.up)
@@ -724,6 +724,8 @@ struct StrategyPayoffView: View {
                     if let pop = strategy.approximateProbabilityOfProfit {
                         MetricRow(label: "Approx. probability of profit", value: String(format: "%.0f%%", pop * 100))
                     }
+                } header: {
+                    Text("Risk")
                 } footer: {
                     Text("Probability of profit is delta-approximated, the standard retail shorthand, not a rigorous distributional estimate. All figures use mid price and ignore fees, assignment risk, and early exercise.")
                 }
