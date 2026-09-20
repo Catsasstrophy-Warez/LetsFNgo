@@ -44,6 +44,8 @@ targets:
       path: Sources/DayTradeScanner/DayTradeScanner.entitlements
       properties:
         aps-environment: development
+        com.apple.security.application-groups:
+          - group.com.daytradescanner.shared
     dependencies:
       - sdk: SwiftData.framework
       - sdk: SwiftUI.framework
@@ -52,6 +54,9 @@ targets:
       - sdk: MetalKit.framework
       - sdk: UserNotifications.framework
       - sdk: AVFoundation.framework
+      - sdk: WidgetKit.framework
+      - target: DayTradeScannerWidgetExtension
+        embed: true
     scheme:
       testTargets:
         - DayTradeScannerTests
@@ -65,3 +70,32 @@ targets:
       - path: Tests/DayTradeScannerTests
     dependencies:
       - target: DayTradeScanner
+
+  DayTradeScannerWidgetExtension:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Sources/DayTradeScannerWidget
+      - path: Sources/DayTradeScanner/Core/WidgetSharedStore.swift
+    info:
+      path: Sources/DayTradeScannerWidget/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.daytradescanner.app.widget
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_EMIT_LOC_STRINGS: YES
+        ENABLE_HARDENED_RUNTIME: YES
+        SKIP_INSTALL: YES
+    entitlements:
+      path: Sources/DayTradeScannerWidget/DayTradeScannerWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.daytradescanner.shared
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework

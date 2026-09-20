@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import UserNotifications
+import WidgetKit
 
 /// The one object both interfaces read from.
 ///
@@ -214,6 +215,24 @@ final class ScannerEngine {
         await start()
     }
 
+    /// Writes the current top candidate to the shared App Group container
+    /// and asks the widget extension to redraw. Cheap enough to call after
+    /// every scoring pass — the extension's own timeline only actually
+    /// reloads on iOS's own budget regardless of how often this is called.
+    private func publishTopCandidateToWidget() {
+        let snapshot = candidates.first.map {
+            WidgetSharedStore.TopCandidateSnapshot(
+                symbol: $0.symbol,
+                score: $0.score,
+                changePercent: $0.snapshot.changePercent,
+                reason: $0.plainReason,
+                updatedAt: Date()
+            )
+        }
+        WidgetSharedStore.writeTopCandidate(snapshot)
+        WidgetCenter.shared.reloadTimelines(ofKind: TopCandidateWidgetKind)
+    }
+
     /// Positive proof the saved keys are valid, paper-trading credentials —
     /// see the doc comment on `AlpacaREST.verifyPaperAccount()` for why a
     /// successful response here is itself the safeguard, not just a status
@@ -386,6 +405,8 @@ final class ScannerEngine {
         rejected = result.rejected.map { (symbol: $0.0, reason: $0.1) }
         diagnostics.lastScoredAt = Date()
         diagnostics.scoringDurationMs = Date().timeIntervalSince(started) * 1000
+
+        publishTopCandidateToWidget()
 
         // Mark open paper trades against every price we hold, not just the
         // ranked ones — a trade opened an hour ago may have since been gated
