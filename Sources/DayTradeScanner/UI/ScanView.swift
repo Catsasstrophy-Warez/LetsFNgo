@@ -8,6 +8,7 @@ struct ScanView: View {
     @State private var selectedSymbol: String?
     @State private var showRejected = false
     @State private var showRecipes = false
+    @State private var show3DPulse = false
 
     var body: some View {
         NavigationStack {
@@ -43,6 +44,11 @@ struct ScanView: View {
                         }
                         .accessibilityLabel(engine.isRunning ? "Stop scanning" : "Start scanning")
                     }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button { show3DPulse = true } label: { Image(systemName: "cube") }
+                            .disabled(engine.candidates.isEmpty)
+                            .accessibilityLabel("3D market pulse")
+                    }
                 } else {
                     ToolbarItem(placement: .principal) { ModeToggle() }
                     ToolbarItem(placement: .topBarTrailing) {
@@ -56,6 +62,7 @@ struct ScanView: View {
                 }
             }
             .sheet(isPresented: $showRecipes) { RecipePicker() }
+            .sheet(isPresented: $show3DPulse) { MarketPulse3DView(candidates: engine.candidates) }
             .navigationDestination(item: $selectedSymbol) { symbol in
                 SymbolDetailView(symbol: symbol)
             }

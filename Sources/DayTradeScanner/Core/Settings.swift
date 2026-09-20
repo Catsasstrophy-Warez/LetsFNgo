@@ -185,6 +185,14 @@ final class Settings {
         didSet { defaults.set(longTermUniverse, forKey: "longTermUniverse") }
     }
 
+    /// Underlyings the options engine pulls chains for. Deliberately small —
+    /// a full chain fetch plus snapshot quotes for every strike/expiration is
+    /// one of the heavier request patterns in the app, so this stays a
+    /// short, hand-picked list rather than a market-wide screen.
+    var optionsUniverse: [String] {
+        didSet { defaults.set(optionsUniverse, forKey: "optionsUniverse") }
+    }
+
     var swingWeights: [SwingComponent: Double] {
         didSet {
             let raw = Dictionary(uniqueKeysWithValues: swingWeights.map { ($0.key.rawValue, $0.value) })
@@ -305,6 +313,7 @@ final class Settings {
         tradeHorizon = TradeHorizon(rawValue: d.string(forKey: "tradeHorizon") ?? "") ?? .dayTrade
         swingUniverse = d.stringArray(forKey: "swingUniverse") ?? TradeHorizon.starterUniverse(for: .swing)
         longTermUniverse = d.stringArray(forKey: "longTermUniverse") ?? TradeHorizon.starterUniverse(for: .longTerm)
+        optionsUniverse = d.stringArray(forKey: "optionsUniverse") ?? ["AAPL", "TSLA", "NVDA", "SPY", "QQQ", "AMD", "META", "AMZN"]
 
         if let data = d.data(forKey: "swingWeights"),
            let raw = try? JSONDecoder().decode([String: Double].self, from: data) {

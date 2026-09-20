@@ -1,0 +1,456 @@
+import SwiftUI
+
+struct OptionsView: View {
+    @Environment(OptionsEngine.self) private var engine
+    @Environment(Settings.self) private var settings
+    @State private var selectedUnderlying: String?
+    @State private var showUniverseEditor = false
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if !settings.hasCredentials {
+                    EmptyStateView(
+                        title: "Add your Alpaca keys",
+                        message: "Option chains use the same Alpaca account as the equity scanner.",
+                        systemImage: "key"
+                    )
+                } else if engine.isRefreshing && engine.chains.isEmpty {
+                    ScrollView {
+                        VStack(spacing: 10) {
+                            ProgressView(value: engine.refreshProgress)
+                                .frame(maxWidth: 240)
+                            Text(engine.refreshMessage)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.top, 40)
+                    }
+                } else {
+                    list
+                }
+            }
+            .navigationTitle("Options")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) { ModeToggle() }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showUniverseEditor = true } label: { Image(systemName: "list.bullet") }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { Task { await engine.refresh() } } label: { Image(systemName: "arrow.clockwise") }
+                        .disabled(engine.isRefreshing)
+                }
+            }
+            .task { if engine.chains.isEmpty { await engine.refresh() } }
+            .sheet(isPresented: $showUniverseEditor) { OptionsUniverseEditor() }
+            .navigationDestination(item: $selectedUnderlying) { underlying in
+                OptionChainDetailView(underlying: underlying)
+            }
+        }
+    }
+
+    private var list: some View {
+        List {
+            unusualActivitySection
+
+            Section {
+                ForEach(settings.optionsUniverse, id: \.self) { underlying in
+                    Button { selectedUnderlying = underlying } label: {
+                        UnderlyingSummaryRow(underlying: underlying, chain: engine.chain(for: underlying))
+                    }
+                    .buttonStyle(.plain)
+                }
+            } header: {
+                HStack {
+                    Text("Chains")
+                    Spacer()
+                    if let refreshed = engine.lastRefreshedAt {
+                        Text("updated \(refreshed.formatted(date: .omitted, time: .shortened))")
+                    }
+                }
+            } footer: {
+                Text("Nearest three expirations only, to keep the request count reasonable on the free tier. Full-chain history and further-dated strikes are available in the chain detail view's \"load more\" action in a future release.")
+            }
+        }
+        .refreshable { await engine.refresh() }
+    }
+
+    private var unusualActivitySection: some View {
+        Group {
+            if !engine.unusualActivity.isEmpty {
+                Section {
+                    ForEach(engine.unusualActivity.prefix(15)) { signal in
+                        UnusualActivityRow(signal: signal)
+                    }
+                } header: {
+                    Text("Unusual activity")
+                } footer: {
+                    Text("Self-computed from Alpaca's own chain data: volume against open interest, volume against this contract's own recent pace, and notional size. This is a ranking aid, not a signed buy/sell signal, and it is never blended into the underlying's own day-trade score.")
+                }
+            }
+        }
+    }
+}
+
+struct UnderlyingSummaryRow: View {
+    let underlying: String
+    let chain: OptionChain?
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(underlying).font(.subheadline.monospaced().weight(.medium))
+                if let chain {
+                    Text("\(chain.contracts.count) contracts · \(chain.expirations.count) expirations")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Not loaded").font(.caption2).foregroundStyle(.tertiary)
+                }
+            }
+            Spacer()
+            if let chain {
+                Text(Fmt.price(chain.spotPrice))
+                    .font(.subheadline.monospacedDigit())
+            }
+            Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+struct UnusualActivityRow: View {
+    let signal: UnusualActivityDetector.Signal
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(signal.contract.underlying)
+                    .font(.subheadline.monospaced().weight(.medium))
+                Text(signal.contract.type == .call ? "CALL" : "PUT")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(signal.contract.type == .call ? Palette.up : Palette.down)
+                Text(Fmt.price(signal.contract.strike))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("\(signal.contract.daysToExpiration)d")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.tertiary)
+                ScoreBar(score: signal.score, height: 4).frame(width: 40)
+            }
+            Text(signal.reasons.joined(separator: " · "))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+struct OptionsUniverseEditor: View {
+    @Environment(Settings.self) private var settings
+    @Environment(OptionsEngine.self) private var engine
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextEditor(text: $text)
+                        .font(.system(.footnote, design: .monospaced))
+                        .frame(minHeight: 80)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                } footer: {
+                    Text("A small list — each underlying costs a full chain fetch plus quote snapshots for its nearest expirations.")
+                }
+            }
+            .navigationTitle("Options watchlist")
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear { text = settings.optionsUniverse.joined(separator: ", ") }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        let symbols = text
+                            .split(whereSeparator: { ", \n\t".contains($0) })
+                            .map { $0.trimmingCharacters(in: .whitespaces).uppercased() }
+                            .filter { !$0.isEmpty }
+                        if !symbols.isEmpty { settings.optionsUniverse = symbols }
+                        dismiss()
+                        Task { await engine.refresh() }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Chain detail
+
+struct OptionChainDetailView: View {
+    @Environment(OptionsEngine.self) private var engine
+    let underlying: String
+    @State private var selectedExpiration: Date?
+    @State private var selectedLegs: [StrategyLeg] = []
+    @State private var showStrategySheet = false
+
+    private var chain: OptionChain? { engine.chain(for: underlying) }
+
+    var body: some View {
+        Group {
+            if let chain {
+                List {
+                    Section {
+                        HStack {
+                            Text(Fmt.price(chain.spotPrice)).font(.title2.monospaced().weight(.medium))
+                            Spacer()
+                            Text("as of \(chain.asOf.formatted(date: .omitted, time: .shortened))")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Section {
+                        Picker("Expiration", selection: $selectedExpiration) {
+                            ForEach(chain.expirations, id: \.self) { date in
+                                Text(date.formatted(date: .abbreviated, time: .omitted)).tag(Date?.some(date))
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    if let expiration = selectedExpiration ?? chain.expirations.first {
+                        let sides = chain.contracts(for: expiration)
+                        Section("Calls") {
+                            ForEach(sides.calls) { contract in
+                                ContractRow(contract: contract, spot: chain.spotPrice, isSelected: isSelected(contract)) {
+                                    toggle(contract)
+                                }
+                            }
+                        }
+                        Section("Puts") {
+                            ForEach(sides.puts) { contract in
+                                ContractRow(contract: contract, spot: chain.spotPrice, isSelected: isSelected(contract)) {
+                                    toggle(contract)
+                                }
+                            }
+                        }
+                    }
+                }
+                .safeAreaInset(edge: .bottom) {
+                    if !selectedLegs.isEmpty {
+                        Button {
+                            showStrategySheet = true
+                        } label: {
+                            Text("Build strategy from \(selectedLegs.count) leg\(selectedLegs.count == 1 ? "" : "s")")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .padding()
+                        .background(.bar)
+                    }
+                }
+            } else {
+                EmptyStateView(
+                    title: "\(underlying) chain not loaded",
+                    message: "Pull to refresh from the Options tab, or wait for the next automatic refresh.",
+                    systemImage: "magnifyingglass"
+                )
+            }
+        }
+        .navigationTitle(underlying)
+        .onAppear { selectedExpiration = chain?.expirations.first }
+        .sheet(isPresented: $showStrategySheet) {
+            StrategyPayoffView(legs: selectedLegs, spot: chain?.spotPrice ?? 0)
+        }
+    }
+
+    private func isSelected(_ contract: OptionContract) -> Bool {
+        selectedLegs.contains { $0.contract.symbol == contract.symbol }
+    }
+
+    private func toggle(_ contract: OptionContract) {
+        if let index = selectedLegs.firstIndex(where: { $0.contract.symbol == contract.symbol }) {
+            selectedLegs.remove(at: index)
+        } else {
+            selectedLegs.append(StrategyLeg(contract: contract, signedQuantity: 1))
+        }
+    }
+}
+
+struct ContractRow: View {
+    let contract: OptionContract
+    let spot: Double
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary.opacity(0.4))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(Fmt.price(contract.strike)).font(.subheadline.monospacedDigit().weight(.medium))
+                        if let moneyness = contract.moneynessPercent(spot: spot), abs(moneyness) < 0.01 {
+                            Text("ATM").font(.caption2.weight(.bold)).foregroundStyle(Palette.amber)
+                        }
+                    }
+                    if let iv = contract.impliedVolatility {
+                        Text("IV \(String(format: "%.0f%%", iv * 100))")
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    if let mid = contract.mid {
+                        Text(Fmt.price(mid)).font(.subheadline.monospacedDigit())
+                    } else {
+                        Text("—").font(.subheadline).foregroundStyle(.tertiary)
+                    }
+                    if let delta = contract.greeks?.delta {
+                        Text("Δ \(String(format: "%.2f", delta))")
+                            .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                    }
+                }
+
+                if let volume = contract.volume, let oi = contract.openInterest {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("v \(volume)").font(.caption2.monospacedDigit())
+                        Text("oi \(oi)").font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
+                    }
+                    .frame(width: 50, alignment: .trailing)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 2)
+    }
+}
+
+// MARK: - Strategy payoff
+
+struct StrategyPayoffView: View {
+    let legs: [StrategyLeg]
+    let spot: Double
+    @Environment(\.dismiss) private var dismiss
+
+    private var strategy: OptionStrategy {
+        OptionStrategy(name: legs.count == 1 ? (legs[0].isLong ? "Long \(legs[0].contract.type.rawValue)" : "Short \(legs[0].contract.type.rawValue)") : "Custom \(legs.count)-leg", legs: legs)
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    PayoffChartView(strategy: strategy, spot: spot)
+                        .frame(height: 200)
+                        .padding(.vertical, 4)
+                }
+
+                Section("Risk") {
+                    MetricRow(label: "Net premium", value: Fmt.price(strategy.netPremium), tint: strategy.netPremium < 0 ? Palette.down : Palette.up)
+                    if let maxProfit = strategy.maxProfit {
+                        MetricRow(label: "Max profit", value: Fmt.price(maxProfit), tint: Palette.up)
+                    } else {
+                        MetricRow(label: "Max profit", value: "Unbounded", tint: Palette.up)
+                    }
+                    if let maxLoss = strategy.maxLoss {
+                        MetricRow(label: "Max loss", value: Fmt.price(maxLoss), tint: Palette.down)
+                    } else {
+                        MetricRow(label: "Max loss", value: "Unbounded", tint: Palette.down)
+                    }
+                    let breakevens = strategy.breakevens(searchLow: max(0.01, spot * 0.5), searchHigh: spot * 1.5)
+                    if !breakevens.isEmpty {
+                        MetricRow(label: "Breakeven", value: breakevens.map { Fmt.price($0) }.joined(separator: ", "))
+                    }
+                    if let pop = strategy.approximateProbabilityOfProfit {
+                        MetricRow(label: "Approx. probability of profit", value: String(format: "%.0f%%", pop * 100))
+                    }
+                } footer: {
+                    Text("Probability of profit is delta-approximated, the standard retail shorthand, not a rigorous distributional estimate. All figures use mid price and ignore fees, assignment risk, and early exercise.")
+                }
+
+                Section("Greeks") {
+                    let g = strategy.netGreeks
+                    MetricRow(label: "Delta", value: String(format: "%.1f", g.delta))
+                    MetricRow(label: "Gamma", value: String(format: "%.2f", g.gamma))
+                    MetricRow(label: "Theta / day", value: Fmt.price(g.theta))
+                    MetricRow(label: "Vega", value: Fmt.price(g.vega))
+                }
+
+                Section("Legs") {
+                    ForEach(legs) { leg in
+                        HStack {
+                            Text(leg.isLong ? "Buy" : "Sell")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(leg.isLong ? Palette.up : Palette.down)
+                            Text("\(leg.contract.type == .call ? "Call" : "Put") \(Fmt.price(leg.contract.strike))")
+                                .font(.subheadline)
+                            Spacer()
+                            Text(leg.contract.expiration.formatted(date: .abbreviated, time: .omitted))
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            .navigationTitle(strategy.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } }
+            }
+        }
+    }
+}
+
+/// Lightweight SwiftUI payoff line — the strategy sheet is a one-off
+/// diagnostic view opened rarely, so it draws with `Path` rather than
+/// standing up the Metal pipeline reserved for the high-frequency
+/// price/volume charts (`Rendering/CandleChartRenderer.swift`).
+struct PayoffChartView: View {
+    let strategy: OptionStrategy
+    let spot: Double
+
+    var body: some View {
+        GeometryReader { geometry in
+            let low = spot * 0.6
+            let high = spot * 1.4
+            let curve = strategy.payoffCurve(from: low, to: high)
+            let pnls = curve.map(\.pnl)
+            let maxAbs = max(pnls.map(abs).max() ?? 1, 1)
+
+            ZStack {
+                // Zero line.
+                Path { path in
+                    let y = geometry.size.height / 2
+                    path.move(to: CGPoint(x: 0, y: y))
+                    path.addLine(to: CGPoint(x: geometry.size.width, y: y))
+                }
+                .stroke(Color.secondary.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+
+                // Spot marker.
+                Path { path in
+                    let x = geometry.size.width * CGFloat((spot - low) / (high - low))
+                    path.move(to: CGPoint(x: x, y: 0))
+                    path.addLine(to: CGPoint(x: x, y: geometry.size.height))
+                }
+                .stroke(Palette.cyan.opacity(0.4), lineWidth: 1)
+
+                Path { path in
+                    for (index, point) in curve.enumerated() {
+                        let x = geometry.size.width * CGFloat((point.spot - low) / (high - low))
+                        let y = geometry.size.height / 2 - CGFloat(point.pnl / maxAbs) * (geometry.size.height / 2 - 8)
+                        if index == 0 { path.move(to: CGPoint(x: x, y: y)) }
+                        else { path.addLine(to: CGPoint(x: x, y: y)) }
+                    }
+                }
+                .stroke(Palette.cyan, lineWidth: 2)
+            }
+        }
+        .accessibilityLabel("Payoff diagram")
+    }
+}
