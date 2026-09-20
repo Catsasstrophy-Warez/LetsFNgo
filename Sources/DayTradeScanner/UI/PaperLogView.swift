@@ -29,6 +29,13 @@ struct PaperLogView: View {
         }
     }
 
+    /// Exports whatever the current filter/horizon selection is showing,
+    /// not always the full journal — a CSV of "just my losses this week" is
+    /// as legitimate an export as the whole history.
+    private var exportURL: URL? {
+        CSVExporter.writeTempFile(CSVExporter.export(filtered), named: "paper-trading-journal")
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -48,10 +55,14 @@ struct PaperLogView: View {
                 ToolbarItem(placement: .principal) { ModeToggle() }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        if let url = exportURL {
+                            ShareLink(item: url) { Label("Export CSV", systemImage: "square.and.arrow.up") }
+                        }
                         Button("Clear all", role: .destructive) { showDeleteConfirm = true }
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
+                    .accessibilityLabel("Journal options")
                 }
             }
             .confirmationDialog("Delete every paper trade?", isPresented: $showDeleteConfirm) {

@@ -75,6 +75,21 @@ struct PortfolioView: View {
                 }
             }
             .navigationTitle("Portfolio")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        if let url = CSVExporter.writeTempFile(CSVExporter.export(paperLog.trades), named: "equity-journal") {
+                            ShareLink(item: url) { Label("Export equity CSV", systemImage: "square.and.arrow.up") }
+                        }
+                        if let url = CSVExporter.writeTempFile(CSVExporter.export(optionsPaperLog.trades), named: "options-journal") {
+                            ShareLink(item: url) { Label("Export options CSV", systemImage: "square.and.arrow.up") }
+                        }
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .accessibilityLabel("Export portfolio")
+                }
+            }
         }
     }
 }
