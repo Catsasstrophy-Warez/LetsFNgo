@@ -31,11 +31,11 @@ final class ScannerEngine {
     private let universeBuilder: UniverseBuilder
     private let secFloat: SECFloatClient
     private let halts = HaltMonitor()
-    private let stockTwits = StockTwitsClient()
     private let edgarStream: EDGARFilingStream
     private let budget = AlertBudgetKeeper()
     private let paperLog: PaperTradeLog
     private let squawk = AudioSquawk()
+    private let social = SocialSentimentCoordinator()
     let recipeFitness = RecipeFitnessEngine()
 
     // Discovery state
@@ -65,10 +65,10 @@ final class ScannerEngine {
     private(set) var suppressedAlerts: [AlertBudget.Suppression] = []
 
     // Social and insider filing feeds
-    private(set) var trendingSocial: [StockTwitsClient.TrendingSymbol] = []
+    var trendingSocial: [StockTwitsClient.TrendingSymbol] { social.trendingSocial }
     private(set) var insiderClusterList: [EDGARFilingStream.ClusterSignal] = []
     private(set) var recentFiled8Ks: [EDGARFilingStream.FilingEvent] = []
-    private(set) var socialLastRefreshed: Date?
+    var socialLastRefreshed: Date? { social.socialLastRefreshed }
 
     // Internal state
     private var states: [String: SymbolState] = [:]
@@ -82,10 +82,6 @@ final class ScannerEngine {
     private var haltCountToday: [String: Int] = [:]
     private var haltTask: Task<Void, Never>?
     private var filingTask: Task<Void, Never>?
-    private var socialTask: Task<Void, Never>?
-    private var socialCache: [String: StockTwitsClient.SentimentSnapshot] = [:]
-    private var socialTrending: [StockTwitsClient.TrendingSymbol] = []
-    private var socialSurge: [String: Double] = [:]
     private var insiderClusters: [String: EDGARFilingStream.ClusterSignal] = [:]
     private var filedReports8K: [String: EDGARFilingStream.FilingEvent] = [:]
     /// Prior closes, kept so SEC public-float dollars can be converted to
@@ -171,7 +167,7 @@ final class ScannerEngine {
         await syncFloatCache()
         startHaltMonitor()
         startFilingStream()
-        startSocialLoop()
+        social.start(universe: { [weak self] in self?.settings.universe ?? [] })
         diagnostics.symbolsWithBaseline = await baselines.count
         diagnostics.baselineCoverage = await baselines.coverage(for: universe)
 
@@ -201,7 +197,7 @@ final class ScannerEngine {
         scoreTask?.cancel()
         haltTask?.cancel()
         filingTask?.cancel()
-        socialTask?.cancel()
+        social.stop()
         await halts.stop()
         await edgarStream.stop()
         await barStream.stop()
@@ -510,13 +506,13 @@ final class ScannerEngine {
         }
 
         // Social, from StockTwits.
-        if let snapshot = socialCache[state.symbol] {
+        if let snapshot = social.socialCache[state.symbol] {
             extended.socialSentimentScore = snapshot.sentimentScore
             extended.socialTaggedFraction = snapshot.taggedFraction
         }
-        extended.socialTrendingRank = trendingSocial.firstIndex { $0.symbol.uppercased() == state.symbol }
-        extended.socialMessageSurge = socialSurge[state.symbol]
-        extended.socialWatchCount = trendingSocial.first { $0.symbol.uppercased() == state.symbol }?.watchlistCount
+        extended.socialTrendingRank = social.trendingSocial.firstIndex { $0.symbol.uppercased() == state.symbol }
+        extended.socialMessageSurge = social.socialSurge[state.symbol]
+        extended.socialWatchCount = social.trendingSocial.first { $0.symbol.uppercased() == state.symbol }?.watchlistCount
 
         if let pattern = PatternDetector.detect(bars: state.recentBars) {
             extended.patternBreakoutScore = pattern.score
@@ -851,7 +847,7 @@ final class ScannerEngine {
     }
 
     func socialSentiment(for symbol: String) -> StockTwitsClient.SentimentSnapshot? {
-        socialCache[symbol]
+        social.sentiment(for: symbol)
     }
 
     func insiderCluster(for symbol: String) -> EDGARFilingStream.ClusterSignal? {
@@ -1006,43 +1002,6 @@ final class ScannerEngine {
         if settings.audioSquawkEnabled, settings.squawkFilings {
             squawk.speakFiling(event)
         }
-    }
-
-    // MARK: - Social sentiment (StockTwits)
-
-    private func startSocialLoop() {
-        socialTask?.cancel()
-        socialTask = Task { [weak self] in
-            while !Task.isCancelled {
-                await self?.refreshSocial()
-                // Keyless public endpoints deserve a slow, polite cadence —
-                // this is retail chatter, not a data feed anyone is paying to
-                // keep fast, and hammering it risks losing access for everyone.
-                try? await Task.sleep(for: .seconds(90))
-            }
-        }
-    }
-
-    private func refreshSocial() async {
-        try? await stockTwits.refreshTrending()
-        trendingSocial = await stockTwits.trending()
-
-        // Sentiment is refreshed for the current universe plus anything
-        // already trending, so a name trending outside the watchlist still
-        // surfaces rather than being invisible until manually added.
-        let trendingSymbols = Set(trendingSocial.prefix(30).map(\.symbol))
-        let targets = Array(Set(settings.universe).union(trendingSymbols))
-        await stockTwits.refreshSentiment(for: targets)
-
-        var sentimentCache: [String: StockTwitsClient.SentimentSnapshot] = [:]
-        var surgeCache: [String: Double] = [:]
-        for symbol in targets {
-            if let snapshot = await stockTwits.sentiment(for: symbol) { sentimentCache[symbol] = snapshot }
-            if let surge = await stockTwits.messageCountSurge(for: symbol) { surgeCache[symbol] = surge }
-        }
-        socialCache = sentimentCache
-        socialSurge = surgeCache
-        socialLastRefreshed = Date()
     }
 
     // MARK: - Lookups for detail views
