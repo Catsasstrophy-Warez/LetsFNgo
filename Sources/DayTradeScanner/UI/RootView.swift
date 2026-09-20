@@ -3,52 +3,98 @@ import SwiftUI
 struct RootView: View {
     @Environment(ScannerEngine.self) private var engine
     @Environment(Settings.self) private var settings
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab: Tab = .scan
     #if DEBUG
     @State private var testSizer = ProcessInfo.processInfo.arguments.contains("--test-position-sizer")
     #endif
 
-    enum Tab: Hashable { case scan, discover, halts, options, portfolio, log, tuning, guide, settings }
+    enum Tab: Hashable, CaseIterable, Identifiable {
+        case scan, discover, halts, options, portfolio, log, tuning, guide, settings
+        var id: Self { self }
+
+        var label: String {
+            switch self {
+            case .scan: return "Scan"
+            case .discover: return "Discover"
+            case .halts: return "Halts"
+            case .options: return "Options"
+            case .portfolio: return "Portfolio"
+            case .log: return "Journal"
+            case .tuning: return "Tuning"
+            case .guide: return "Guide"
+            case .settings: return "Settings"
+            }
+        }
+
+        var systemImage: String {
+            switch self {
+            case .scan: return "waveform.path.ecg"
+            case .discover: return "scope"
+            case .halts: return "pause.circle"
+            case .options: return "chart.xyaxis.line"
+            case .portfolio: return "briefcase"
+            case .log: return "list.bullet.rectangle"
+            case .tuning: return "slider.horizontal.3"
+            case .guide: return "book.pages"
+            case .settings: return "gearshape"
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func destination(for tab: Tab) -> some View {
+        switch tab {
+        case .scan: ScanView()
+        case .discover: DiscoveryView()
+        case .halts: HaltsView()
+        case .options: OptionsView()
+        case .portfolio: PortfolioView()
+        case .log: PaperLogView()
+        case .tuning: TuningView()
+        case .guide: TradingGuideView()
+        case .settings: SettingsView()
+        }
+    }
 
     var body: some View {
         @Bindable var settings = settings
 
-        TabView(selection: $selectedTab) {
-            ScanView()
-                .tabItem { Label("Scan", systemImage: "waveform.path.ecg") }
-                .tag(Tab.scan)
-
-            DiscoveryView()
-                .tabItem { Label("Discover", systemImage: "scope") }
-                .tag(Tab.discover)
-
-            HaltsView()
-                .tabItem { Label("Halts", systemImage: "pause.circle") }
-                .tag(Tab.halts)
-
-            OptionsView()
-                .tabItem { Label("Options", systemImage: "chart.xyaxis.line") }
-                .tag(Tab.options)
-
-            PortfolioView()
-                .tabItem { Label("Portfolio", systemImage: "briefcase") }
-                .tag(Tab.portfolio)
-
-            PaperLogView()
-                .tabItem { Label("Journal", systemImage: "list.bullet.rectangle") }
-                .tag(Tab.log)
-
-            TuningView()
-                .tabItem { Label("Tuning", systemImage: "slider.horizontal.3") }
-                .tag(Tab.tuning)
-
-            TradingGuideView()
-                .tabItem { Label("Guide", systemImage: "book.pages") }
-                .tag(Tab.guide)
-
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "gearshape") }
-                .tag(Tab.settings)
+        Group {
+            // iPad (and any other regular-width environment) gets a proper
+            // sidebar rather than a stretched-out iPhone tab bar — the
+            // original ask was "for iPhone and iPad," and every screen in
+            // this app already builds its own NavigationStack internally,
+            // which drops straight into a NavigationSplitView's detail
+            // column exactly the way Apple's own split-view pattern expects.
+            if horizontalSizeClass == .regular {
+                // `List(selection:)` needs an optional binding; `selectedTab`
+                // itself stays non-optional so the TabView branch below (and
+                // every `.tag(tab)` match) keeps working unchanged. This
+                // bridges the two without ever actually going nil — the
+                // setter simply ignores a nil (a row being deselected).
+                let sidebarSelection = Binding<Tab?>(
+                    get: { selectedTab },
+                    set: { if let newTab = $0 { selectedTab = newTab } }
+                )
+                NavigationSplitView {
+                    List(Tab.allCases, selection: sidebarSelection) { tab in
+                        Label(tab.label, systemImage: tab.systemImage).tag(tab)
+                    }
+                    .navigationTitle("DayTradeScanner")
+                } detail: {
+                    destination(for: selectedTab)
+                }
+                .navigationSplitViewStyle(.balanced)
+            } else {
+                TabView(selection: $selectedTab) {
+                    ForEach(Tab.allCases) { tab in
+                        destination(for: tab)
+                            .tabItem { Label(tab.label, systemImage: tab.systemImage) }
+                            .tag(tab)
+                    }
+                }
+            }
         }
         .tint(Palette.cyan)
         .preferredColorScheme(.dark)
