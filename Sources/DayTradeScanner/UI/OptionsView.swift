@@ -3,6 +3,7 @@ import SwiftUI
 struct OptionsView: View {
     @Environment(OptionsEngine.self) private var engine
     @Environment(Settings.self) private var settings
+    @Environment(OptionsPaperTradeLog.self) private var optionsPaperLog
     @State private var selectedUnderlying: String?
     @State private var showUniverseEditor = false
 
@@ -52,6 +53,7 @@ struct OptionsView: View {
 
     private var list: some View {
         List {
+            positionsSection
             unusualActivitySection
 
             Section {
@@ -70,10 +72,26 @@ struct OptionsView: View {
                     }
                 }
             } footer: {
-                Text("Nearest three expirations only, to keep the request count reasonable on the free tier. Full-chain history and further-dated strikes are available in the chain detail view's \"load more\" action in a future release.")
+                Text("Nearest three expirations to start, to keep the request count reasonable on the free tier. Open a chain and use \"Load more expirations\" to widen just that underlying's window.")
             }
         }
         .refreshable { await engine.refresh() }
+    }
+
+    private var positionsSection: some View {
+        Group {
+            if optionsPaperLog.openCount > 0 {
+                Section {
+                    ForEach(optionsPaperLog.trades.filter { $0.status == .open }) { trade in
+                        OptionsPositionRow(trade: trade)
+                    }
+                } header: {
+                    Text("Open positions")
+                } footer: {
+                    Text("Marked against the last successful chain refresh. A leg missing from that refresh (expired or delisted) keeps its last known mark instead of showing as zero.")
+                }
+            }
+        }
     }
 
     private var unusualActivitySection: some View {
@@ -148,6 +166,42 @@ struct UnusualActivityRow: View {
     }
 }
 
+struct OptionsPositionRow: View {
+    @Environment(OptionsPaperTradeLog.self) private var log
+    let trade: OptionsPaperTrade
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(trade.underlying).font(.subheadline.monospaced().weight(.medium))
+                Text(trade.strategyName).font(.caption2).foregroundStyle(.secondary)
+                Spacer()
+                if let pnl = trade.profitAndLoss {
+                    Text(Fmt.price(pnl))
+                        .font(.subheadline.monospacedDigit().weight(.medium))
+                        .foregroundStyle(Palette.direction(pnl))
+                } else {
+                    Text("—").font(.subheadline).foregroundStyle(.tertiary)
+                }
+            }
+            HStack(spacing: 10) {
+                Text("\(trade.legCount) leg\(trade.legCount == 1 ? "" : "s")")
+                Text("opened \(trade.openedAt.formatted(date: .abbreviated, time: .omitted))")
+                if let percent = trade.profitAndLossPercent {
+                    Text(String(format: "%+.0f%%", percent * 100))
+                        .foregroundStyle(Palette.direction(percent))
+                }
+                Spacer()
+                Button("Close") { log.close(trade) }
+                    .font(.caption2)
+            }
+            .font(.caption2.monospacedDigit())
+            .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 2)
+    }
+}
+
 struct OptionsUniverseEditor: View {
     @Environment(Settings.self) private var settings
     @Environment(OptionsEngine.self) private var engine
@@ -195,6 +249,7 @@ struct OptionChainDetailView: View {
     @State private var selectedExpiration: Date?
     @State private var selectedLegs: [StrategyLeg] = []
     @State private var showStrategySheet = false
+    @State private var isLoadingMore = false
 
     private var chain: OptionChain? { engine.chain(for: underlying) }
 
@@ -218,6 +273,23 @@ struct OptionChainDetailView: View {
                             }
                         }
                         .pickerStyle(.segmented)
+
+                        if engine.hasMoreExpirations(for: underlying) {
+                            Button {
+                                Task {
+                                    isLoadingMore = true
+                                    await engine.loadMoreExpirations(for: underlying)
+                                    isLoadingMore = false
+                                }
+                            } label: {
+                                if isLoadingMore {
+                                    ProgressView()
+                                } else {
+                                    Text("Load more expirations")
+                                }
+                            }
+                            .disabled(isLoadingMore)
+                        }
                     }
 
                     if let expiration = selectedExpiration ?? chain.expirations.first {
@@ -338,6 +410,8 @@ struct StrategyPayoffView: View {
     let legs: [StrategyLeg]
     let spot: Double
     @Environment(\.dismiss) private var dismiss
+    @Environment(OptionsPaperTradeLog.self) private var optionsPaperLog
+    @State private var didLog = false
 
     private var strategy: OptionStrategy {
         OptionStrategy(name: legs.count == 1 ? (legs[0].isLong ? "Long \(legs[0].contract.type.rawValue)" : "Short \(legs[0].contract.type.rawValue)") : "Custom \(legs.count)-leg", legs: legs)
@@ -396,6 +470,16 @@ struct StrategyPayoffView: View {
                                 .font(.caption2).foregroundStyle(.secondary)
                         }
                     }
+                }
+
+                Section {
+                    Button(didLog ? "Logged" : "Log as paper trade") {
+                        optionsPaperLog.open(strategy: strategy, underlyingSpot: spot)
+                        didLog = true
+                    }
+                    .disabled(didLog || legs.isEmpty)
+                } footer: {
+                    Text("Records the current mid price of every leg as the entry cost basis. Marked to market on every options refresh; close it manually whenever you'd exit for real.")
                 }
             }
             .navigationTitle(strategy.name)

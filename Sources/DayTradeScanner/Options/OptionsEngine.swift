@@ -26,6 +26,7 @@ final class OptionsEngine {
     private(set) var lastError: String?
 
     private let rest: AlpacaREST
+    private let paperLog: OptionsPaperTradeLog
     private var refreshTask: Task<Void, Never>?
     /// Volume/OI history per contract, so the unusual-activity detector can
     /// compare today's pace against this contract's own recent average
@@ -36,8 +37,9 @@ final class OptionsEngine {
 
     static let refreshInterval: Duration = .seconds(60)
 
-    init(rest: AlpacaREST) {
+    init(rest: AlpacaREST, paperLog: OptionsPaperTradeLog) {
         self.rest = rest
+        self.paperLog = paperLog
     }
 
     func start() {
@@ -57,6 +59,14 @@ final class OptionsEngine {
 
     // MARK: - Refresh
 
+    /// How many nearest expirations to keep per underlying. Starts at 3 for
+    /// everyone; `loadMoreExpirations(for:)` raises a single underlying's
+    /// window and re-fetches just that chain, rather than widening every
+    /// chain in the universe at once.
+    private var expirationWindow: [String: Int] = [:]
+    private static let defaultExpirationCount = 3
+    private static let maxExpirationCount = 12
+
     func refresh() async {
         guard !isRefreshing, settings.hasCredentials else { return }
         isRefreshing = true
@@ -70,7 +80,8 @@ final class OptionsEngine {
 
         for (index, underlying) in universe.enumerated() {
             refreshMessage = "Fetching \(underlying) chain"
-            if let chain = await fetchChain(for: underlying) {
+            let count = expirationWindow[underlying] ?? Self.defaultExpirationCount
+            if let chain = await fetchChain(for: underlying, expirationCount: count) {
                 builtChains[underlying] = chain
             }
             refreshProgress = Double(index + 1) / Double(universe.count)
@@ -85,16 +96,54 @@ final class OptionsEngine {
         lastRefreshedAt = Date()
         lastError = builtChains.isEmpty ? "Could not load any option chains." : nil
         refreshProgress = 1.0
+
+        markOpenPaperTrades()
     }
 
-    private func fetchChain(for underlying: String) async -> OptionChain? {
+    /// Whether `underlying`'s chain can still grow — false once it's already
+    /// showing every expiration Alpaca lists for it or the app's own cap.
+    func hasMoreExpirations(for underlying: String) -> Bool {
+        let current = expirationWindow[underlying] ?? Self.defaultExpirationCount
+        return current < Self.maxExpirationCount
+    }
+
+    /// Widens one underlying's expiration window and re-fetches just that
+    /// chain. Kept separate from the periodic `refresh()` sweep so drilling
+    /// into one chain's later expirations doesn't cost a full-universe
+    /// refetch, and so it's safe to call from a "load more" button while a
+    /// background refresh is also in flight.
+    func loadMoreExpirations(for underlying: String) async {
+        guard settings.hasCredentials, hasMoreExpirations(for: underlying) else { return }
+        let nextCount = min((expirationWindow[underlying] ?? Self.defaultExpirationCount) + 3, Self.maxExpirationCount)
+        expirationWindow[underlying] = nextCount
+
+        refreshMessage = "Loading more \(underlying) expirations"
+        guard let chain = await fetchChain(for: underlying, expirationCount: nextCount) else { return }
+        chains[underlying] = chain
+        unusualActivity = UnusualActivityDetector.scan(chains: chains, history: volumeHistory)
+        markOpenPaperTrades()
+    }
+
+    /// Marks every open options paper trade against the current chain data.
+    /// Fired after any refresh (full sweep or a single-underlying load) so
+    /// the journal's marks are never staler than the last successful fetch.
+    private func markOpenPaperTrades() {
+        var mids: [String: Double] = [:]
+        for contract in chains.values.flatMap(\.contracts) {
+            if let mid = contract.mid { mids[contract.symbol] = mid }
+        }
+        paperLog.markToMarket(midsByContractSymbol: mids)
+    }
+
+    private func fetchChain(for underlying: String, expirationCount: Int) async -> OptionChain? {
         guard let contractsRaw = try? await rest.optionContracts(underlying: underlying),
               !contractsRaw.isEmpty else { return nil }
 
         // Near-dated, near-the-money contracts are what a chain view and the
         // unusual-activity scan actually care about; the free tier's request
-        // budget doesn't stretch to snapshotting every strike out a year.
-        let nearest = Self.nearestExpirations(in: contractsRaw, count: 3)
+        // budget doesn't stretch to snapshotting every strike out a year by
+        // default. `loadMoreExpirations(for:)` raises this on demand.
+        let nearest = Self.nearestExpirations(in: contractsRaw, count: expirationCount)
         let scoped = contractsRaw.filter { raw in
             guard let expiry = Self.parseExpiration(raw.expirationDate) else { return false }
             return nearest.contains(expiry)

@@ -7,6 +7,7 @@ struct DayTradeScannerApp: App {
     @UIApplicationDelegateAdaptor(NotificationDelegate.self) private var notificationDelegate
     @State private var settings = Settings.shared
     @State private var paperLog: PaperTradeLog
+    @State private var optionsPaperLog: OptionsPaperTradeLog
     @State private var engine: ScannerEngine
     @State private var swingEngine: SwingEngine
     @State private var longTermEngine: LongTermEngine
@@ -18,18 +19,21 @@ struct DayTradeScannerApp: App {
     init() {
         let container: ModelContainer
         do {
-            container = try ModelContainer(for: PaperTrade.self)
+            container = try ModelContainer(for: PaperTrade.self, OptionsPaperTrade.self)
         } catch {
             // A corrupt store shouldn't brick the app. Fall back to in-memory
             // so the scanner still runs; the log is rebuilt from the next alert.
             let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
-            container = try! ModelContainer(for: PaperTrade.self, configurations: configuration)
+            container = try! ModelContainer(for: PaperTrade.self, OptionsPaperTrade.self, configurations: configuration)
         }
         self.container = container
 
         let log = PaperTradeLog()
         _paperLog = State(initialValue: log)
         _engine = State(initialValue: ScannerEngine(paperLog: log))
+
+        let optionsLog = OptionsPaperTradeLog()
+        _optionsPaperLog = State(initialValue: optionsLog)
 
         // Swing, long-term, and options share the same free/paper-account
         // data sources — Alpaca REST and SEC EDGAR — but need no websocket
@@ -40,7 +44,7 @@ struct DayTradeScannerApp: App {
         let sharedSECFloat = SECFloatClient(contactEmail: Settings.shared.secContactEmail)
         _swingEngine = State(initialValue: SwingEngine(rest: sharedREST, secFloat: sharedSECFloat))
         _longTermEngine = State(initialValue: LongTermEngine(rest: sharedREST, secFloat: sharedSECFloat))
-        _optionsEngine = State(initialValue: OptionsEngine(rest: sharedREST))
+        _optionsEngine = State(initialValue: OptionsEngine(rest: sharedREST, paperLog: optionsLog))
     }
 
     var body: some Scene {
@@ -52,9 +56,11 @@ struct DayTradeScannerApp: App {
                 .environment(optionsEngine)
                 .environment(settings)
                 .environment(paperLog)
+                .environment(optionsPaperLog)
                 .modelContainer(container)
                 .task {
                     paperLog.attach(context: container.mainContext)
+                    optionsPaperLog.attach(context: container.mainContext)
                     #if DEBUG
                     if ProcessInfo.processInfo.arguments.contains("--ui-testing") || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { return }
                     #endif
