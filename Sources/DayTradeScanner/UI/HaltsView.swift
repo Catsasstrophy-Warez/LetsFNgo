@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct HaltsView: View {
     @Environment(ScannerEngine.self) private var engine
@@ -237,6 +238,12 @@ struct RecipePicker: View {
     @Environment(ScannerEngine.self) private var engine
     @Environment(Settings.self) private var settings
     @Environment(\.dismiss) private var dismiss
+    private let customStore = CustomRecipeStore.shared
+
+    @State private var showBuilder = false
+    @State private var editingRecipe: ScanRecipe?
+    @State private var showImporter = false
+    @State private var importMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -264,6 +271,37 @@ struct RecipePicker: View {
                     .buttonStyle(.plain)
                 }
 
+                if !customStore.recipes.isEmpty {
+                    Section("Your recipes") {
+                        ForEach(customStore.recipes) { recipe in
+                            HStack {
+                                Button {
+                                    engine.applyRecipe(recipe)
+                                    dismiss()
+                                } label: {
+                                    RecipeRow(recipe: recipe, isSelected: settings.activeRecipeName == recipe.name)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    customStore.delete(named: recipe.name)
+                                    if settings.activeRecipeName == recipe.name { engine.applyRecipe(nil) }
+                                } label: { Label("Delete", systemImage: "trash") }
+                                Button {
+                                    editingRecipe = recipe
+                                } label: { Label("Edit", systemImage: "pencil") }
+                                .tint(.blue)
+                            }
+                            .contextMenu {
+                                if let url = exportURL(for: recipe) {
+                                    ShareLink(item: url) { Label("Export as JSON", systemImage: "square.and.arrow.up") }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 ForEach(groupedRecipes, id: \.0) { profile, recipes in
                     Section(profile.displayName) {
                         ForEach(recipes) { recipe in
@@ -285,9 +323,37 @@ struct RecipePicker: View {
             .navigationTitle("Scan recipes")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Menu {
+                        Button { showBuilder = true } label: { Label("New recipe", systemImage: "plus") }
+                        Button { showImporter = true } label: { Label("Import from file", systemImage: "square.and.arrow.down") }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $showBuilder) { RecipeBuilderView() }
+            .sheet(item: $editingRecipe) { recipe in RecipeBuilderView(existing: recipe) }
+            .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json]) { result in
+                switch result {
+                case .success(let url):
+                    let didAccess = url.startAccessingSecurityScopedResource()
+                    defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
+                    if let data = try? Data(contentsOf: url) {
+                        let imported = customStore.importJSON(data)
+                        importMessage = imported.isEmpty ? "No recipes found in that file." : "Imported \(imported.count) recipe\(imported.count == 1 ? "" : "s")."
+                    }
+                case .failure:
+                    importMessage = "Couldn't read that file."
+                }
+            }
+            .alert("Import", isPresented: Binding(get: { importMessage != nil }, set: { if !$0 { importMessage = nil } })) {
+                Button("OK") { importMessage = nil }
+            } message: {
+                Text(importMessage ?? "")
             }
         }
     }
@@ -297,6 +363,21 @@ struct RecipePicker: View {
         return ScanProfile.allCases.compactMap { profile in
             guard let recipes = grouped[profile], !recipes.isEmpty else { return nil }
             return (profile, recipes)
+        }
+    }
+
+    /// Writes the recipe's JSON to a temp file so `ShareLink` has something
+    /// with a filename and a "JSON document" preview, rather than sharing
+    /// raw `Data` with no context.
+    private func exportURL(for recipe: ScanRecipe) -> URL? {
+        guard let data = customStore.exportJSON(recipe) else { return nil }
+        let safeName = recipe.name.replacingOccurrences(of: " ", with: "-").lowercased()
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(safeName).json")
+        do {
+            try data.write(to: url, options: .atomic)
+            return url
+        } catch {
+            return nil
         }
     }
 }

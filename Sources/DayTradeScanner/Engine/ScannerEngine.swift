@@ -904,7 +904,9 @@ final class ScannerEngine {
     }
 
     var activeRecipe: ScanRecipe? {
-        settings.activeRecipeName.flatMap { RecipeLibrary.recipe(named: $0) }
+        settings.activeRecipeName.flatMap { name in
+            RecipeLibrary.recipe(named: name) ?? CustomRecipeStore.shared.recipe(named: name)
+        }
     }
 
     // MARK: - EDGAR filing stream (insider clusters + filed catalysts)
