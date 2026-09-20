@@ -5,6 +5,12 @@ struct SymbolDetailView: View {
     @Environment(Settings.self) private var settings
     let symbol: String
 
+    /// A fixed `.system(size:)` font never grows with Dynamic Type; this
+    /// scales the big price readout the same way the built-in text styles
+    /// do, so it doesn't stay pinned at a tiny fixed size for someone using
+    /// an accessibility text size.
+    @ScaledMetric(relativeTo: .largeTitle) private var priceFontSize: CGFloat = 34
+
     @State private var baseline: VolumeBaseline?
     @State private var showPositionSizer = false
     @State private var haltEvent: HaltMonitor.HaltEvent?
@@ -68,7 +74,7 @@ struct SymbolDetailView: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(Fmt.price(candidate.snapshot.last))
-                        .font(.system(size: 34, weight: .medium, design: .monospaced))
+                        .font(.system(size: priceFontSize, weight: .medium, design: .monospaced))
                     Text(Fmt.percent(candidate.snapshot.changePercent))
                         .font(.title3.monospacedDigit().weight(.medium))
                         .foregroundStyle(Palette.direction(candidate.snapshot.changePercent))

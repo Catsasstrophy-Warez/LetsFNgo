@@ -102,6 +102,7 @@ struct LongTermDetailView: View {
     @Environment(PaperTradeLog.self) private var paperLog
     let symbol: String
     @State private var showPositionSizer = false
+    @ScaledMetric(relativeTo: .largeTitle) private var priceFontSize: CGFloat = 30
 
     private var candidate: LongTermCandidate? { engine.candidate(for: symbol) }
 
@@ -120,7 +121,7 @@ struct LongTermDetailView: View {
                                 .foregroundStyle(.secondary)
                         }
                         Text(Fmt.price(snapshot.lastPrice))
-                            .font(.system(size: 30, weight: .medium, design: .monospaced))
+                            .font(.system(size: priceFontSize, weight: .medium, design: .monospaced))
                         ScoreBar(score: max(candidate.score, 0), height: 8)
                         Text(candidate.plainReason)
                             .font(.subheadline)

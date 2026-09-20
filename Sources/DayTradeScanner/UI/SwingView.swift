@@ -145,6 +145,7 @@ struct SwingDetailView: View {
     @Environment(PaperTradeLog.self) private var paperLog
     let symbol: String
     @State private var showPositionSizer = false
+    @ScaledMetric(relativeTo: .largeTitle) private var priceFontSize: CGFloat = 32
 
     private var candidate: SwingCandidate? { engine.candidate(for: symbol) }
 
@@ -155,7 +156,7 @@ struct SwingDetailView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack(alignment: .firstTextBaseline) {
                             Text(Fmt.price(candidate.snapshot.last))
-                                .font(.system(size: 32, weight: .medium, design: .monospaced))
+                                .font(.system(size: priceFontSize, weight: .medium, design: .monospaced))
                             Text(Fmt.percent(candidate.snapshot.changePercent))
                                 .font(.title3.monospacedDigit().weight(.medium))
                                 .foregroundStyle(Palette.direction(candidate.snapshot.changePercent))
