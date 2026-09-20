@@ -13,17 +13,24 @@ struct RootView: View {
         case scan, discover, halts, options, portfolio, log, tuning, guide, settings
         var id: Self { self }
 
+        /// Wired through `String(localized:)` against `Localizable.strings`
+        /// as the demonstrated pattern for this app's localization
+        /// scaffolding — see the comment at the top of
+        /// Resources/en.lproj/Localizable.strings for scope/rationale.
+        /// `Text("Scan")` would only auto-localize for a string *literal*
+        /// passed directly to `Text`; going through a `String` property
+        /// like this one needs the explicit lookup instead.
         var label: String {
             switch self {
-            case .scan: return "Scan"
-            case .discover: return "Discover"
-            case .halts: return "Halts"
-            case .options: return "Options"
-            case .portfolio: return "Portfolio"
-            case .log: return "Journal"
-            case .tuning: return "Tuning"
-            case .guide: return "Guide"
-            case .settings: return "Settings"
+            case .scan: return String(localized: "tab.scan", defaultValue: "Scan")
+            case .discover: return String(localized: "tab.discover", defaultValue: "Discover")
+            case .halts: return String(localized: "tab.halts", defaultValue: "Halts")
+            case .options: return String(localized: "tab.options", defaultValue: "Options")
+            case .portfolio: return String(localized: "tab.portfolio", defaultValue: "Portfolio")
+            case .log: return String(localized: "tab.journal", defaultValue: "Journal")
+            case .tuning: return String(localized: "tab.tuning", defaultValue: "Tuning")
+            case .guide: return String(localized: "tab.guide", defaultValue: "Guide")
+            case .settings: return String(localized: "tab.settings", defaultValue: "Settings")
             }
         }
 

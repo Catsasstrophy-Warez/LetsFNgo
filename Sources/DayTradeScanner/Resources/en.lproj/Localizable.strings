@@ -1,0 +1,36 @@
+/*
+  Localizable.strings (English, base/development language)
+
+  Scaffolding, not a full localization pass — this app has on the order of
+  a thousand-plus user-facing strings across ~65 files, most of them
+  dynamically formatted with live financial data (percentages, prices,
+  plain-language narrative sentences built from scored components) rather
+  than simple static labels. Wrapping all of them in String(localized:)
+  and translating them is real, substantial future work, correctly out of
+  scope for a single pass without a compiler available to verify each
+  change across that many call sites.
+
+  What this file and the few call sites wired to it (RootView.Tab.label,
+  as of this pass) demonstrate is the mechanism: project.yml already sets
+  SWIFT_EMIT_LOC_STRINGS: YES on the main target, and this Resources/
+  folder is already in the target's resources path — so any future
+  String(localized:) call automatically gets picked up by Xcode's string
+  extraction, and any future .lproj directory added here is picked up as
+  a new supported language with no other project changes needed. The next
+  step, when this becomes a priority, is working section by section
+  through the UI/ directory converting static (non-interpolated) labels
+  first, then deciding a strategy for the many dynamically-formatted
+  strings (which need String(format:) call sites converted to
+  locale-aware formatting — NumberFormatter/ FormatStyle — not just a
+  strings-table entry).
+*/
+
+"tab.scan" = "Scan";
+"tab.discover" = "Discover";
+"tab.halts" = "Halts";
+"tab.options" = "Options";
+"tab.portfolio" = "Portfolio";
+"tab.journal" = "Journal";
+"tab.tuning" = "Tuning";
+"tab.guide" = "Guide";
+"tab.settings" = "Settings";
