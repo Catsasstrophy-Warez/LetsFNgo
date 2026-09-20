@@ -239,6 +239,9 @@ final class OptionsEngine {
                 }
             }
 
+            // Not today's cumulative volume — see the doc comment on
+            // OptionContract.volume for why Alpaca's option snapshot
+            // endpoint can't give us that.
             let volume = quote?.latestTrade?.size
 
             contracts.append(OptionContract(

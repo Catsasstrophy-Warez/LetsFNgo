@@ -6,6 +6,7 @@ import SwiftUI
 struct PortfolioView: View {
     @Environment(PaperTradeLog.self) private var paperLog
     @Environment(OptionsPaperTradeLog.self) private var optionsPaperLog
+    @State private var export: ExportedFile?
 
     private var openEquityTrades: [PaperTrade] {
         paperLog.trades.filter { $0.status == .open }
@@ -146,11 +147,11 @@ struct PortfolioView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        if let url = CSVExporter.writeTempFile(CSVExporter.export(paperLog.trades), named: "equity-journal") {
-                            ShareLink(item: url) { Label("Export equity CSV", systemImage: "square.and.arrow.up") }
+                        LazyExportButton(title: "Export equity CSV", export: $export) {
+                            CSVExporter.writeTempFile(CSVExporter.export(paperLog.trades), named: "equity-journal")
                         }
-                        if let url = CSVExporter.writeTempFile(CSVExporter.export(optionsPaperLog.trades), named: "options-journal") {
-                            ShareLink(item: url) { Label("Export options CSV", systemImage: "square.and.arrow.up") }
+                        LazyExportButton(title: "Export options CSV", export: $export) {
+                            CSVExporter.writeTempFile(CSVExporter.export(optionsPaperLog.trades), named: "options-journal")
                         }
                     } label: {
                         Image(systemName: "square.and.arrow.up")
@@ -158,6 +159,7 @@ struct PortfolioView: View {
                     .accessibilityLabel("Export portfolio")
                 }
             }
+            .sheet(item: $export) { file in ActivityView(url: file.url) }
         }
     }
 }

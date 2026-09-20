@@ -244,6 +244,7 @@ struct RecipePicker: View {
     @State private var editingRecipe: ScanRecipe?
     @State private var showImporter = false
     @State private var importMessage: String?
+    @State private var export: ExportedFile?
 
     var body: some View {
         NavigationStack {
@@ -312,8 +313,8 @@ struct RecipePicker: View {
                                 .tint(.blue)
                             }
                             .contextMenu {
-                                if let url = exportURL(for: recipe) {
-                                    ShareLink(item: url) { Label("Export as JSON", systemImage: "square.and.arrow.up") }
+                                LazyExportButton(title: "Export as JSON", export: $export) {
+                                    exportURL(for: recipe)
                                 }
                             }
                         }
@@ -374,6 +375,7 @@ struct RecipePicker: View {
             } message: {
                 Text(importMessage ?? "")
             }
+            .sheet(item: $export) { file in ActivityView(url: file.url) }
         }
     }
 

@@ -44,10 +44,17 @@ struct OptionContract: Identifiable, Codable, Hashable, Sendable {
     let bid: Double?
     let ask: Double?
     let lastPrice: Double?
-    /// Contracts traded so far today.
+    /// The size of the single most recent trade print, NOT cumulative
+    /// contracts traded today — Alpaca's option snapshot endpoint has no
+    /// daily-volume field the way its equity snapshot does (see
+    /// `AlpacaREST.OptionQuoteRaw`). Every unusual-activity heuristic that
+    /// compares this against open interest is therefore comparing one
+    /// trade's size, not the day's pace — expect more false negatives
+    /// (real daily volume undercounted) than false positives.
     let volume: Int?
     /// Open contracts as of the last settlement — the denominator every
-    /// unusual-activity heuristic compares today's volume against.
+    /// unusual-activity heuristic compares `volume` against (see that
+    /// property's doc comment for what `volume` actually measures).
     let openInterest: Int?
     let impliedVolatility: Double?
     let greeks: Greeks?

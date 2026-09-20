@@ -6,6 +6,7 @@ struct PaperLogView: View {
     @State private var showDeleteConfirm = false
     @State private var filter: Filter = .all
     @State private var horizonFilter: TradeHorizon?
+    @State private var export: ExportedFile?
 
     enum Filter: String, CaseIterable, Identifiable {
         case all = "All"
@@ -32,7 +33,7 @@ struct PaperLogView: View {
     /// Exports whatever the current filter/horizon selection is showing,
     /// not always the full journal — a CSV of "just my losses this week" is
     /// as legitimate an export as the whole history.
-    private var exportURL: URL? {
+    private func makeExportURL() -> URL? {
         CSVExporter.writeTempFile(CSVExporter.export(filtered), named: "paper-trading-journal")
     }
 
@@ -55,9 +56,7 @@ struct PaperLogView: View {
                 ToolbarItem(placement: .principal) { ModeToggle() }
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        if let url = exportURL {
-                            ShareLink(item: url) { Label("Export CSV", systemImage: "square.and.arrow.up") }
-                        }
+                        LazyExportButton(title: "Export CSV", export: $export, makeURL: makeExportURL)
                         Button("Clear all", role: .destructive) { showDeleteConfirm = true }
                     } label: {
                         Image(systemName: "ellipsis.circle")
@@ -68,6 +67,7 @@ struct PaperLogView: View {
             .confirmationDialog("Delete every paper trade?", isPresented: $showDeleteConfirm) {
                 Button("Delete all", role: .destructive) { log.deleteAll() }
             }
+            .sheet(item: $export) { file in ActivityView(url: file.url) }
         }
     }
 

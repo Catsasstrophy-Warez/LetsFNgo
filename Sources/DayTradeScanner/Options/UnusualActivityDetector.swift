@@ -21,10 +21,16 @@ enum UnusualActivityDetector {
     }
 
     /// Scans every chain currently held for contracts worth surfacing.
+    ///
+    /// Note: `contract.volume` is the size of the latest trade print, not
+    /// cumulative contracts traded today (see `OptionContract.volume`'s doc
+    /// comment) — every ratio/surge computation below is against that same
+    /// understated quantity, so it undercounts real daily activity more
+    /// often than it overcounts.
     /// - Parameter history: recent (date, volume) samples per contract
-    ///   symbol, used to judge whether today's volume is a surge relative to
-    ///   this specific contract's own recent pace rather than only its open
-    ///   interest.
+    ///   symbol, used to judge whether the latest print is a surge relative
+    ///   to this specific contract's own recent pace rather than only its
+    ///   open interest.
     static func scan(
         chains: [String: OptionChain],
         history: [String: [(date: Date, volume: Int)]]
@@ -51,7 +57,7 @@ enum UnusualActivityDetector {
         if let ratio = contract.volumeToOpenInterestRatio {
             if ratio >= 3.0 {
                 score += 0.45
-                reasons.append(String(format: "%.1f× today's volume vs open interest", ratio))
+                reasons.append(String(format: "%.1f× trade size vs open interest", ratio))
             } else if ratio >= 1.0 {
                 score += 0.25
                 reasons.append(String(format: "%.1f× volume vs open interest", ratio))

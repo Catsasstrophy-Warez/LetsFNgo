@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Formatting
 
@@ -443,6 +444,59 @@ struct InvalidCredentialsBanner: View {
         .background(Palette.down)
         .sheet(isPresented: $showSettings) { SettingsView() }
     }
+}
+
+/// Wraps a URL so it can be handed to `.sheet(item:)` — used to present the
+/// system share sheet for an export that was just written to disk.
+struct ExportedFile: Identifiable {
+    let url: URL
+    var id: URL { url }
+}
+
+/// A menu/context-menu row that writes its export file only when tapped,
+/// not on every time the enclosing view's body re-evaluates.
+///
+/// `ShareLink(item:)` needs an already-materialized `URL`, which is what
+/// previously pushed call sites toward computing that URL — and doing the
+/// disk write behind it — inline in a `Menu`/`.contextMenu` builder. Those
+/// builder closures run on every render of the enclosing view, not just
+/// when the menu opens, so that pattern was writing a temp file on every
+/// unrelated re-render.
+///
+/// This defers the write to `makeURL()`, called only from the button's own
+/// action. It can't just swap itself for a `ShareLink` on tap the way a
+/// standalone button could — inside a `Menu` or `.contextMenu`, any row's
+/// tap dismisses the whole menu immediately, so a `ShareLink` revealed by
+/// that same tap would never get a second tap to actually trigger it.
+/// Instead the action hands the computed URL to `export`, which the caller
+/// presents via `.sheet(item:)` with `ActivityView` — the same one-tap
+/// "menu item triggers the native share sheet" flow `ShareLink` normally
+/// provides on its own.
+struct LazyExportButton: View {
+    let title: String
+    var systemImage: String = "square.and.arrow.up"
+    @Binding var export: ExportedFile?
+    let makeURL: () -> URL?
+
+    var body: some View {
+        Button {
+            if let url = makeURL() { export = ExportedFile(url: url) }
+        } label: {
+            Label(title, systemImage: systemImage)
+        }
+    }
+}
+
+/// Thin wrapper around `UIActivityViewController`, for presenting the
+/// system share sheet from a `.sheet(item:)` triggered by `LazyExportButton`.
+struct ActivityView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 /// Empty states are an instruction, not an apology.

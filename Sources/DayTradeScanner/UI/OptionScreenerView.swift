@@ -129,13 +129,18 @@ struct OptionScreenerView: View {
         HStack(spacing: 8) {
             ForEach(OptionScreenFilter.Side.allCases, id: \.self) { side in
                 let isSelected = filter.side == side
-                Text(side.label)
-                    .font(.caption.weight(isSelected ? .semibold : .regular))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Capsule().fill(isSelected ? Color.accentColor.opacity(0.2) : Color.secondary.opacity(0.12)))
-                    .foregroundStyle(isSelected ? Color.accentColor : .primary)
-                    .onTapGesture { filter.side = side }
+                Button {
+                    filter.side = side
+                } label: {
+                    Text(side.label)
+                        .font(.caption.weight(isSelected ? .semibold : .regular))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Capsule().fill(isSelected ? Color.accentColor.opacity(0.2) : Color.secondary.opacity(0.12)))
+                        .foregroundStyle(isSelected ? Color.accentColor : .primary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(isSelected ? [.isSelected] : [])
             }
         }
     }
