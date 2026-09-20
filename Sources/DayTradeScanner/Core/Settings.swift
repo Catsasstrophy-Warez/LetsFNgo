@@ -231,6 +231,16 @@ final class Settings {
         didSet { defaults.set(haltNotifications, forKey: "haltNotifications") }
     }
 
+    /// Named, individually-mutable alert subscriptions — the same idea
+    /// Benzinga Pro's "Signals" expose. A component in this set can still
+    /// rank and display normally in the scan list; it's excluded only from
+    /// competing for an alert budget slot and firing a notification/squawk,
+    /// so muting "gap" doesn't hide gap setups, just stops alerting on them
+    /// as the *reason* an alert fired.
+    var mutedSignalComponents: Set<SignalComponent> {
+        didSet { persist(mutedSignalComponents, key: "mutedSignalComponents") }
+    }
+
     /// Spoken-aloud alerts for halts, fresh 8-K filings, and top-ranked
     /// setups — a "squawk box," the trading-desk term for the speaker that
     /// reads out order flow so a trader doesn't have to keep eyes on a
@@ -391,6 +401,13 @@ final class Settings {
             scoring = decoded
         } else {
             scoring = ScanProfile.dayTrade.makeConfig()
+        }
+
+        if let data = d.data(forKey: "mutedSignalComponents"),
+           let decoded = try? JSONDecoder().decode(Set<SignalComponent>.self, from: data) {
+            mutedSignalComponents = decoded
+        } else {
+            mutedSignalComponents = []
         }
     }
 

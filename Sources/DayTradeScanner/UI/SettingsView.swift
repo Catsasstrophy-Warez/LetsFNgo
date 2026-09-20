@@ -23,6 +23,7 @@ struct SettingsView: View {
                 swingUniverseSection
                 longTermUniverseSection
                 behaviourSection
+                alertTypesSection
                 squawkSection
                 positionSizingSection
                 secFloatSection
@@ -221,6 +222,14 @@ struct SettingsView: View {
             Text("Behaviour")
         } footer: {
             Text("Pre-market bars are thin and erratic. Leaving them out anchors VWAP to the same open everyone else is watching. Halt notifications bypass the alert budget — a halt on something you may be holding isn't an opportunity to be rationed.")
+        }
+    }
+
+    private var alertTypesSection: some View {
+        Section {
+            NavigationLink("Alert types") { SignalAlertTypesView() }
+        } footer: {
+            Text("Subscribe or mute individual signal types — a muted signal still ranks and shows in the scan list, it just won't be the reason an alert notifies you.")
         }
     }
 

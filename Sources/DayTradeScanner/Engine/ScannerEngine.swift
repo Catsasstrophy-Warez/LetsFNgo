@@ -567,8 +567,19 @@ final class ScannerEngine {
     private func fireAlerts(for candidates: [Candidate]) async {
         budget.update(config: settings.alertBudget)
 
+        // Muted signal types are excluded before the budget even sees them,
+        // not just silenced after — a muted component shouldn't consume a
+        // rationed slot any more than it should notify. It still ranks and
+        // displays normally in the scan list; only alerting on it stops.
+        let eligibleCandidates = settings.mutedSignalComponents.isEmpty
+            ? candidates
+            : candidates.filter { candidate in
+                guard let topDriver = candidate.breakdown.topDrivers(limit: 1).first else { return true }
+                return !settings.mutedSignalComponents.contains(topDriver)
+            }
+
         let grants = budget.evaluate(
-            candidates: candidates,
+            candidates: eligibleCandidates,
             threshold: settings.scoring.alertThreshold,
             cooldownMinutes: settings.scoring.alertCooldownMinutes
         )
