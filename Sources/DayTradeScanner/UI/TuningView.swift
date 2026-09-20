@@ -8,6 +8,7 @@ struct TuningView: View {
     @Environment(LongTermEngine.self) private var longTermEngine
 
     @State private var showResetConfirm = false
+    @State private var showBacktest = false
     /// Which horizon's tuning is shown. Previously the swing and long-term
     /// weight/evidence sections existed but were never added to `body`, so
     /// there was no way to reach them from the UI — this picker is the fix.
@@ -39,6 +40,11 @@ struct TuningView: View {
                 case .swing:
                     AdvancedOnly { swingWeightsSection }
                     swingEvidenceSection
+                    Section {
+                        Button("Backtest swing scoring") { showBacktest = true }
+                    } footer: {
+                        Text("Walks your swing watchlist's daily-bar history day by day with today's swing weights, scoring each day exactly as the live engine would with only the bars available at that point in time — then checks what actually happened over the following sessions.")
+                    }
                 case .longTerm:
                     AdvancedOnly { longTermWeightsSection }
                     longTermEvidenceSection
@@ -60,6 +66,7 @@ struct TuningView: View {
                     Button("Reset") { showResetConfirm = true }
                 }
             }
+            .sheet(isPresented: $showBacktest) { BacktestView() }
             .confirmationDialog("Reset weights to defaults?", isPresented: $showResetConfirm) {
                 Button("Reset weights", role: .destructive) {
                     switch tuningHorizon {
