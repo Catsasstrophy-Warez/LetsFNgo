@@ -131,6 +131,16 @@ struct LongTermDetailView: View {
 
                 NarrativeSectionView(narrative: NarrativeGenerator.forLongTerm(candidate))
 
+                Section {
+                    SnowflakeChartView(breakdown: candidate.breakdown)
+                        .frame(height: 220)
+                        .padding(.vertical, 6)
+                } header: {
+                    Text("Fundamentals snowflake")
+                } footer: {
+                    Text("Each axis is this score's normalized component — further from center is better on every axis, including balance sheet and float where the underlying model scores risk negatively.")
+                }
+
                 Section("Growth & profitability") {
                     if let growth = snapshot.revenueGrowthYoY {
                         MetricRow(label: "Revenue growth, YoY", value: Fmt.percent(growth), tint: Palette.direction(growth))
