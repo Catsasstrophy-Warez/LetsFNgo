@@ -201,15 +201,25 @@ struct ScoringModel: Sendable {
         var score = 0.0
         if let rank = extended.socialTrendingRank {
             // Top of the list saturates fast; trending at all is most of the signal.
-            score += clamp(1.0 - (Double(rank) / 30.0)) * 0.7
+            score += clamp(1.0 - (Double(rank) / 30.0)) * 0.55
         }
         if let surge = extended.socialMessageSurge, surge > 1.5 {
-            score += clamp((surge - 1.5) / 3.5) * 0.3
+            score += clamp((surge - 1.5) / 3.5) * 0.20
+        }
+        // Watch-count growth is the slower of the two crowd-size signals —
+        // it moves with accounts adding a watchlist entry, not posting — so
+        // it's weighted below message surge but still counted, since a
+        // symbol accumulating watchers ahead of any chatter is an earlier
+        // read than either rank or message volume alone.
+        if let watchers = extended.socialWatchCount, watchers > 0 {
+            // Saturates around 5,000 watchers, which is already a large
+            // crowd for anything outside mega-cap names.
+            score += clamp(Double(watchers) / 5000.0) * 0.15
         }
         // A sentiment score built on too few tagged messages is noise; only
         // let it nudge the score once there's enough tagged volume to trust.
         if let sentiment = extended.socialSentimentScore, extended.socialTaggedFraction > 0.3 {
-            score += clamp(abs(sentiment)) * 0.15
+            score += clamp(abs(sentiment)) * 0.10
         }
         return clamp(score)
     }

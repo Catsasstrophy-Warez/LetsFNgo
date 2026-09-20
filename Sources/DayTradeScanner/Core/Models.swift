@@ -389,6 +389,13 @@ struct ExtendedSignals: Codable, Hashable, Sendable {
     var socialTaggedFraction: Double = 0
     var socialTrendingRank: Int?
     var socialMessageSurge: Double?
+    /// StockTwits' own `watchlist_count` on the trending endpoint — how many
+    /// accounts have this symbol on a watchlist, a slower-moving crowd-size
+    /// signal distinct from message volume. A symbol gaining watchers before
+    /// its post volume spikes is showing up on more screens before the
+    /// crowd starts talking, which is the more useful order for a leading
+    /// indicator to arrive in.
+    var socialWatchCount: Int?
 
     // Insider activity, from the live EDGAR filing feed.
     var insiderClusterFilers: Int = 0

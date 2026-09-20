@@ -156,6 +156,14 @@ struct UnusualActivityRow: View {
                 Text("\(signal.contract.daysToExpiration)d")
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.tertiary)
+                // Displayed 0-100 rather than the underlying 0...1 score —
+                // matches the "Activity Score" framing Cheddar Flow's Power
+                // Alerts and similar competitor products use, so the number
+                // reads the same way a trader coming from those tools expects.
+                Text("\(Int(signal.score * 100))")
+                    .font(.caption.monospacedDigit().weight(.bold))
+                    .foregroundStyle(Palette.score(signal.score))
+                    .frame(width: 24, alignment: .trailing)
                 ScoreBar(score: signal.score, height: 4).frame(width: 40)
             }
             Text(signal.reasons.joined(separator: " · "))

@@ -485,6 +485,7 @@ final class ScannerEngine {
         }
         extended.socialTrendingRank = trendingSocial.firstIndex { $0.symbol.uppercased() == state.symbol }
         extended.socialMessageSurge = socialSurge[state.symbol]
+        extended.socialWatchCount = trendingSocial.first { $0.symbol.uppercased() == state.symbol }?.watchlistCount
 
         // Insider clusters and filed 8-Ks, from the live EDGAR filing feed.
         if let cluster = insiderClusters[state.symbol] {
