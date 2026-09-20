@@ -6,6 +6,7 @@ struct OptionsView: View {
     @Environment(OptionsPaperTradeLog.self) private var optionsPaperLog
     @State private var selectedUnderlying: String?
     @State private var showUniverseEditor = false
+    @State private var activityFilter = UnusualActivityFilter.default
 
     var body: some View {
         NavigationStack {
@@ -94,12 +95,25 @@ struct OptionsView: View {
         }
     }
 
+    private var filteredActivity: [UnusualActivityDetector.Signal] {
+        var spotByUnderlying: [String: Double] = [:]
+        for (underlying, chain) in engine.chains { spotByUnderlying[underlying] = chain.spotPrice }
+        let matched = engine.unusualActivity.filter(activityFilter.matches)
+        return activityFilter.sorted(matched, spotByUnderlying: spotByUnderlying)
+    }
+
     private var unusualActivitySection: some View {
         Group {
             if !engine.unusualActivity.isEmpty {
                 Section {
-                    ForEach(engine.unusualActivity.prefix(15)) { signal in
+                    UnusualActivityFilterBar(filter: $activityFilter)
+                    ForEach(filteredActivity.prefix(15)) { signal in
                         UnusualActivityRow(signal: signal)
+                    }
+                    if filteredActivity.isEmpty {
+                        Text("Nothing matches this filter right now.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 } header: {
                     Text("Unusual activity")
@@ -108,6 +122,78 @@ struct OptionsView: View {
                 }
             }
         }
+    }
+}
+
+/// Filter/sort controls for the unusual-activity list, plus a menu to save
+/// the current combination as a named preset or reapply a saved one.
+struct UnusualActivityFilterBar: View {
+    @Binding var filter: UnusualActivityFilter
+    private let store = UnusualActivityFilterStore.shared
+
+    @State private var showSaveAlert = false
+    @State private var newPresetName = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(UnusualActivityFilter.Side.allCases, id: \.self) { side in
+                        chip(side.label, isSelected: filter.side == side) { filter.side = side }
+                    }
+                    Divider().frame(height: 14)
+                    Menu {
+                        ForEach(UnusualActivityFilter.SortKey.allCases, id: \.self) { key in
+                            Button(key.label) { filter.sortKey = key }
+                        }
+                    } label: {
+                        chipLabel("Sort: \(filter.sortKey.label)", isSelected: true)
+                    }
+                    Divider().frame(height: 14)
+                    Menu {
+                        Button("Save current as preset") { newPresetName = ""; showSaveAlert = true }
+                        if !store.presets.isEmpty {
+                            Section("Saved presets") {
+                                ForEach(store.presets) { preset in
+                                    Button(preset.name) { filter = preset }
+                                }
+                            }
+                        }
+                    } label: {
+                        chipLabel("Presets", isSelected: false, systemImage: "line.3.horizontal.decrease.circle")
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 2)
+        .alert("Save preset", isPresented: $showSaveAlert) {
+            TextField("Preset name", text: $newPresetName)
+            Button("Save") {
+                let trimmed = newPresetName.trimmingCharacters(in: .whitespaces)
+                guard !trimmed.isEmpty else { return }
+                var toSave = filter
+                toSave.name = trimmed
+                store.save(toSave)
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+
+    private func chip(_ label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) { chipLabel(label, isSelected: isSelected) }
+            .buttonStyle(.plain)
+    }
+
+    private func chipLabel(_ label: String, isSelected: Bool, systemImage: String? = nil) -> some View {
+        HStack(spacing: 4) {
+            if let systemImage { Image(systemName: systemImage) }
+            Text(label)
+        }
+        .font(.caption.weight(isSelected ? .semibold : .regular))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(Capsule().fill(isSelected ? Color.accentColor.opacity(0.2) : Color.secondary.opacity(0.12)))
+        .foregroundStyle(isSelected ? Color.accentColor : .primary)
     }
 }
 
