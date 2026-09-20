@@ -114,15 +114,77 @@ windowed (non-AR) `RealityView` API — no camera, no ARSession.
     and short-dated-expiry contributions, score clamping, and `scan()`'s
     descending sort both within and across chains.
 
+## Complete (round 3 — competitive-adaptation backlog, steps 6–20)
+
+Everything below was added after `COMPETITIVE_ADAPTATION_BACKLOG.md`'s
+research pass, in priority order, each committed and pushed separately:
+
+- **Custom recipe builder** (`Core/CustomRecipeStore.swift`,
+  `UI/RecipeBuilderView.swift`) — user-built `ScanRecipe`s via filter chips,
+  persisted in UserDefaults alongside the 17 built-ins.
+- **Recipe JSON import/export** — Share-sheet export and `fileImporter`
+  import, folded into the same recipe-builder work since `ScanRecipe` was
+  already `Codable`.
+- **Chart annotation strip** (`UI/ChartAnnotationStrip.swift`) — gap-open,
+  VWAP-cross, news, and "now" markers under the symbol-detail chart, keyed
+  to bar index rather than pixel position so it stays correct regardless of
+  the Metal chart's own pan/zoom state.
+- **Options flow filter/sort bar with saved presets**
+  (`Core/UnusualActivityFilter.swift`) — side/sort/threshold filtering over
+  `OptionsEngine.unusualActivity`, presets persisted the same way as
+  custom recipes.
+- **0–100 unusual-activity score display** — cosmetic rescale to match the
+  "Activity Score" framing competitor tools use.
+- **Audio squawk box** (`Engine/AudioSquawk.swift`) — `AVSpeechSynthesizer`
+  readout of halts, filings, top setups, and strategy-bot alerts, each with
+  its own Settings toggle, off by default.
+- **StockTwits watch-count in social scoring** — `ExtendedSignals.socialWatchCount`
+  wired into `ScoringModel.normalizeSocialMomentum`, rebalanced weights.
+- **Market-regime banner + sector breadth** (`Engine/MarketRegimeEngine.swift`,
+  `UI/MarketRegimeView.swift`) — SPY + 11 SPDR sector ETFs on the same free
+  daily-bars endpoint, a persistent strip above the horizon picker, and a
+  tap-through sector-tile grid.
+- **IV Rank/Percentile** (`Journal/IVHistoryStore.swift`) — new SwiftData
+  model recording one front-month ATM IV point per underlying per day,
+  since no free source publishes historical IV; rank/percentile computed
+  over a trailing 365-day window once enough history accumulates.
+- **Snowflake radar chart** (`UI/SnowflakeChartView.swift`) — the eight
+  `LongTermComponent` axes as a plain-`Path` radar chart on the long-term
+  detail screen.
+- **Portfolio tab** (`UI/PortfolioView.swift`) — unified rollup of every
+  open equity (any horizon) and options paper position.
+- **Backtest mode** (`Engine/BacktestEngine.swift`) — walks swing-watchlist
+  daily-bar history day by day through the live, pure `SwingEngine.buildSnapshot`
+  + `SwingScoringModel`, no lookahead, reporting win rate and edge over
+  baseline for a configurable score threshold and holding period. Scoped to
+  the swing horizon only — day-trade backtesting needs minute-bar depth the
+  free IEX tier doesn't carry far enough back.
+- **Strategy Bot** (`Engine/StrategyBotEngine.swift`) — mechanical lifecycle
+  alerts (profit target, stop loss, 21 DTE, expiration day) on open options
+  positions, each firing once per position per alert kind.
+
 ## Not yet done / next steps
 
-1. **First Xcode build pass.** Everything in this document was written
-   against the reviewed source and the Alpaca API docs from memory, across a
-   long session, without a compiler in the loop (this environment has no
-   Xcode toolchain, though the new unit tests are written to run under plain
-   `swift test` once one is available). Before anything else: run
-   `xcodegen generate && xcodebuild` on macOS and fix whatever the
-   type-checker/linker actually flags — expect the usual crop of typos, an
-   Alpaca options-payload field mismatch or two, and possibly a
+1. **First Xcode build pass.** Everything in this document — three full
+   rounds of work now — was written against the reviewed source and the
+   Alpaca API docs from memory, without a compiler in the loop at any point
+   (this environment has no Xcode toolchain, though the unit tests are
+   written to run under plain `swift test` once one is available). Before
+   anything else: run `xcodegen generate && xcodebuild` on macOS and fix
+   whatever the type-checker/linker actually flags. This is a larger
+   surface than round 1 flagged — expect the usual crop of typos, an Alpaca
+   payload field mismatch or two, `@Observable`/`@MainActor` inference
+   edge cases across the newer engines (`MarketRegimeEngine`,
+   `BacktestEngine`, `StrategyBotEngine`, `IVHistoryStore`), SwiftData
+   `#Predicate` macro quirks in `IVHistoryStore`, and possibly a
    `RealityView` call-site signature drift version to version.
-2. Bump deployment target to iOS 27 / build with Xcode 27 the day both exist.
+2. **Platform target.** Still targeting the latest available SDKs today
+   (iOS 18+ via `project.yml`/`Package.swift`); iOS 27 and Xcode 27 do not
+   exist as of this writing (September 2026). Swift 6 strict concurrency
+   is already the baseline throughout every engine added in all three
+   rounds, so no source changes are expected when the real deployment
+   target bump happens — this remains a one-line change to
+   `project.yml`/`Package.swift` once both actually ship. Re-check this
+   note the next time work resumes on this project; if iOS 27/Xcode 27
+   have shipped by then, bump immediately and treat it as step 1 of the
+   next Xcode build pass rather than a separate task.
