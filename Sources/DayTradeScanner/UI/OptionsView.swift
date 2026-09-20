@@ -6,6 +6,7 @@ struct OptionsView: View {
     @Environment(OptionsPaperTradeLog.self) private var optionsPaperLog
     @State private var selectedUnderlying: String?
     @State private var showUniverseEditor = false
+    @State private var showScreener = false
     @State private var activityFilter = UnusualActivityFilter.default
 
     var body: some View {
@@ -40,12 +41,17 @@ struct OptionsView: View {
                     Button { showUniverseEditor = true } label: { Image(systemName: "list.bullet") }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button { showScreener = true } label: { Image(systemName: "slider.horizontal.3") }
+                        .accessibilityLabel("Option screener")
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button { Task { await engine.refresh() } } label: { Image(systemName: "arrow.clockwise") }
                         .disabled(engine.isRefreshing)
                 }
             }
             .task { if engine.chains.isEmpty { await engine.refresh() } }
             .sheet(isPresented: $showUniverseEditor) { OptionsUniverseEditor() }
+            .sheet(isPresented: $showScreener) { OptionScreenerView() }
             .navigationDestination(item: $selectedUnderlying) { underlying in
                 OptionChainDetailView(underlying: underlying)
             }
