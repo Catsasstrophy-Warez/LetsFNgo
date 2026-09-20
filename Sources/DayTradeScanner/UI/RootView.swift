@@ -8,7 +8,7 @@ struct RootView: View {
     @State private var testSizer = ProcessInfo.processInfo.arguments.contains("--test-position-sizer")
     #endif
 
-    enum Tab: Hashable { case scan, discover, halts, options, log, tuning, guide, settings }
+    enum Tab: Hashable { case scan, discover, halts, options, portfolio, log, tuning, guide, settings }
 
     var body: some View {
         @Bindable var settings = settings
@@ -29,6 +29,10 @@ struct RootView: View {
             OptionsView()
                 .tabItem { Label("Options", systemImage: "chart.xyaxis.line") }
                 .tag(Tab.options)
+
+            PortfolioView()
+                .tabItem { Label("Portfolio", systemImage: "briefcase") }
+                .tag(Tab.portfolio)
 
             PaperLogView()
                 .tabItem { Label("Journal", systemImage: "list.bullet.rectangle") }
