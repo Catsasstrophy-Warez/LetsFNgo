@@ -59,11 +59,12 @@ final class StrategyBotEngine {
     private let paperLog: OptionsPaperTradeLog
     private let squawk: AudioSquawk?
 
-    private var settings: Settings { Settings.shared }
+    private let settings: Settings
 
-    init(paperLog: OptionsPaperTradeLog, squawk: AudioSquawk? = nil) {
+    init(paperLog: OptionsPaperTradeLog, squawk: AudioSquawk? = nil, settings: Settings = .shared) {
         self.paperLog = paperLog
         self.squawk = squawk
+        self.settings = settings
     }
 
     /// Re-evaluates every open position. Cheap enough to call after every

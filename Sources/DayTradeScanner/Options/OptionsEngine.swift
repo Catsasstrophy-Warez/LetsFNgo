@@ -36,7 +36,7 @@ final class OptionsEngine {
     /// rather than only its static open interest.
     private var volumeHistory: [String: [(date: Date, volume: Int)]] = [:]
 
-    private var settings: Settings { Settings.shared }
+    private let settings: Settings
 
     static let refreshInterval: Duration = .seconds(60)
 
@@ -44,12 +44,14 @@ final class OptionsEngine {
         rest: AlpacaREST,
         paperLog: OptionsPaperTradeLog,
         ivHistory: IVHistoryStore = IVHistoryStore(),
-        strategyBot: StrategyBotEngine? = nil
+        strategyBot: StrategyBotEngine? = nil,
+        settings: Settings = .shared
     ) {
         self.rest = rest
         self.paperLog = paperLog
         self.ivHistory = ivHistory
-        self.strategyBot = strategyBot ?? StrategyBotEngine(paperLog: paperLog)
+        self.strategyBot = strategyBot ?? StrategyBotEngine(paperLog: paperLog, settings: settings)
+        self.settings = settings
     }
 
     func start() {

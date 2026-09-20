@@ -27,11 +27,12 @@ final class SwingEngine {
     private var estimatedFilingCache: [String: Int] = [:]
     private var sectorCache: [String: String] = [:]
 
-    private var settings: Settings { Settings.shared }
+    private let settings: Settings
 
-    init(rest: AlpacaREST, secFloat: SECFloatClient) {
+    init(rest: AlpacaREST, secFloat: SECFloatClient, settings: Settings = .shared) {
         self.rest = rest
         self.secFloat = secFloat
+        self.settings = settings
     }
 
     func start() {

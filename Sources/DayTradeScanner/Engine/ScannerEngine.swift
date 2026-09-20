@@ -94,17 +94,18 @@ final class ScannerEngine {
     private var newsTask: Task<Void, Never>?
     private var scoreTask: Task<Void, Never>?
 
-    private var settings: Settings { Settings.shared }
+    private let settings: Settings
 
     /// IEX's approximate share of consolidated US equity volume. Used only to
     /// scale float rotation, never to report a volume figure — every other
     /// volume signal in the app is a ratio and needs no such correction.
     private static let iexVolumeShare = 0.025
 
-    init(paperLog: PaperTradeLog) {
+    init(paperLog: PaperTradeLog, settings: Settings = .shared) {
         self.paperLog = paperLog
-        self.secFloat = SECFloatClient(contactEmail: Settings.shared.secContactEmail)
-        self.edgarStream = EDGARFilingStream(contactEmail: Settings.shared.secContactEmail)
+        self.settings = settings
+        self.secFloat = SECFloatClient(contactEmail: settings.secContactEmail)
+        self.edgarStream = EDGARFilingStream(contactEmail: settings.secContactEmail)
         self.baselines = BaselineStore(rest: rest)
         self.universeBuilder = UniverseBuilder(rest: rest)
         self.phase = MarketClock.phase()

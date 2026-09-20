@@ -95,7 +95,7 @@ actor AlpacaREST {
             return try await fetch(url, as: type, retries: retries - 1)
         }
         if http.statusCode == 401 {
-            await MainActor.run { Settings.shared.credentialsAppearInvalid = true }
+            Settings.shared.credentialsAppearInvalid = true
         }
         guard (200..<300).contains(http.statusCode) else {
             throw AlpacaError.http(http.statusCode, String(decoding: data, as: UTF8.self))
@@ -104,7 +104,7 @@ actor AlpacaREST {
         // rejected them earlier is no longer true — most commonly, the
         // user just fixed them in Settings and reconnected.
         if Settings.shared.credentialsAppearInvalid {
-            await MainActor.run { Settings.shared.credentialsAppearInvalid = false }
+            Settings.shared.credentialsAppearInvalid = false
         }
         do {
             return try decoder.decode(T.self, from: data)

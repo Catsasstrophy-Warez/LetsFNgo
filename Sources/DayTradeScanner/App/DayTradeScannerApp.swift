@@ -56,9 +56,18 @@ struct DayTradeScannerApp: App {
         }
         self.container = container
 
+        // Every engine below is handed this same `settings` instance
+        // explicitly rather than reaching for `Settings.shared` internally —
+        // it's still the same singleton (SwiftUI views read it via
+        // `.environment(settings)`, actors that can't take a constructor
+        // dependency still fall back to `Settings.shared`), but an engine's
+        // own dependency list should say what it needs rather than reaching
+        // out for a global.
+        let appSettings = settings
+
         let log = PaperTradeLog()
         _paperLog = State(initialValue: log)
-        _engine = State(initialValue: ScannerEngine(paperLog: log))
+        _engine = State(initialValue: ScannerEngine(paperLog: log, settings: appSettings))
 
         let optionsLog = OptionsPaperTradeLog()
         _optionsPaperLog = State(initialValue: optionsLog)
@@ -69,12 +78,12 @@ struct DayTradeScannerApp: App {
         // clients rather than reaching into the day-trade engine's private
         // state.
         let sharedREST = AlpacaREST()
-        let sharedSECFloat = SECFloatClient(contactEmail: Settings.shared.secContactEmail)
-        _swingEngine = State(initialValue: SwingEngine(rest: sharedREST, secFloat: sharedSECFloat))
-        _longTermEngine = State(initialValue: LongTermEngine(rest: sharedREST, secFloat: sharedSECFloat))
+        let sharedSECFloat = SECFloatClient(contactEmail: appSettings.secContactEmail)
+        _swingEngine = State(initialValue: SwingEngine(rest: sharedREST, secFloat: sharedSECFloat, settings: appSettings))
+        _longTermEngine = State(initialValue: LongTermEngine(rest: sharedREST, secFloat: sharedSECFloat, settings: appSettings))
         let ivHistory = IVHistoryStore()
-        let strategyBot = StrategyBotEngine(paperLog: optionsLog, squawk: AudioSquawk())
-        _optionsEngine = State(initialValue: OptionsEngine(rest: sharedREST, paperLog: optionsLog, ivHistory: ivHistory, strategyBot: strategyBot))
+        let strategyBot = StrategyBotEngine(paperLog: optionsLog, squawk: AudioSquawk(), settings: appSettings)
+        _optionsEngine = State(initialValue: OptionsEngine(rest: sharedREST, paperLog: optionsLog, ivHistory: ivHistory, strategyBot: strategyBot, settings: appSettings))
         _regimeEngine = State(initialValue: MarketRegimeEngine(rest: sharedREST))
     }
 
