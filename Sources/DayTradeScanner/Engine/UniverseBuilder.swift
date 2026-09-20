@@ -269,7 +269,9 @@ actor UniverseBuilder {
         try? data.write(to: fileURL, options: .atomic)
     }
 
-    private nonisolated static func loadProfilesFromDisk(at fileURL: URL) -> [String: VolatilityProfile] {
+    // internal rather than private so a round-trip test can call this
+    // directly without spinning up the whole actor.
+    nonisolated static func loadProfilesFromDisk(at fileURL: URL) -> [String: VolatilityProfile] {
         guard let data = try? Data(contentsOf: fileURL),
               let decoded = try? JSONDecoder().decode([String: VolatilityProfile].self, from: data) else { return [:] }
         return decoded

@@ -748,7 +748,9 @@ actor SECFloatClient {
         }
     }
 
-    private nonisolated static func loadFromDisk(
+    // internal rather than private so a round-trip test can call this
+    // directly without spinning up the whole actor.
+    nonisolated static func loadFromDisk(
         recordsURL: URL,
         mapURL: URL
     ) -> (records: [String: FloatRecord], tickerToCIK: [String: Int], cikToTicker: [Int: String]) {

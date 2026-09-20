@@ -252,7 +252,9 @@ actor BaselineStore {
         try? data.write(to: fileURL, options: .atomic)
     }
 
-    private nonisolated static func loadBaselinesFromDisk(at fileURL: URL) -> [String: VolumeBaseline] {
+    // internal rather than private so a round-trip test can call this
+    // directly without spinning up the whole actor.
+    nonisolated static func loadBaselinesFromDisk(at fileURL: URL) -> [String: VolumeBaseline] {
         guard let data = try? Data(contentsOf: fileURL),
               let decoded = try? JSONDecoder().decode([String: VolumeBaseline].self, from: data) else { return [:] }
         return decoded
