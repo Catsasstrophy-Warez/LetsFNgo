@@ -9,6 +9,7 @@ struct ScanView: View {
     @State private var showRejected = false
     @State private var showRecipes = false
     @State private var show3DPulse = false
+    @State private var showCalendar = false
 
     var body: some View {
         NavigationStack {
@@ -61,9 +62,14 @@ struct ScanView: View {
                         } label: { Image(systemName: "arrow.clockwise") }
                     }
                 }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showCalendar = true } label: { Image(systemName: "calendar") }
+                        .accessibilityLabel("Catalyst calendar")
+                }
             }
             .sheet(isPresented: $showRecipes) { RecipePicker() }
             .sheet(isPresented: $show3DPulse) { MarketPulse3DView(candidates: engine.candidates) }
+            .sheet(isPresented: $showCalendar) { CalendarView() }
             .navigationDestination(item: $selectedSymbol) { symbol in
                 SymbolDetailView(symbol: symbol)
             }
