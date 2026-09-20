@@ -163,6 +163,40 @@ research pass, in priority order, each committed and pushed separately:
   alerts (profit target, stop loss, 21 DTE, expiration day) on open options
   positions, each firing once per position per alert kind.
 
+## Complete (round 4 — post-round-3 gap analysis, recommendations 1–6)
+
+A follow-up review compared the full built feature set against
+`COMPETITIVE_ADAPTATION_BACKLOG.md` and found six research items that were
+surfaced but never scheduled into rounds 1–3. All six are now built, in
+recommended order:
+
+1. **Catalyst calendar** (`UI/CalendarView.swift`) — combines each swing
+   candidate's projected next-filing window (extrapolated cadence, labeled
+   as an estimate), recent insider clusters, and recent 8-K filings. No new
+   data source.
+2. **Option screener** (`Core/OptionScreenFilter.swift`,
+   `UI/OptionScreenerView.swift`) — thinkorswim "Option Hacker"-style scan
+   by side/DTE/delta/IV/volume/OI/spread across every loaded chain at once,
+   not one underlying at a time. First real connection between the equity
+   recipe system's design and the options module.
+3. **Fundamental sparklines + health badges**
+   (`UI/FundamentalSparklineView.swift`) — `SECFloatClient.quarterlyTTM` now
+   also returns a rolling 8-quarter TTM series from the same XBRL fetch;
+   rendered as a trend line plus pass/fail chips on the long-term detail
+   screen.
+4. **Named/mutable Signal alert types** (`UI/SignalAlertTypesView.swift`) —
+   per-component alert subscriptions; a muted component still ranks and
+   displays, it just can't be the reason an alert fires or consumes an
+   alert-budget slot.
+5. **Bar-replay mode** (`UI/ChartReplayView.swift`) — scrub/step through a
+   symbol's bars, reusing `CandleChartView` as-is via a truncated bars
+   array rather than touching the Metal coordinator.
+6. **Trendline-break pattern detection** (`Engine/PatternDetector.swift`) —
+   fractal pivot detection + two-point trendline projection, a new
+   `SignalComponent.trendlineBreak` that reads chart geometry rather than
+   momentum/volume/float context, the only component in the scoring model
+   that does.
+
 ## Not yet done / next steps
 
 1. **First Xcode build pass.** Everything in this document — three full
