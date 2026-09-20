@@ -197,6 +197,19 @@ recommended order:
    momentum/volume/float context, the only component in the scoring model
    that does.
 
+## Complete (round 5 — the last backlog item)
+
+**Nightly self-reweighting recipes** (`Engine/RecipeFitnessEngine.swift`) —
+the Trade Ideas "Holly AI" row, the one item left unscheduled across every
+prior round. Recomputes at most once per calendar day from real, resolved
+`PaperTradeLog` outcomes grouped by recipe name (live results, not a
+synthetic backtest — day-trade scoring needs minute-bar depth the free tier
+doesn't carry far back enough to replay honestly), producing a clamped
+fitness multiplier that divides into the alert threshold in
+`ScannerEngine.fireAlerts`. `RecipeRow` shows a hot/cold badge once a recipe
+has at least 5 resolved trades. With this, every item `COMPETITIVE_ADAPTATION_BACKLOG.md`
+surfaced as free-tier-buildable has now been built.
+
 ## Not yet done / next steps
 
 1. **First Xcode build pass.** Everything in this document — three full
