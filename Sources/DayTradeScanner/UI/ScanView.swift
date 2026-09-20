@@ -23,6 +23,7 @@ struct ScanView: View {
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .top, spacing: 0) {
                 VStack(spacing: 0) {
+                    MarketRegimeBanner()
                     HorizonPicker()
                     if settings.tradeHorizon == .dayTrade {
                         SessionHeader()

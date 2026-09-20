@@ -12,6 +12,7 @@ struct DayTradeScannerApp: App {
     @State private var swingEngine: SwingEngine
     @State private var longTermEngine: LongTermEngine
     @State private var optionsEngine: OptionsEngine
+    @State private var regimeEngine: MarketRegimeEngine
     @Environment(\.scenePhase) private var scenePhase
 
     private let container: ModelContainer
@@ -45,6 +46,7 @@ struct DayTradeScannerApp: App {
         _swingEngine = State(initialValue: SwingEngine(rest: sharedREST, secFloat: sharedSECFloat))
         _longTermEngine = State(initialValue: LongTermEngine(rest: sharedREST, secFloat: sharedSECFloat))
         _optionsEngine = State(initialValue: OptionsEngine(rest: sharedREST, paperLog: optionsLog))
+        _regimeEngine = State(initialValue: MarketRegimeEngine(rest: sharedREST))
     }
 
     var body: some Scene {
@@ -54,6 +56,7 @@ struct DayTradeScannerApp: App {
                 .environment(swingEngine)
                 .environment(longTermEngine)
                 .environment(optionsEngine)
+                .environment(regimeEngine)
                 .environment(settings)
                 .environment(paperLog)
                 .environment(optionsPaperLog)
@@ -77,6 +80,7 @@ struct DayTradeScannerApp: App {
                         swingEngine.start()
                         longTermEngine.start()
                         optionsEngine.start()
+                        regimeEngine.start()
                     }
                 }
                 .onChange(of: scenePhase) { _, phase in
@@ -97,6 +101,7 @@ struct DayTradeScannerApp: App {
                             if settings.hasCredentials {
                                 longTermEngine.start()
                                 optionsEngine.start()
+                                regimeEngine.start()
                             }
                         case .background:
                             // iOS will suspend the websocket anyway. Closing it
@@ -105,6 +110,7 @@ struct DayTradeScannerApp: App {
                             await engine.stop()
                             swingEngine.stop()
                             optionsEngine.stop()
+                            regimeEngine.stop()
                             // Long-term keeps polling in the background where
                             // iOS allows it — a multi-hour cadence has nothing
                             // to lose by continuing, unlike a websocket.
