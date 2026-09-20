@@ -11,6 +11,14 @@ struct SettingsView: View {
     @State private var longTermUniverseText = ""
     @State private var showSecret = false
     @State private var showRebuildConfirm = false
+    @State private var accountVerification: AccountVerificationState = .unverified
+
+    enum AccountVerificationState {
+        case unverified
+        case verifying
+        case verified(AlpacaREST.AccountSummary)
+        case failed(String)
+    }
 
     var body: some View {
         @Bindable var settings = settings
@@ -102,11 +110,45 @@ struct SettingsView: View {
 
             if settings.hasCredentials {
                 Button("Reconnect") { Task { await engine.restart() } }
+
+                Button {
+                    Task { await verifyAccount() }
+                } label: {
+                    if case .verifying = accountVerification {
+                        HStack { ProgressView(); Text("Verifying…") }
+                    } else {
+                        Text("Verify paper account")
+                    }
+                }
+                .disabled({ if case .verifying = accountVerification { return true }; return false }())
+
+                switch accountVerification {
+                case .unverified, .verifying:
+                    EmptyView()
+                case .verified(let summary):
+                    Label("Confirmed paper account #\(summary.accountNumber) — no real money at risk", systemImage: "checkmark.shield.fill")
+                        .font(.caption)
+                        .foregroundStyle(Palette.up)
+                case .failed(let message):
+                    Label(message, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(Palette.down)
+                }
             }
         } header: {
             Text("Alpaca")
         } footer: {
-            Text("Keys are stored in the iOS keychain, never in preferences. A free paper account works — the scanner never places orders. Generate keys at alpaca.markets under Paper Trading.")
+            Text("Keys are stored in the iOS keychain, never in preferences. This app only ever calls Alpaca's paper-trading endpoint — there is no order-submission code path anywhere in it, on any host. A free paper account works. Generate keys at alpaca.markets under Paper Trading, then tap \"Verify paper account\" to confirm the keys are valid before scanning starts.")
+        }
+    }
+
+    private func verifyAccount() async {
+        accountVerification = .verifying
+        do {
+            let summary = try await engine.verifyPaperAccount()
+            accountVerification = .verified(summary)
+        } catch {
+            accountVerification = .failed("Could not verify: \(error.localizedDescription). If these are live-trading keys rather than paper keys, they will never authenticate here — paper and live keys are separate credential pairs.")
         }
     }
 

@@ -240,6 +240,36 @@ actor AlpacaREST {
         }
     }
 
+    // MARK: - Account verification
+
+    /// Minimal decode of `/v2/account` — enough to positively confirm the
+    /// saved keys are real, valid, and specifically paper-trading keys.
+    /// This isn't just informational: `tradingBase` is hardcoded to
+    /// `paper-api.alpaca.markets`, and Alpaca live-account keys are not
+    /// valid credentials against that host at all — they're a completely
+    /// separate key pair scoped to `api.alpaca.markets`. A successful
+    /// response here is itself proof the keys can only ever touch the
+    /// paper environment; nothing in this app calls a live endpoint or an
+    /// order-submission endpoint of any kind, on any host.
+    struct AccountSummary: Decodable, Sendable {
+        let accountNumber: String
+        let status: String
+        let buyingPower: String
+        let cash: String
+
+        enum CodingKeys: String, CodingKey {
+            case accountNumber = "account_number"
+            case status
+            case buyingPower = "buying_power"
+            case cash
+        }
+    }
+
+    func verifyPaperAccount() async throws -> AccountSummary {
+        let url = tradingBase.appendingPathComponent("/v2/account")
+        return try await fetch(url, as: AccountSummary.self)
+    }
+
     /// The tradable US equity list. `shortable` and `easyToBorrow` are the
     /// closest thing to borrow availability the free tier exposes.
     func tradableAssets() async throws -> [Asset] {

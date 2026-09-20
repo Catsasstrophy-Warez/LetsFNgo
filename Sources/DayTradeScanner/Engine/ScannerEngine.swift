@@ -214,6 +214,14 @@ final class ScannerEngine {
         await start()
     }
 
+    /// Positive proof the saved keys are valid, paper-trading credentials —
+    /// see the doc comment on `AlpacaREST.verifyPaperAccount()` for why a
+    /// successful response here is itself the safeguard, not just a status
+    /// check.
+    func verifyPaperAccount() async throws -> AlpacaREST.AccountSummary {
+        try await rest.verifyPaperAccount()
+    }
+
     /// Called when the user edits the universe without a full restart.
     func updateUniverse(_ symbols: [String]) async {
         for symbol in symbols where states[symbol] == nil {
