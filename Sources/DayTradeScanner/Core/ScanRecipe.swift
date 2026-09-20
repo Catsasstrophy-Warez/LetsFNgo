@@ -110,7 +110,7 @@ enum SetupType: String, Codable, CaseIterable, Identifiable, Sendable {
 /// scan that answers a single question is legible, and a scan with forty knobs
 /// is not. A recipe is a thin overlay on a `ScanProfile` — it narrows the
 /// gates and re-weights a few components, then hands off to the same engine.
-struct ScanRecipe: Identifiable, Codable, Equatable, Sendable {
+struct ScanRecipe: Identifiable, Codable, Equatable, Sendable, NamedPreset {
     var id: String { name }
 
     let name: String

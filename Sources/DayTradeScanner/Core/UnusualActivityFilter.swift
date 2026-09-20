@@ -6,7 +6,7 @@ import Observation
 /// one is just naming the currently-applied filter, so there's one type for
 /// both rather than a separate "preset" struct that mirrors it field for
 /// field.
-struct UnusualActivityFilter: Codable, Equatable, Sendable, Identifiable {
+struct UnusualActivityFilter: Codable, Equatable, Sendable, Identifiable, NamedPreset {
     enum Side: String, Codable, CaseIterable, Sendable {
         case either, callsOnly, putsOnly
         var label: String {
@@ -70,42 +70,18 @@ struct UnusualActivityFilter: Codable, Equatable, Sendable, Identifiable {
     }
 }
 
-/// Saved filter presets, persisted in UserDefaults alongside custom
-/// recipes — the same lightweight pattern, since this is also a small
-/// personal list with no need for a relational store.
+/// Saved filter presets. Wraps `UserDefaultsPresetStore` rather than
+/// reimplementing the same save/delete/persist mechanics a third time —
+/// see that type's doc comment.
 @MainActor
 @Observable
 final class UnusualActivityFilterStore {
     static let shared = UnusualActivityFilterStore()
 
-    private(set) var presets: [UnusualActivityFilter] = []
-    private let defaultsKey = "unusualActivityFilterPresets"
+    private let store = UserDefaultsPresetStore<UnusualActivityFilter>(defaultsKey: "unusualActivityFilterPresets")
 
-    init() { load() }
+    var presets: [UnusualActivityFilter] { store.items }
 
-    func save(_ filter: UnusualActivityFilter) {
-        if let index = presets.firstIndex(where: { $0.name == filter.name }) {
-            presets[index] = filter
-        } else {
-            presets.append(filter)
-        }
-        persist()
-    }
-
-    func delete(named name: String) {
-        presets.removeAll { $0.name == name }
-        persist()
-    }
-
-    private func persist() {
-        if let data = try? JSONEncoder().encode(presets) {
-            UserDefaults.standard.set(data, forKey: defaultsKey)
-        }
-    }
-
-    private func load() {
-        guard let data = UserDefaults.standard.data(forKey: defaultsKey),
-              let decoded = try? JSONDecoder().decode([UnusualActivityFilter].self, from: data) else { return }
-        presets = decoded
-    }
+    func save(_ filter: UnusualActivityFilter) { store.save(filter) }
+    func delete(named name: String) { store.delete(named: name) }
 }

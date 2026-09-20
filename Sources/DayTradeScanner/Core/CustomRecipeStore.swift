@@ -6,41 +6,28 @@ import Observation
 /// these are mutable and need somewhere to actually live — UserDefaults,
 /// the same place every other setting in this app is stored, is more than
 /// enough for a personal list of a few dozen filter-chip recipes.
+///
+/// Wraps `UserDefaultsPresetStore` for the actual save/delete/persist
+/// mechanics rather than reimplementing them — see that type's doc comment
+/// for why. This type's own job is the recipe-specific surface: the
+/// `recipes` name callers already use, `isCustom`, and JSON import/export.
 @MainActor
 @Observable
 final class CustomRecipeStore {
     static let shared = CustomRecipeStore()
 
-    private(set) var recipes: [ScanRecipe] = []
-    private let defaultsKey = "customRecipes"
-    private let defaults = UserDefaults.standard
+    private let store = UserDefaultsPresetStore<ScanRecipe>(defaultsKey: "customRecipes")
 
-    init() {
-        load()
-    }
+    var recipes: [ScanRecipe] { store.items }
 
-    func save(_ recipe: ScanRecipe) {
-        if let index = recipes.firstIndex(where: { $0.name == recipe.name }) {
-            recipes[index] = recipe
-        } else {
-            recipes.append(recipe)
-        }
-        persist()
-    }
-
-    func delete(named name: String) {
-        recipes.removeAll { $0.name == name }
-        persist()
-    }
-
-    func recipe(named name: String) -> ScanRecipe? {
-        recipes.first { $0.name == name }
-    }
+    func save(_ recipe: ScanRecipe) { store.save(recipe) }
+    func delete(named name: String) { store.delete(named: name) }
+    func recipe(named name: String) -> ScanRecipe? { store.item(named: name) }
 
     /// Whether a name belongs to a user recipe rather than a built-in —
     /// governs whether the picker offers an edit/delete affordance for it.
     func isCustom(named name: String) -> Bool {
-        recipes.contains { $0.name == name }
+        store.item(named: name) != nil
     }
 
     // MARK: - Import / export
@@ -69,20 +56,5 @@ final class CustomRecipeStore {
         }
         for recipe in imported { save(recipe) }
         return imported
-    }
-
-    // MARK: - Persistence
-
-    private func persist() {
-        let encoder = JSONEncoder()
-        if let data = try? encoder.encode(recipes) {
-            defaults.set(data, forKey: defaultsKey)
-        }
-    }
-
-    private func load() {
-        guard let data = defaults.data(forKey: defaultsKey),
-              let decoded = try? JSONDecoder().decode([ScanRecipe].self, from: data) else { return }
-        recipes = decoded
     }
 }

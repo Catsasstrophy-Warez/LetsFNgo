@@ -7,7 +7,7 @@ import Observation
 /// `OptionContract` data `OptionsEngine` already fetches — no new network
 /// calls, same connective idea as `UnusualActivityFilter` but scanning the
 /// whole chain set instead of just the pre-computed unusual-activity list.
-struct OptionScreenFilter: Codable, Equatable, Sendable, Identifiable {
+struct OptionScreenFilter: Codable, Equatable, Sendable, Identifiable, NamedPreset {
     var id: String { name }
 
     var name: String
@@ -86,34 +86,10 @@ struct OptionScreenFilter: Codable, Equatable, Sendable, Identifiable {
 final class OptionScreenFilterStore {
     static let shared = OptionScreenFilterStore()
 
-    private(set) var presets: [OptionScreenFilter] = []
-    private let defaultsKey = "optionScreenPresets"
+    private let store = UserDefaultsPresetStore<OptionScreenFilter>(defaultsKey: "optionScreenPresets")
 
-    init() { load() }
+    var presets: [OptionScreenFilter] { store.items }
 
-    func save(_ filter: OptionScreenFilter) {
-        if let index = presets.firstIndex(where: { $0.name == filter.name }) {
-            presets[index] = filter
-        } else {
-            presets.append(filter)
-        }
-        persist()
-    }
-
-    func delete(named name: String) {
-        presets.removeAll { $0.name == name }
-        persist()
-    }
-
-    private func persist() {
-        if let data = try? JSONEncoder().encode(presets) {
-            UserDefaults.standard.set(data, forKey: defaultsKey)
-        }
-    }
-
-    private func load() {
-        guard let data = UserDefaults.standard.data(forKey: defaultsKey),
-              let decoded = try? JSONDecoder().decode([OptionScreenFilter].self, from: data) else { return }
-        presets = decoded
-    }
+    func save(_ filter: OptionScreenFilter) { store.save(filter) }
+    func delete(named name: String) { store.delete(named: name) }
 }
