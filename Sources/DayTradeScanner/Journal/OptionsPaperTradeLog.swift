@@ -35,20 +35,23 @@ struct OptionLegRecord: Codable, Hashable, Sendable {
 /// works in `StrategyBuilder.swift`.
 @Model
 final class OptionsPaperTrade {
-    @Attribute(.unique) var id: UUID
-    var underlying: String
-    var strategyName: String
-    var openedAt: Date
+    // See the equivalent comment on PaperTrade — every property here has an
+    // inline default or is Optional, and `id` carries no uniqueness
+    // constraint, both required for CloudKit-synced SwiftData.
+    var id: UUID = UUID()
+    var underlying: String = ""
+    var strategyName: String = ""
+    var openedAt: Date = Date()
     var closedAt: Date?
-    var statusRaw: String
+    var statusRaw: String = TradeStatus.open.rawValue
 
     /// JSON-encoded `[OptionLegRecord]`.
-    var legsData: Data
+    var legsData: Data = Data()
 
     /// Net premium at open: positive = net debit paid, negative = net credit
     /// received. Cost basis for every P&L calculation below.
-    var netPremiumAtOpen: Double
-    var underlyingSpotAtOpen: Double
+    var netPremiumAtOpen: Double = 0
+    var underlyingSpotAtOpen: Double = 0
 
     /// Current mark, in the same sign convention as `netPremiumAtOpen` —
     /// updated by `OptionsPaperTradeLog.markToMarket` whenever fresh quotes
@@ -60,7 +63,7 @@ final class OptionsPaperTrade {
     /// contract symbol later reappears with a stale quote.
     var closedValue: Double?
 
-    var note: String
+    var note: String = ""
 
     init(
         underlying: String,

@@ -20,10 +20,25 @@ struct DayTradeScannerApp: App {
     init() {
         let container: ModelContainer
         do {
-            container = try ModelContainer(for: PaperTrade.self, OptionsPaperTrade.self, IVHistoryPoint.self)
+            // Private-database CloudKit sync — journal, options positions,
+            // and IV history follow the same iCloud account across a
+            // person's iPhone and iPad, the two devices this app has always
+            // targeted. Every @Model property was given an inline default
+            // (or made Optional) and no property carries a uniqueness
+            // constraint specifically so this configuration is valid —
+            // CloudKit's schema can't express either a missing default or a
+            // uniqueness constraint, and SwiftData refuses to sync a store
+            // that doesn't meet both requirements.
+            let cloudConfiguration = ModelConfiguration(cloudKitDatabase: .automatic)
+            container = try ModelContainer(
+                for: PaperTrade.self, OptionsPaperTrade.self, IVHistoryPoint.self,
+                configurations: cloudConfiguration
+            )
         } catch {
-            // A corrupt store shouldn't brick the app. Fall back to in-memory
-            // so the scanner still runs; the log is rebuilt from the next alert.
+            // A corrupt store, a missing iCloud entitlement in this build,
+            // or no signed-in iCloud account shouldn't brick the app — fall
+            // back to a local-only, in-memory store so the scanner still
+            // runs; the log is rebuilt from the next alert.
             let configuration = ModelConfiguration(isStoredInMemoryOnly: true)
             container = try! ModelContainer(for: PaperTrade.self, OptionsPaperTrade.self, IVHistoryPoint.self, configurations: configuration)
         }

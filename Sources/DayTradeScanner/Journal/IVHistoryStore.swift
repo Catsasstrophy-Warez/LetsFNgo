@@ -12,9 +12,11 @@ import Observation
 /// happens to run that day.
 @Model
 final class IVHistoryPoint {
-    var symbol: String
-    var date: Date
-    var atmIV: Double
+    // Defaults required for CloudKit-synced SwiftData — see the equivalent
+    // comment on PaperTrade.
+    var symbol: String = ""
+    var date: Date = Date()
+    var atmIV: Double = 0
 
     init(symbol: String, date: Date, atmIV: Double) {
         self.symbol = symbol

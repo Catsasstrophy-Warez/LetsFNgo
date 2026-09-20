@@ -21,17 +21,24 @@ enum TradeStatus: String, Codable, Sendable {
 /// and what actually happened is one you can tune by evidence.
 @Model
 final class PaperTrade {
-    @Attribute(.unique) var id: UUID
-    var symbol: String
-    var openedAt: Date
+    // Every stored property below has an inline default (or is Optional),
+    // and `id` carries no uniqueness constraint — both are hard requirements
+    // for a SwiftData model backed by CloudKit sync (CloudKit record types
+    // can't express a uniqueness constraint, and partial/conflicting syncs
+    // need a default to fall back on). None of this changes behavior: the
+    // designated init below still sets every one of these explicitly at
+    // construction time, the same as before.
+    var id: UUID = UUID()
+    var symbol: String = ""
+    var openedAt: Date = Date()
     var closedAt: Date?
-    var entryPrice: Double
-    var directionRaw: String
-    var statusRaw: String
+    var entryPrice: Double = 0
+    var directionRaw: String = TradeDirection.long.rawValue
+    var statusRaw: String = TradeStatus.open.rawValue
 
     /// The score and its decomposition at the moment of the alert.
-    var score: Double
-    var reason: String
+    var score: Double = 0
+    var reason: String = ""
     /// JSON-encoded `SignalSnapshot`, so every raw metric survives for analysis.
     var snapshotData: Data?
     /// JSON-encoded `[String: Double]` of component contributions.
@@ -46,24 +53,24 @@ final class PaperTrade {
     /// Best and worst excursion seen while the trade was open, in the
     /// direction of the trade. Tells you whether a setup that ended flat
     /// ever actually worked.
-    var maxFavorable: Double
-    var maxAdverse: Double
+    var maxFavorable: Double = 0
+    var maxAdverse: Double = 0
 
-    var note: String
+    var note: String = ""
 
     /// Which setup this was. Slicing outcomes by setup answers a more useful
     /// question than slicing by component: knowing gap-and-go works for you and
     /// VWAP reclaims don't is directly actionable.
-    var setupRaw: String
+    var setupRaw: String = SetupType.unclassified.rawValue
     /// Float category at entry, so float-conditional performance is visible.
     var floatCategoryRaw: String?
     var floatSharesAtEntry: Double?
     /// Whether the symbol halted at any point while the trade was open.
-    var haltedDuringTrade: Bool
+    var haltedDuringTrade: Bool = false
     var recipeName: String?
     /// Which discipline this trade belongs to. Governs whether it force-closes
     /// at the bell and which mark-to-market horizons apply.
-    var horizonRaw: String
+    var horizonRaw: String = TradeHorizon.dayTrade.rawValue
 
     init(
         symbol: String,

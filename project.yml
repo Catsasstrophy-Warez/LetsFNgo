@@ -34,6 +34,11 @@ targets:
           UIApplicationSupportsMultipleScenes: false
         NSUserNotificationsUsageDescription: "Used to alert you when a scan candidate crosses your threshold."
         NSSupportsLiveActivities: true
+        # Silent remote-notification pushes are how CloudKit tells a running
+        # app another device just wrote a change — without this, sync only
+        # ever catches up the next time the app launches fresh.
+        UIBackgroundModes:
+          - remote-notification
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.daytradescanner.app
@@ -47,6 +52,10 @@ targets:
         aps-environment: development
         com.apple.security.application-groups:
           - group.com.daytradescanner.shared
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.daytradescanner.app
+        com.apple.developer.icloud-services:
+          - CloudKit
     dependencies:
       - sdk: SwiftData.framework
       - sdk: SwiftUI.framework
