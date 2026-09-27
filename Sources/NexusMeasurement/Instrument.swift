@@ -94,6 +94,24 @@ public struct InstrumentModel: Sendable, Hashable {
         ObjectRecord(type: .instrument, title: title, attributes: [accuracyKey: Attribute(spec.value)], provenance: provenance)
     }
 
+    /// Uncertainty, resolution and range for `value`, all in the reading's
+    /// own unit. Refuses readings outside the spec's range or in a unit the
+    /// spec cannot describe (a voltage spec for a current reading).
+    public func accuracy(for value: Quantity) throws -> ReadingAccuracy {
+        let unit = try MeasurementUnit(value.unit)
+        let resolutionUnit = try MeasurementUnit(spec.resolution.unit)
+        // The range is given in the resolution's unit.
+        let inRangeUnit = try unit.convert(value.value, to: resolutionUnit)
+        if let low = spec.rangeLow, inRangeUnit < low { throw InstrumentError.overRange(record.id, reading: value.value, unit: value.unit) }
+        if let high = spec.rangeHigh, inRangeUnit > high { throw InstrumentError.overRange(record.id, reading: value.value, unit: value.unit) }
+        return ReadingAccuracy(
+            uncertainty: try spec.uncertainty(for: value), resolution: try spec.resolution(in: value.unit),
+            rangeLow: try spec.rangeLow.map { try resolutionUnit.convert($0, to: unit) },
+            rangeHigh: try spec.rangeHigh.map { try resolutionUnit.convert($0, to: unit) },
+            method: "±(\(spec.percentOfReading)% rdg + \(spec.digits) digits)"
+        )
+    }
+
     /// An observed reading from this instrument, with uncertainty and
     /// resolution from the spec. Refuses readings outside the spec's range.
     public func reading(
@@ -104,26 +122,31 @@ public struct InstrumentModel: Sendable, Hashable {
         sampledAt: Date,
         confidence: Double? = nil
     ) throws -> MeasurementRecord {
-        let unit = try MeasurementUnit(value.unit)
-        let resolutionUnit = try MeasurementUnit(spec.resolution.unit)
-        // The range is given in the resolution's unit.
-        let inRangeUnit = try unit.convert(value.value, to: resolutionUnit)
-        if let low = spec.rangeLow, inRangeUnit < low { throw InstrumentError.overRange(record.id, reading: value.value, unit: value.unit) }
-        if let high = spec.rangeHigh, inRangeUnit > high { throw InstrumentError.overRange(record.id, reading: value.value, unit: value.unit) }
+        let accuracy = try accuracy(for: value)
         let measurement = MeasurementRecord(
             quantityName: quantityName, value: value,
-            uncertainty: try spec.uncertainty(for: value), resolution: try spec.resolution(in: value.unit),
-            rangeLow: try spec.rangeLow.map { try resolutionUnit.convert($0, to: unit) },
-            rangeHigh: try spec.rangeHigh.map { try resolutionUnit.convert($0, to: unit) },
+            uncertainty: accuracy.uncertainty, resolution: accuracy.resolution,
+            rangeLow: accuracy.rangeLow, rangeHigh: accuracy.rangeHigh,
             testPoint: testPoint, instrument: record.id, loading: loading, sampledAt: sampledAt,
             provenance: Provenance(
                 origin: .instrument(id: record.id), truth: .observed, timestamp: sampledAt,
-                method: "±(\(spec.percentOfReading)% rdg + \(spec.digits) digits)", confidence: confidence
+                method: accuracy.method, confidence: confidence
             )
         )
         try measurement.validate()
         return measurement
     }
+}
+
+/// What an instrument's spec says about one reading, in the reading's unit.
+public struct ReadingAccuracy: Sendable, Hashable {
+    /// Half-width of the accuracy limit.
+    public var uncertainty: Double
+    public var resolution: Double
+    public var rangeLow: Double?
+    public var rangeHigh: Double?
+    /// The spec, in words, for a measurement's provenance method.
+    public var method: String
 }
 
 extension Value {

@@ -55,9 +55,23 @@ private func reading(
         #expect(throws: UnitError.incompatible(from: "bool", to: "value")) { try MeasurementUnit.convert(1, from: "bool", to: "value") }
     }
 
+    @Test func mechanicalAndFlowUnitsConvert() throws {
+        #expect(abs(try MeasurementUnit.convert(1_800, from: "rpm", to: "Hz") - 30) < 1e-12)
+        #expect(abs(try MeasurementUnit.convert(1, from: "psi", to: "kPa") - 6.894_757) < 1e-6)
+        #expect(abs(try MeasurementUnit.convert(1, from: "bar", to: "psi") - 14.503_77) < 1e-4)
+        #expect(try MeasurementUnit.convert(1_250, from: "mm", to: "m") == 1.25)
+        #expect(try MeasurementUnit.convert(2, from: "kg", to: "g") == 2_000)
+        #expect(abs(try MeasurementUnit.convert(60, from: "L/min", to: "L/s") - 1) < 1e-12)
+        #expect(try MeasurementUnit("L").isCommensurable(with: MeasurementUnit("m3")))
+        #expect(try MeasurementUnit("N").dimension == MeasurementUnit("kg.m/s2").dimension)
+        #expect(try MeasurementUnit("mA").isCommensurable(with: MeasurementUnit("A")))
+        #expect(try MeasurementUnit("min").dimension == MeasurementUnit("s").dimension)
+    }
+
     @Test func malformedCodesAreRejected() {
         #expect(throws: UnitError.unknownUnit("volt")) { try MeasurementUnit("volt") }
-        #expect(throws: UnitError.unknownUnit("mm")) { try MeasurementUnit("mm") }
+        #expect(throws: UnitError.unknownUnit("kpsi")) { try MeasurementUnit("kpsi") }
+        #expect(throws: UnitError.unknownUnit("krpm")) { try MeasurementUnit("krpm") }
         #expect(throws: UnitError.unknownUnit("kdegC")) { try MeasurementUnit("kdegC") }
         #expect(throws: UnitError.offsetUnitInCompound("degC.A")) { try MeasurementUnit("degC.A") }
         #expect(throws: UnitError.notNumeric("bool/s")) { try MeasurementUnit("bool/s") }

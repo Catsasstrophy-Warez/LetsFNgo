@@ -38,6 +38,7 @@ let package = Package(
         .library(name: "NexusTasks", targets: ["NexusTasks"]),
         .library(name: "NexusDocuments", targets: ["NexusDocuments"]),
         .library(name: "NexusMeasurement", targets: ["NexusMeasurement"]),
+        .library(name: "NexusActions", targets: ["NexusActions"]),
     ],
     targets: [
         .target(name: "NexusCore"),
@@ -75,7 +76,7 @@ let package = Package(
         ),
         // Apple-only: empty on Linux, verify in Xcode.
         .target(name: "NexusRealityKit", dependencies: ["NexusCore", "NexusReality"]),
-        .target(name: "NexusMeetings", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
+        .target(name: "NexusMeetings", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusTasks"]),
         // Apple-only SwiftUI app layer: empty on Linux, compiled by the macOS CI job.
         .target(
             name: "NexusUI",
@@ -104,6 +105,14 @@ let package = Package(
         .target(name: "NexusDocuments", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
         // Units, uncertainty and instruments, with adapters for the trainer's evidence types.
         .target(name: "NexusMeasurement", dependencies: ["NexusCore", "NexusModel", "ControlsPLC", "ControlsReasoning"]),
+        // Executes every command in NexusProjects/Commands.swift against the store and runtimes.
+        .target(
+            name: "NexusActions",
+            dependencies: [
+                "NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSearch", "NexusProjects", "NexusPermissions",
+                "NexusInvestigation", "NexusTasks", "NexusDocuments", "NexusMeasurement", "NexusSimulation", "NexusLearning",
+            ]
+        ),
         // Large-graph timings (docs/PERFORMANCE.md). Not part of `swift test`: `swift run -c release NexusBenchmarks`.
         .executableTarget(name: "NexusBenchmarks", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph"]),
         .testTarget(name: "NexusCoreTests", dependencies: ["NexusCore"]),
@@ -121,12 +130,15 @@ let package = Package(
         .testTarget(name: "NexusLearningTests", dependencies: ["NexusLearning"]),
         .testTarget(name: "NexusRealityTests", dependencies: ["NexusReality", "NexusProjects"]),
         .testTarget(name: "NexusDemoTests", dependencies: ["NexusDemo", "NexusSearch"]),
-        .testTarget(name: "NexusMeetingsTests", dependencies: ["NexusMeetings"]),
+        .testTarget(name: "NexusMeetingsTests", dependencies: ["NexusMeetings", "NexusTasks"]),
         .testTarget(name: "NexusInvestigationTests", dependencies: ["NexusInvestigation"]),
         // End-to-end Golden Vertical Slice (docs/BUILD_PLAN.md §D).
         .testTarget(
             name: "GoldenSliceTests",
-            dependencies: ["NexusInvestigation", "NexusSimulation", "NexusProjects", "NexusSearch", "NexusGraph", "NexusLearning", "NexusReality"]
+            dependencies: [
+                "NexusInvestigation", "NexusSimulation", "NexusProjects", "NexusSearch", "NexusGraph", "NexusLearning", "NexusReality",
+                "NexusActions", "NexusDocuments", "NexusMeasurement", "NexusTasks",
+            ]
         ),
         .testTarget(name: "ControlsPLCTests", dependencies: ["ControlsPLC"]),
         .testTarget(name: "ControlsReasoningTests", dependencies: ["ControlsReasoning", "ControlsPLC"]),
@@ -154,5 +166,12 @@ let package = Package(
         .testTarget(name: "NexusTasksTests", dependencies: ["NexusTasks"]),
         .testTarget(name: "NexusDocumentsTests", dependencies: ["NexusDocuments"]),
         .testTarget(name: "NexusMeasurementTests", dependencies: ["NexusMeasurement", "ControlsReasoning", "ControlsPLC"]),
+        .testTarget(
+            name: "NexusActionsTests",
+            dependencies: [
+                "NexusActions", "NexusDocuments", "NexusInvestigation", "NexusLearning", "NexusMeasurement", "NexusProjects", "NexusSimulation",
+                "NexusTasks",
+            ]
+        ),
     ]
 )

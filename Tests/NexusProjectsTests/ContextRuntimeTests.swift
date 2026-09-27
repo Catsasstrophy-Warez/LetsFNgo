@@ -143,7 +143,9 @@ private struct Fixture {
         #expect(try fixture.commandIDs() == ["open", "ask", "analyze", "link", "trace", "simulate", "investigate"])
 
         try fixture.context.select(terminal, from: .spatial)
-        #expect(try fixture.commandIDs().contains("measure"))
+        #expect(try fixture.commandIDs() == [
+            "open", "ask", "analyze", "link", "trace", "measure", "recordMeasurement", "simulate", "investigate",
+        ])
 
         try fixture.context.select([sensor, terminal], from: .collection)
         #expect(try fixture.commandIDs() == [

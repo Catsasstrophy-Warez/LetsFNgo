@@ -185,3 +185,66 @@ private struct Bench {
         #expect(throws: InvestigationError.malformed(stray.id)) { try Hypothesis(record: stray) }
     }
 }
+
+@Suite struct InvestigationEventTests {
+    @Test func confirmRejectAndCloseGoOnTheTimeline() throws {
+        let bench = try Bench()
+        let high = try bench.runtime.propose("Supply high", in: bench.investigation, predictions: [bench.volts(20, 30)], by: tech)
+        let low = try bench.runtime.propose("Supply low", in: bench.investigation, predictions: [bench.volts(0, 10)], by: tech)
+        let open = try bench.runtime.propose("Open circuit", in: bench.investigation, predictions: [], by: tech)
+
+        let reading = try bench.reading(24)
+        try bench.runtime.assess(reading, in: bench.investigation, by: tech)
+        let automatic = try bench.store.events(about: low.id).filter { $0.kind == .hypothesisRejected }
+        #expect(automatic.count == 1)
+        #expect(automatic.first?.payload["measurement"] == .reference(reading))
+        #expect(automatic.first?.provenance.truth == .derived)
+
+        #expect(throws: InvestigationError.requiresHuman(agent)) {
+            try bench.runtime.reject(open.id, in: bench.investigation, reason: "unlikely", by: agent)
+        }
+        let rejected = try bench.runtime.reject(open.id, in: bench.investigation, reason: "Continuity checked good", by: tech)
+        #expect(rejected.state == .rejected)
+        #expect(try bench.store.events(about: open.id).map(\.kind) == [.hypothesisRejected])
+        #expect(throws: InvestigationError.notLive(open.id, .rejected)) {
+            try bench.runtime.reject(open.id, in: bench.investigation, reason: "again", by: tech)
+        }
+
+        try bench.runtime.confirm(high.id, in: bench.investigation, by: tech)
+        let confirmed = try bench.store.events(about: high.id).filter { $0.kind == .hypothesisConfirmed }
+        #expect(confirmed.count == 1 && confirmed.first?.provenance.origin == tech)
+
+        try bench.runtime.close(bench.investigation, resolution: "Regulator replaced", verifiedBy: [reading], by: tech)
+        let closed = try bench.store.events(about: bench.investigation).filter { $0.kind == .investigationClosed }
+        #expect(closed.count == 1)
+        #expect(closed.first?.subjects.contains(reading) == true)
+        #expect(closed.first?.provenance.revision == (try bench.store.object(bench.investigation)?.revision))
+        #expect(try bench.runtime.investigations(containing: high.id) == [bench.investigation])
+    }
+
+    @Test func repairAndVerificationAreRecorded() throws {
+        let bench = try Bench()
+        let recorded = Provenance(origin: tech, truth: .recorded, timestamp: t0)
+        let task = try bench.store.create(ObjectRecord(type: .task, title: "Fix", provenance: recorded))
+        let procedure = try bench.store.create(ObjectRecord(type: .procedure, title: "Steps", provenance: recorded))
+        let planned = try bench.runtime.recordRepair(in: bench.investigation, task: task.id, procedure: procedure.id, summary: "Planned", by: tech)
+        #expect(planned.kind == .repair)
+        #expect(Set(try bench.store.relationships(from: bench.investigation, kind: .produced).map(\.to)) == [task.id, procedure.id])
+        // Recording again does not duplicate the links.
+        try bench.runtime.recordRepair(in: bench.investigation, task: task.id, procedure: procedure.id, summary: "Again", by: tech)
+        #expect(try bench.store.relationships(from: bench.investigation, kind: .produced).count == 2)
+
+        let modeled = try bench.reading(12, truth: .modeled)
+        #expect(throws: InvestigationError.notEvidence(modeled, .modeled)) {
+            try bench.runtime.recordVerification(in: bench.investigation, evidence: [modeled], summary: "x", by: tech)
+        }
+        #expect(throws: InvestigationError.unverified(bench.investigation)) {
+            try bench.runtime.recordVerification(in: bench.investigation, evidence: [], summary: "x", by: tech)
+        }
+        let observed = try bench.reading(12)
+        let verified = try bench.runtime.recordVerification(in: bench.investigation, evidence: [observed], task: task.id, summary: "OK", by: tech)
+        #expect(verified.kind == .repairVerified && verified.provenance.dependencies == [observed])
+        #expect(try bench.store.relationships(from: bench.investigation, kind: .contains).contains { $0.to == observed })
+        #expect(try bench.store.events(about: task.id).map(\.kind) == [.repair, .repair, .repairVerified])
+    }
+}
