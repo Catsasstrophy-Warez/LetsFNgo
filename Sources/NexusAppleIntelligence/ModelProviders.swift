@@ -3,6 +3,7 @@ import Foundation
 import FoundationModels
 import NexusAgents
 import NexusAI
+import NexusCloudProviders
 import NexusCore
 import NexusModel
 import NexusPermissions
@@ -12,7 +13,23 @@ import NexusUI
 @MainActor
 enum ModelProviders {
     static func install(into env: NexusEnvironment) async {
-        guard #available(iOS 27.0, macOS 27.0, *) else { return }
+        var providers: [any LanguageModelProvider] = []
+        if #available(iOS 27.0, macOS 27.0, *) {
+            providers += await appleProviders()
+        }
+        // Opt-in third-party tier (L4). The router only reaches it when the
+        // person allows third-party cloud, and each run asks before data leaves.
+        if let key = CloudCredentials.key(for: "anthropic") {
+            providers.append(AnthropicProvider(apiKey: key))
+        }
+        env.installedModels = providers.map { "\($0.descriptor.ref.provider) · \($0.descriptor.ref.modelID) (\($0.descriptor.tier))" }
+        env.agents = providers.isEmpty
+            ? nil
+            : AgentRuntime(store: env.store, router: ModelRouter(providers: providers), permissions: env.permissions, tools: WorldTools.all)
+    }
+
+    @available(iOS 27.0, macOS 27.0, *)
+    private static func appleProviders() async -> [any LanguageModelProvider] {
         var providers: [any LanguageModelProvider] = []
         let system = SystemLanguageModel.default
         if system.isAvailable {
@@ -39,10 +56,7 @@ enum ModelProviders {
         // A Nexus-tuned open model exported with Core AI plugs in here as one
         // more FoundationModelsProvider once `coreai-models` builds for the
         // simulator (see docs/APPLE_PLATFORM_NOTES.md).
-        guard !providers.isEmpty else { return }
-        env.agents = AgentRuntime(
-            store: env.store, router: ModelRouter(providers: providers), permissions: env.permissions, tools: WorldTools.all
-        )
+        return providers
     }
 }
 

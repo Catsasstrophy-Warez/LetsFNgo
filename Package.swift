@@ -81,7 +81,7 @@ let package = Package(
             name: "NexusUI",
             dependencies: [
                 "NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSearch", "NexusProjects", "NexusPermissions",
-                "NexusInvestigation", "NexusSimulation", "NexusReality", "NexusRealityKit", "NexusAgents", "NexusDemo",
+                "NexusInvestigation", "NexusSimulation", "NexusReality", "NexusRealityKit", "NexusAI", "NexusAgents", "NexusDemo",
             ]
         ),
         // Apple-only: Siri/Shortcuts, Spotlight, Visual Intelligence, speech, Live Activities, Foundation Models.
@@ -89,7 +89,7 @@ let package = Package(
             name: "NexusAppleIntelligence",
             dependencies: [
                 "NexusCore", "NexusModel", "NexusPersistence", "NexusSearch", "NexusProjects", "NexusPermissions",
-                "NexusInvestigation", "NexusMeetings", "NexusAgents", "NexusAI", "NexusUI",
+                "NexusInvestigation", "NexusMeetings", "NexusAgents", "NexusAI", "NexusCloudProviders", "NexusUI",
             ]
         ),
         // Deterministic PLC engine, ported from the Controls Tech Trainer core.

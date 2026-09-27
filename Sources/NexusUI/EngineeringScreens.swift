@@ -113,55 +113,82 @@ struct InvestigationScreen: View {
 }
 
 /// The equipment as a scene: tap to select, with truth-labeled overlays.
+///
+/// The scene follows the focused object when it contains components;
+/// otherwise it shows the demo equipment. Modeled values are computed off
+/// the main thread.
 struct DigitalTwinScreen: View {
     @Environment(NexusEnvironment.self) private var env
     @State private var overlays: [OverlayValue] = []
 
+    private func scene() -> SceneDescription? {
+        let candidates = [env.context.focus, env.demo?.loop.tank].compactMap { $0 }
+        for root in candidates {
+            if let scene = try? SceneBuilder.build(root: root, graph: env.graph), scene.nodes.count > 1 { return scene }
+        }
+        return nil
+    }
+
     var body: some View {
-        let root = env.demo?.loop.tank ?? env.context.focus
-        if let root, let scene = try? SceneBuilder.build(root: root, graph: env.graph) {
-            HStack(spacing: 0) {
-                #if canImport(RealityKit)
-                RealityView { content in
-                    content.add(RealityKitSceneBuilder.makeEntities(for: scene))
-                }
-                .gesture(
-                    SpatialTapGesture().targetedToAnyEntity().onEnded { value in
-                        if let object = RealityKitSceneBuilder.object(for: value.entity) {
-                            try? env.context.select(object, from: .spatial)
-                        }
+        _ = env.revision
+        return Group {
+            if let scene = scene(), let root = scene.object(for: scene.root) {
+                HStack(spacing: 0) {
+                    #if canImport(RealityKit)
+                    RealityView { content in
+                        content.add(RealityKitSceneBuilder.makeEntities(for: scene, selected: env.context.focus, overlays: overlays))
+                    } update: { content in
+                        content.entities.removeAll()
+                        content.add(RealityKitSceneBuilder.makeEntities(for: scene, selected: env.context.focus, overlays: overlays))
                     }
-                )
-                .accessibilityLabel("3D view of \(env.title(root)). Selection is also available in the list.")
-                #endif
-                List(scene.nodes) { node in
-                    Button {
-                        try? env.context.select(node.object, from: .spatial)
-                    } label: {
-                        VStack(alignment: .leading) {
-                            Text(node.title).fontWeight(env.context.focus == node.object ? .bold : .regular)
-                            ForEach(overlays.filter { $0.entity == node.entity }, id: \.self) { overlay in
-                                HStack {
-                                    Text("\(overlay.quantity) \(overlay.value.formatted(.number.precision(.significantDigits(1...4)))) \(overlay.unit)")
-                                        .font(.caption.monospacedDigit())
-                                    TruthBadge(overlay.truth)
+                    .realityViewCameraControls(.orbit)
+                    .gesture(
+                        SpatialTapGesture().targetedToAnyEntity().onEnded { value in
+                            if let object = RealityKitSceneBuilder.object(for: value.entity) {
+                                try? env.context.select(object, from: .spatial)
+                            }
+                        }
+                    )
+                    .accessibilityLabel("3D view of \(env.title(root)). Selection is also available in the list.")
+                    #endif
+                    List(scene.nodes) { node in
+                        Button {
+                            try? env.context.select(node.object, from: .spatial)
+                        } label: {
+                            VStack(alignment: .leading) {
+                                Text(node.title).fontWeight(env.context.focus == node.object ? .bold : .regular)
+                                ForEach(overlays.filter { $0.entity == node.entity }, id: \.self) { overlay in
+                                    HStack {
+                                        Text("\(overlay.quantity) \(overlay.value.formatted(.number.precision(.significantDigits(1...4)))) \(overlay.unit)")
+                                            .font(.caption.monospacedDigit())
+                                        TruthBadge(overlay.truth)
+                                    }
                                 }
                             }
                         }
+                        .accessibilityAddTraits(env.context.focus == node.object ? .isSelected : [])
                     }
+                    .frame(maxWidth: 360)
                 }
-                .frame(maxWidth: 360)
+                .task(id: RefreshKey(root: root, revision: env.revision)) { await refresh(scene) }
+            } else {
+                NextActionEmptyState("No twin", message: "Select equipment that contains components to see it in 3D.", systemImage: "cube.transparent")
             }
-            .task(id: env.revision) { refresh(scene) }
-        } else {
-            NextActionEmptyState("No twin", message: "Select equipment that contains components to see it in 3D.", systemImage: "cube.transparent")
         }
     }
 
-    private func refresh(_ scene: SceneDescription) {
+    private struct RefreshKey: Hashable {
+        var root: ObjectID
+        var revision: Int
+    }
+
+    private func refresh(_ scene: SceneDescription) async {
         var values = (try? OverlayBuilder.measured(in: scene, store: env.store)) ?? []
-        if let demo = env.demo, let twin = try? demo.makeTwin(), let snapshot = twin.history.last {
-            values += OverlayBuilder.modeled(snapshot, in: scene, units: ["terminalVoltage": "V", "loopCurrent": "mA", "level": "%", "measuredLevel": "%"])
+        if let demo = env.demo, scene.object(for: scene.root) == demo.loop.tank {
+            let snapshot = await Task.detached(priority: .userInitiated) { (try? demo.makeTwin())?.history.last }.value
+            if let snapshot {
+                values += OverlayBuilder.modeled(snapshot, in: scene, units: ["terminalVoltage": "V", "loopCurrent": "mA", "level": "%", "measuredLevel": "%"])
+            }
         }
         overlays = values
     }
@@ -217,7 +244,7 @@ struct TelemetryScreen: View {
                 }
             }
         }
-        .task { load() }
+        .task { await load() }
     }
 
     private var visibleSeries: [Sample] {
@@ -239,15 +266,20 @@ struct TelemetryScreen: View {
         }
     }
 
-    private func load() {
-        guard let demo = env.demo, let field = try? demo.makeField() else { return }
-        let names: [(StateKey, String)] = [
-            (demo.loop.level, "level"), (demo.loop.measuredLevel, "measuredLevel"),
-            (demo.loop.terminalVoltage, "terminalVoltage"), (demo.loop.loopCurrent, "loopCurrent"),
-        ]
-        series = field.history.filter { $0.tick % 10 == 0 }.flatMap { snapshot in
-            names.compactMap { key, name in snapshot.values[key].map { Sample(signal: name, seconds: snapshot.seconds, value: $0) } }
-        }
+    private func load() async {
+        guard let demo = env.demo else { return }
+        // The simulation runs off the main thread; only the samples come back.
+        series = await Task.detached(priority: .userInitiated) { () -> [Sample] in
+            guard let field = try? demo.makeField() else { return [] }
+            let names: [(StateKey, String)] = [
+                (demo.loop.level, "level"), (demo.loop.measuredLevel, "measuredLevel"),
+                (demo.loop.terminalVoltage, "terminalVoltage"), (demo.loop.loopCurrent, "loopCurrent"),
+            ]
+            return field.history.filter { $0.tick % 10 == 0 }.flatMap { snapshot in
+                names.compactMap { key, name in snapshot.values[key].map { Sample(signal: name, seconds: snapshot.seconds, value: $0) } }
+            }
+        }.value
     }
+
 }
 #endif

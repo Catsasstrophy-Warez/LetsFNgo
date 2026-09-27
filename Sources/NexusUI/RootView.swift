@@ -1,4 +1,5 @@
 #if canImport(SwiftUI)
+import NexusAgents
 import NexusCore
 import NexusModel
 import NexusProjects
@@ -277,8 +278,13 @@ struct CommandPalette: View {
 struct IntelligencePanel: View {
     @Environment(NexusEnvironment.self) private var env
     @State private var goal = ""
-    @State private var running = false
-    @State private var lastOutput: String?
+    @State private var task: Task<Void, Never>?
+    @State private var streamed = ""
+    @State private var steps: [(phase: AgentPhase, summary: String)] = []
+    @State private var result: AgentRunResult?
+    @State private var failure: String?
+
+    private var running: Bool { task != nil }
 
     var body: some View {
         Form {
@@ -289,15 +295,44 @@ struct IntelligencePanel: View {
             }
             Section("Ask") {
                 TextField("Ask about the selection", text: $goal, axis: .vertical)
-                Button(running ? "Working…" : "Ask") { ask() }
-                    .disabled(goal.isEmpty || running || env.agents == nil)
+                    .accessibilityIdentifier("ask.field")
+                HStack {
+                    Button("Ask") { ask() }
+                        .disabled(goal.isEmpty || running || env.agents == nil)
+                        .accessibilityIdentifier("ask.submit")
+                    if running {
+                        Button("Stop", role: .cancel) { task?.cancel() }
+                    }
+                }
                 if env.agents == nil {
-                    Text("No language model is available on this device yet.").font(.caption).foregroundStyle(.secondary)
+                    Text("No language model is installed. See Settings → Models.").font(.caption).foregroundStyle(.secondary)
                 }
-                if let lastOutput {
-                    Text(lastOutput).textSelection(.enabled)
-                    TruthBadge(.agentInterpretation)
+            }
+            if !steps.isEmpty {
+                // Inspectable progress: each ledger step as it happens.
+                Section(running ? "Working (\(steps.count) steps)" : "Steps") {
+                    ForEach(Array(steps.enumerated()), id: \.offset) { _, step in
+                        LabeledContent(step.phase.rawValue.capitalized, value: step.summary)
+                            .font(.caption)
+                    }
                 }
+            }
+            if !streamed.isEmpty || result != nil {
+                Section("Answer") {
+                    Text(result?.output ?? streamed).textSelection(.enabled)
+                    HStack {
+                        TruthBadge(.agentInterpretation)
+                        if let result {
+                            Text("\(result.status.rawValue) · \(result.model.modelID)").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    if let result {
+                        Button("Open run") { try? env.context.open(result.run, in: .agentActivity, from: .command) }
+                    }
+                }
+            }
+            if let failure {
+                Section { Label(failure, systemImage: "exclamationmark.triangle") }
             }
         }
         .navigationTitle("Intelligence")
@@ -305,13 +340,44 @@ struct IntelligencePanel: View {
 
     private func ask() {
         guard let agents = env.agents else { return }
-        running = true
-        let request = AgentRequestFactory.request(goal: goal, env: env)
-        Task {
-            let result = try? await agents.run(request, as: .diagnostician, approver: AlertApprover.shared)
-            lastOutput = result?.output ?? "The run did not complete."
-            running = false
+        streamed = ""
+        steps = []
+        result = nil
+        failure = nil
+        var request = AgentRequestFactory.request(goal: goal, env: env)
+        request.privacy = ModelPrivacy.current.requirement
+        let (events, sink) = AsyncStream<AgentEvent>.makeStream()
+        let (mirrored, mirrorSink) = AsyncStream<AgentEvent>.makeStream()
+        if let mirror = env.runMirror {
+            let goal = goal
+            Task.detached { await mirror(goal, mirrored) }
+        } else {
+            mirrorSink.finish()
         }
+        task = Task {
+            let consumer = Task {
+                for await event in events { apply(event) }
+            }
+            do {
+                result = try await agents.run(request, as: .diagnostician, approver: AlertApprover.shared) { event in
+                    sink.yield(event)
+                    mirrorSink.yield(event)
+                }
+            } catch is CancellationError {
+                failure = "Stopped. Steps already recorded stay in the run's ledger; nothing else changed."
+            } catch {
+                failure = "The run failed: \(error). Completed steps are kept in Agent Activity; partial tool writes were rolled back."
+            }
+            sink.finish()
+            mirrorSink.finish()
+            await consumer.value
+            task = nil
+        }
+    }
+
+    private func apply(_ event: AgentEvent) {
+        if case .step(let phase, let summary) = event { steps.append((phase, summary)) }
+        if case .textDelta(let text) = event { streamed += text }
     }
 }
 #endif

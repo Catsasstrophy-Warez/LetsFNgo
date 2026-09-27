@@ -29,6 +29,13 @@ public final class NexusEnvironment {
     public let context: ContextRuntime
     /// Set by the app once a language model is available on this device.
     public var agents: AgentRuntime?
+    /// Names of the installed language models, for Settings.
+    public var installedModels: [String] = []
+    /// Rebuilds the model list, e.g. after a cloud key changes. Set by the app.
+    @ObservationIgnored public var reinstallModels: (@MainActor () async -> Void)?
+    /// Mirrors an agent run somewhere outside the app (a Live Activity).
+    /// Receives the goal and the run's events; runs off the main actor.
+    @ObservationIgnored public var runMirror: (@Sendable (String, AsyncStream<AgentEvent>) async -> Void)?
     public private(set) var demo: DemoWorld?
     /// Advances on every committed change; read it in `body` to refresh.
     public private(set) var revision = 0

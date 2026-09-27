@@ -1,5 +1,6 @@
 #if canImport(SwiftUI)
 import Foundation
+import NexusAgents
 import NexusUI
 
 /// Wires Apple Intelligence surfaces to the app's environment: Siri and
@@ -19,7 +20,27 @@ public enum AppleIntelligence {
         spotlight = indexer
         #endif
         #if canImport(FoundationModels)
+        env.reinstallModels = { [weak env] in
+            guard let env else { return }
+            await ModelProviders.install(into: env)
+        }
         Task { await ModelProviders.install(into: env) }
+        #endif
+        #if canImport(ActivityKit) && os(iOS)
+        env.runMirror = { goal, events in
+            // All ActivityKit calls stay in this one task (Activity isn't Sendable).
+            let activity = AgentRunActivity.start(goal: goal)
+            var steps = 0
+            var last = goal
+            for await event in events {
+                if case .step(let phase, let summary) = event {
+                    steps += 1
+                    last = summary
+                    await AgentRunActivity.update(activity, phase: phase.rawValue, summary: summary, steps: steps)
+                }
+            }
+            await AgentRunActivity.end(activity, summary: last)
+        }
         #endif
     }
 

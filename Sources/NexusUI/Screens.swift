@@ -330,6 +330,7 @@ struct PermissionsScreen: View {
                     rules = env.permissions.rules
                 }
             }
+            ModelSettingsSection()
             Section("Add rule") {
                 TextField("Agent (blank = any)", text: $agent)
                 TextField("Action (blank = any)", text: $action)
