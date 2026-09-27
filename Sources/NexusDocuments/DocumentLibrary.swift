@@ -27,7 +27,8 @@ public enum DocumentFormat: String, Sendable, Hashable, Codable {
 public enum ExtractionState: String, Sendable, Hashable, Codable {
     /// Passages were segmented from the blob.
     case extracted
-    /// The blob is stored but its text is not yet extracted (PDF on Linux).
+    /// The blob is stored but its text is not yet extracted (a PDF with no
+    /// extractor, or one without a text layer).
     case needsExtraction
 }
 
@@ -49,6 +50,8 @@ public struct Passage: Sendable, Hashable, Identifiable {
     /// Verbatim text of that byte range.
     public var text: String
     public var section: String?
+    /// One-based PDF page the passage starts on; nil for text documents.
+    public var page: Int?
     public var provenance: Provenance
 
     public init(record: ObjectRecord) throws {
@@ -70,6 +73,7 @@ public struct Passage: Sendable, Hashable, Identifiable {
         end = try int(Keys.end)
         self.text = text
         if case .string(let section)? = record.attributes[Keys.section]?.value { self.section = section }
+        if case .int(let page)? = record.attributes[Keys.page]?.value { self.page = Int(page) }
         provenance = record.provenance
     }
 
@@ -84,6 +88,7 @@ public struct Passage: Sendable, Hashable, Identifiable {
         static let start = "start"
         static let end = "end"
         static let section = "section"
+        static let page = "page"
     }
 }
 
@@ -119,16 +124,22 @@ public struct DocumentHit: Sendable, Hashable {
 /// `passage` type, rather than `source`, keeps "a citable source" meaning
 /// what it says and lets search filter to passages.
 ///
-/// PDF: the blob is stored and the document marked `needsExtraction`. Linux
-/// has no PDF parser; extraction with PDFKit belongs in an Apple-only target
-/// and will add passages to the existing document without touching its blob.
+/// PDF: with a `PDFTextExtractor` the extracted text is stored as a second
+/// blob (the document's `textBlob`) and segmented like plain text, so passage
+/// byte ranges address that text and claims still quote exact bytes. Without
+/// one, or when the PDF has no text layer, the PDF is stored and the document
+/// marked `needsExtraction`; `extractText(of:)` adds the passages later
+/// without touching the original blob.
 public struct DocumentLibrary: Sendable {
     public let store: NexusStore
     let clock: NexusClock
+    /// Reads PDF text. `DocumentLibrary.platformPDFExtractor` is PDFKit on Apple platforms.
+    public let pdfExtractor: (any PDFTextExtractor)?
 
-    public init(store: NexusStore, clock: NexusClock = SystemClock()) {
+    public init(store: NexusStore, clock: NexusClock = SystemClock(), pdfExtractor: (any PDFTextExtractor)? = nil) {
         self.store = store
         self.clock = clock
+        self.pdfExtractor = pdfExtractor
     }
 
     // MARK: Ingesting
@@ -147,10 +158,10 @@ public struct DocumentLibrary: Sendable {
         by author: Origin
     ) throws -> IngestResult {
         guard let format = DocumentFormat(mediaType: mediaType) else { throw DocumentError.unsupportedMediaType(mediaType) }
-        let segmentation: Segmentation? = switch format {
-        case .plainText: try Segmenter.segment(data, as: .plainText)
-        case .markdown: try Segmenter.segment(data, as: .markdown)
-        case .pdf: nil
+        let text: ExtractedText? = switch format {
+        case .plainText: ExtractedText(segmentation: try Segmenter.segment(data, as: .plainText), method: "segmenter v\(Segmenter.version) (plainText)")
+        case .markdown: ExtractedText(segmentation: try Segmenter.segment(data, as: .markdown), method: "segmenter v\(Segmenter.version) (markdown)")
+        case .pdf: try extractPDF(data)
         }
 
         return try store.batch { store in
@@ -166,59 +177,55 @@ public struct DocumentLibrary: Sendable {
                 return IngestResult(document: existing, blob: blob, passages: try passages(of: existing.id), deduplicated: true)
             }
 
-            let method = segmentation == nil ? "blob stored; text extraction pending" : "segmenter v\(Segmenter.version) (\(format.rawValue))"
+            let method = text?.method ?? "blob stored; text extraction pending"
             let provenance = Provenance(origin: author, truth: author.defaultTruth, timestamp: now, method: method)
             var attributes: [String: Attribute] = [
                 "blob": Attribute(.string(blob.sha256)),
                 "mediaType": Attribute(.string(mediaType)),
                 "format": Attribute(.string(format.rawValue)),
                 "byteCount": Attribute(.int(Int64(data.count))),
-                "extraction": Attribute(.string((segmentation == nil ? ExtractionState.needsExtraction : .extracted).rawValue)),
+                "extraction": Attribute(.string((text == nil ? ExtractionState.needsExtraction : .extracted).rawValue)),
             ]
-            if let segmentation {
-                attributes["passageCount"] = Attribute(.int(Int64(segmentation.passages.count)))
-                if !segmentation.sections.isEmpty {
-                    attributes["sections"] = Attribute(.list(segmentation.sections.map { section in
-                        .map([
-                            "title": .string(section.title), "level": .int(Int64(section.level)),
-                            "start": .int(Int64(section.start)),
-                        ])
-                    }))
-                }
+            if let text {
+                attributes.merge(try Self.textAttributes(text, in: store)) { _, new in new }
             }
             let document = try store.create(ObjectRecord(type: .document, title: title, attributes: attributes, provenance: provenance))
             if let project {
                 try store.relate(Relationship(kind: .contains, from: project, to: document.id, validFrom: now, provenance: provenance))
             }
-
-            var passages: [Passage] = []
-            for span in segmentation?.passages ?? [] {
-                let derived = Provenance(
-                    origin: author, truth: .derived, timestamp: now, method: method,
-                    dependencies: [document.id], transformation: "utf8[\(span.start)..<\(span.end)]"
-                )
-                var passageAttributes: [String: Attribute] = [
-                    Passage.Keys.document: Attribute(.reference(document.id)),
-                    Passage.Keys.text: Attribute(.string(span.text)),
-                    Passage.Keys.index: Attribute(.int(Int64(span.index))),
-                    Passage.Keys.start: Attribute(.int(Int64(span.start))),
-                    Passage.Keys.end: Attribute(.int(Int64(span.end))),
-                ]
-                if let section = span.section.map({ segmentation!.sections[$0].title }), !section.isEmpty {
-                    passageAttributes[Passage.Keys.section] = Attribute(.string(section))
-                }
-                let record = try store.create(ObjectRecord(
-                    type: .passage, title: Self.snippet(span.text, fallback: "\(title) ¶\(span.index + 1)"),
-                    attributes: passageAttributes, provenance: derived
-                ))
-                try store.relate(Relationship(kind: .contains, from: document.id, to: record.id, provenance: derived))
-                passages.append(try Passage(record: record))
-            }
+            let passages = try text.map { try addPassages($0, to: document.id, title: title, by: author, at: now) } ?? []
             return IngestResult(document: document, blob: blob, passages: passages, deduplicated: false)
         }
     }
 
-    // MARK: Reading
+    /// Extracts the text of a document stored as `needsExtraction`, using
+    /// `pdfExtractor`, and adds its passages. The original blob is untouched.
+    ///
+    /// Returns the passages, or nil when there is still no text to extract
+    /// (no extractor, or no text layer). Already extracted documents return
+    /// their existing passages.
+    @discardableResult
+    public func extractText(of documentID: ObjectID, by author: Origin) throws -> [Passage]? {
+        let record = try requireDocument(documentID)
+        if try extractionState(of: documentID) == .extracted { return try passages(of: documentID) }
+        guard case .string(let format)? = record.attributes["format"]?.value, format == DocumentFormat.pdf.rawValue,
+              let text = try extractPDF(try contents(of: documentID))
+        else { return nil }
+        return try store.batch { store in
+            let now = clock.now()
+            let extracted = try Self.textAttributes(text, in: store)
+            let stamp = Provenance(origin: author, truth: author.defaultTruth, timestamp: now, method: text.method)
+            try store.update(documentID, by: author, instruction: "Extracted text (\(text.method))") {
+                for (key, attribute) in extracted {
+                    $0.attributes[key] = Attribute(attribute.value, provenance: stamp)
+                }
+                $0.attributes["extraction"] = Attribute(.string(ExtractionState.extracted.rawValue), provenance: stamp)
+            }
+            return try addPassages(text, to: documentID, title: record.title, by: author, at: now)
+        }
+    }
+
+        // MARK: Reading
 
     /// The document's passages in reading order.
     public func passages(of document: ObjectID) throws -> [Passage] {
@@ -244,7 +251,8 @@ public struct DocumentLibrary: Sendable {
     /// Re-reads a passage from the blob. Equal to `passage.text` unless
     /// something has gone badly wrong; used to prove citation lineage.
     public func sourceText(of passage: Passage) throws -> String {
-        let data = try contents(of: passage.document)
+        let digest = try textDigest(of: passage.document)
+        guard let data = try store.blobData(sha256: digest) else { throw BlobError.missingBytes(sha256: digest) }
         guard passage.start >= 0, passage.end <= data.count, passage.start <= passage.end else {
             throw DocumentError.corrupt(passage.id, field: "range")
         }
@@ -288,7 +296,7 @@ public struct DocumentLibrary: Sendable {
         by author: Origin
     ) throws -> Claim {
         let passage = try passage(passageID)
-        let digest = try blobDigest(of: passage.document)
+        let digest = try textDigest(of: passage.document)
         let now = clock.now()
         let claim = Claim(
             statement: statement, sources: [passage.document], passages: [passage.text], sourceClass: sourceClass,
@@ -339,10 +347,94 @@ public struct DocumentLibrary: Sendable {
         return digest
     }
 
+    /// The blob passages index into: the extracted text for a PDF, the
+    /// document's own bytes otherwise.
+    private func textDigest(of document: ObjectID) throws -> String {
+        if case .string(let digest)? = try requireDocument(document).attributes["textBlob"]?.value { return digest }
+        return try blobDigest(of: document)
+    }
+
+    /// Text from a PDF, or nil when there is no extractor or no text.
+    /// An unreadable PDF is still stored: extraction just waits.
+    private func extractPDF(_ data: Data) throws -> ExtractedText? {
+        guard let pdfExtractor, let pages = try? pdfExtractor.pages(of: data) else { return nil }
+        guard pages.contains(where: { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else { return nil }
+        var joined = Data()
+        var pageStarts: [Int] = []
+        for (index, page) in pages.enumerated() {
+            if index > 0 { joined.append(contentsOf: Array("\n\n".utf8)) }
+            pageStarts.append(joined.count)
+            joined.append(contentsOf: Array(page.utf8))
+        }
+        return ExtractedText(
+            segmentation: try Segmenter.segment(joined, as: .plainText),
+            method: "\(pdfExtractor.identifier) text, segmenter v\(Segmenter.version) (plainText)",
+            text: joined, pageStarts: pageStarts
+        )
+    }
+
+    /// Document attributes describing extracted text; stores a PDF's text blob.
+    private static func textAttributes(_ text: ExtractedText, in store: NexusStore) throws -> [String: Attribute] {
+        var attributes: [String: Attribute] = ["passageCount": Attribute(.int(Int64(text.segmentation.passages.count)))]
+        if !text.segmentation.sections.isEmpty {
+            attributes["sections"] = Attribute(.list(text.segmentation.sections.map { section in
+                .map([
+                    "title": .string(section.title), "level": .int(Int64(section.level)),
+                    "start": .int(Int64(section.start)),
+                ])
+            }))
+        }
+        if let data = text.text {
+            attributes["textBlob"] = Attribute(.string(try store.putBlob(data, mediaType: "text/plain; charset=utf-8").sha256))
+            attributes["pageCount"] = Attribute(.int(Int64(text.pageStarts.count)))
+        }
+        return attributes
+    }
+
+    private func addPassages(_ text: ExtractedText, to document: ObjectID, title: String, by author: Origin, at now: Date) throws -> [Passage] {
+        let segmentation = text.segmentation
+        var passages: [Passage] = []
+        for span in segmentation.passages {
+            let derived = Provenance(
+                origin: author, truth: .derived, timestamp: now, method: text.method,
+                dependencies: [document], transformation: "utf8[\(span.start)..<\(span.end)]"
+            )
+            var passageAttributes: [String: Attribute] = [
+                Passage.Keys.document: Attribute(.reference(document)),
+                Passage.Keys.text: Attribute(.string(span.text)),
+                Passage.Keys.index: Attribute(.int(Int64(span.index))),
+                Passage.Keys.start: Attribute(.int(Int64(span.start))),
+                Passage.Keys.end: Attribute(.int(Int64(span.end))),
+            ]
+            if let section = span.section.map({ segmentation.sections[$0].title }), !section.isEmpty {
+                passageAttributes[Passage.Keys.section] = Attribute(.string(section))
+            }
+            if let page = text.pageStarts.lastIndex(where: { $0 <= span.start }) {
+                passageAttributes[Passage.Keys.page] = Attribute(.int(Int64(page + 1)))
+            }
+            let record = try store.create(ObjectRecord(
+                type: .passage, title: Self.snippet(span.text, fallback: "\(title) ¶\(span.index + 1)"),
+                attributes: passageAttributes, provenance: derived
+            ))
+            try store.relate(Relationship(kind: .contains, from: document, to: record.id, provenance: derived))
+            passages.append(try Passage(record: record))
+        }
+        return passages
+    }
+
     /// First line of a passage, shortened, as its title.
     static func snippet(_ text: String, fallback: String) -> String {
         let line = text.split(whereSeparator: \.isNewline).first.map(String.init)?.trimmingCharacters(in: .whitespaces) ?? ""
         guard !line.isEmpty else { return fallback }
         return line.count > 80 ? String(line.prefix(79)) + "…" : line
     }
+}
+
+/// Text ready to become passages: the segmentation, how it was made and, for
+/// PDFs, the extracted text (which passages index into) and page offsets.
+struct ExtractedText {
+    var segmentation: Segmentation
+    var method: String
+    var text: Data? = nil
+    var pageStarts: [Int] = []
 }

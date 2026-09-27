@@ -59,9 +59,11 @@ public enum UnitError: Error, Equatable, Sendable {
 
 /// A parsed UCUM-style unit code such as "mA", "kOhm", "V/A" or "s-1".
 ///
-/// Supported atoms: V, A, Ohm, W, Pa, bar, s, min, h, Hz, K, degC, %, 1,
-/// value (a plain number) and bool (a logical state). V, A, Ohm, W, Pa, bar,
-/// s and Hz take the prefixes n, u, m, k and M. Codes combine with `.`
+/// Supported atoms: V, A, Ohm, W, Pa, bar, psi, N, m, g, L, s, min, h, Hz,
+/// rpm, K, degC, %, 1, value (a plain number) and bool (a logical state).
+/// V, A, Ohm, W, Pa, bar, N, m, g, L, s and Hz take the prefixes n, u, m, k
+/// and M, so mA, kPa, mm, km, kg and mL all parse. Flow rates combine, e.g.
+/// `L/min`; `rpm` is revolutions per minute (a frequency, 1/60 Hz). Codes combine with `.`
 /// (multiply) and `/` (divide), evaluated left to right as in UCUM, with
 /// integer exponents (`s-1`, `A2`) and parentheses.
 ///
@@ -135,6 +137,25 @@ extension MeasurementUnit {
     }
 }
 
+/// Entry point for validating unit codes typed by people or sent by tools.
+public enum Units {
+    /// Parses `code`, throwing `UnitError` if it is not a supported unit.
+    @discardableResult
+    public static func validate(_ code: String) throws -> MeasurementUnit {
+        try MeasurementUnit(code.trimmingCharacters(in: .whitespaces))
+    }
+
+    public static func isValid(_ code: String) -> Bool {
+        (try? validate(code)) != nil
+    }
+
+    /// Whether a value in `code` can be compared with one in `other`.
+    public static func areCommensurable(_ code: String, _ other: String) -> Bool {
+        guard let lhs = try? validate(code), let rhs = try? validate(other) else { return false }
+        return lhs.isCommensurable(with: rhs)
+    }
+}
+
 // MARK: Parser
 
 private struct Atom {
@@ -151,10 +172,16 @@ private let atoms: [String: Atom] = [
     "W": Atom(dimension: Dimension(mass: 1, length: 2, time: -3), factor: 1, prefixable: true),
     "Pa": Atom(dimension: Dimension(mass: 1, length: -1, time: -2), factor: 1, prefixable: true),
     "bar": Atom(dimension: Dimension(mass: 1, length: -1, time: -2), factor: 100_000, prefixable: true),
+    "psi": Atom(dimension: Dimension(mass: 1, length: -1, time: -2), factor: 6_894.757_293_168, prefixable: false),
+    "N": Atom(dimension: Dimension(mass: 1, length: 1, time: -2), factor: 1, prefixable: true),
+    "m": Atom(dimension: Dimension(length: 1), factor: 1, prefixable: true),
+    "g": Atom(dimension: Dimension(mass: 1), factor: 1e-3, prefixable: true),
+    "L": Atom(dimension: Dimension(length: 3), factor: 1e-3, prefixable: true),
     "s": Atom(dimension: Dimension(time: 1), factor: 1, prefixable: true),
     "min": Atom(dimension: Dimension(time: 1), factor: 60, prefixable: false),
     "h": Atom(dimension: Dimension(time: 1), factor: 3_600, prefixable: false),
     "Hz": Atom(dimension: Dimension(time: -1), factor: 1, prefixable: true),
+    "rpm": Atom(dimension: Dimension(time: -1), factor: 1.0 / 60, prefixable: false),
     "K": Atom(dimension: Dimension(temperature: 1), factor: 1, prefixable: false),
     "degC": Atom(dimension: Dimension(temperature: 1), factor: 1, offset: 273.15, prefixable: false),
     "%": Atom(dimension: .none, factor: 0.01, prefixable: false),

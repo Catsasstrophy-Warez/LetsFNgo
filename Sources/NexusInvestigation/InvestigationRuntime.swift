@@ -122,7 +122,17 @@ public struct InvestigationRuntime: Sendable {
                         from: measurementID, to: hypothesis.id, provenance: derived
                     ))
                     if effect == .contradicts, hypothesis.state.isLive {
-                        try setState(.rejected, of: hypothesis.id, provenance: derived, instruction: "Contradicted by \(measurement.quantityName) = \(measurement.value.value) \(measurement.value.unit)")
+                        let reason = "Contradicted by \(measurement.quantityName) = \(measurement.value.value) \(measurement.value.unit)"
+                        try setState(.rejected, of: hypothesis.id, provenance: derived, instruction: reason)
+                        try store.record(Event(
+                            at: now, kind: .hypothesisRejected, subjects: [investigation, hypothesis.id, measurementID],
+                            summary: "Rejected: \(hypothesis.statement)",
+                            payload: [
+                                "hypothesis": .reference(hypothesis.id), "statement": .string(hypothesis.statement),
+                                "reason": .string(reason), "measurement": .reference(measurementID),
+                            ],
+                            provenance: derived
+                        ))
                         newState = .rejected
                     }
                 }
@@ -212,21 +222,142 @@ public struct InvestigationRuntime: Sendable {
                 $0.attributes["status"] = Attribute(.string("causeConfirmed"), provenance: provenance)
                 $0.attributes["cause"] = Attribute(.reference(hypothesisID), provenance: provenance)
             }
+            try store.record(Event(
+                at: provenance.timestamp, kind: .hypothesisConfirmed, subjects: [investigation, hypothesisID],
+                summary: "Confirmed as cause: \(hypothesis.statement)",
+                payload: ["hypothesis": .reference(hypothesisID), "statement": .string(hypothesis.statement)],
+                provenance: provenance
+            ))
             return try Hypothesis(record: try store.object(hypothesisID).orThrow(StoreError.notFound(hypothesisID)))
+        }
+    }
+
+    /// Rules a hypothesis out on a person's judgement, without contradicting
+    /// evidence (a part was swapped and ruled out, say). People only: an
+    /// agent can argue against a hypothesis but not close it.
+    @discardableResult
+    public func reject(_ hypothesisID: ObjectID, in investigation: ObjectID, reason: String, by author: Origin) throws -> Hypothesis {
+        switch author {
+        case .user, .system: break
+        default: throw InvestigationError.requiresHuman(author)
+        }
+        return try store.batch { store in
+            let hypothesis = try member(hypothesisID, of: investigation)
+            guard hypothesis.state.isLive else { throw InvestigationError.notLive(hypothesisID, hypothesis.state) }
+            let provenance = Provenance(origin: author, truth: .recorded, timestamp: clock.now(), method: "rejected by technician")
+            let text = reason.trimmingCharacters(in: .whitespacesAndNewlines)
+            let instruction = text.isEmpty ? "Rejected" : "Rejected: \(text)"
+            try setState(.rejected, of: hypothesisID, provenance: provenance, instruction: instruction)
+            try store.record(Event(
+                at: provenance.timestamp, kind: .hypothesisRejected, subjects: [investigation, hypothesisID],
+                summary: "Rejected: \(hypothesis.statement)",
+                payload: ["hypothesis": .reference(hypothesisID), "statement": .string(hypothesis.statement), "reason": .string(text)],
+                provenance: provenance
+            ))
+            return try Hypothesis(record: try store.object(hypothesisID).orThrow(StoreError.notFound(hypothesisID)))
+        }
+    }
+
+    // MARK: Repair
+
+    /// Ties repair work to the investigation and puts it on the timeline.
+    ///
+    /// The investigation `produced` the procedure and the task (unless they
+    /// are already linked), and a `repair` event records that the repair was
+    /// planned. The task itself belongs to the task runtime; this only ties
+    /// it to the case.
+    @discardableResult
+    public func recordRepair(
+        in investigation: ObjectID,
+        task: ObjectID,
+        procedure: ObjectID?,
+        summary: String,
+        by author: Origin
+    ) throws -> Event {
+        try store.batch { store in
+            try requireInvestigation(investigation)
+            let now = clock.now()
+            let provenance = Provenance(origin: author, truth: author.defaultTruth, timestamp: now, method: "repair planned")
+            let produced = Set(try store.relationships(from: investigation, kind: .produced).map(\.to))
+            for id in [procedure, task].compactMap({ $0 }) where !produced.contains(id) {
+                try store.relate(Relationship(kind: .produced, from: investigation, to: id, provenance: provenance))
+            }
+            var payload: [String: Value] = ["task": .reference(task), "summary": .string(summary)]
+            if let procedure { payload["procedure"] = .reference(procedure) }
+            let event = Event(
+                at: now, kind: .repair, subjects: [investigation, task] + (procedure.map { [$0] } ?? []),
+                summary: summary, payload: payload, provenance: provenance
+            )
+            try store.record(event)
+            return event
+        }
+    }
+
+    /// Records that the repair was verified by observed or recorded readings,
+    /// which join the investigation's evidence.
+    @discardableResult
+    public func recordVerification(
+        in investigation: ObjectID,
+        evidence: [ObjectID],
+        task: ObjectID? = nil,
+        summary: String,
+        by author: Origin
+    ) throws -> Event {
+        try store.batch { store in
+            try requireInvestigation(investigation)
+            guard !evidence.isEmpty else { throw InvestigationError.unverified(investigation) }
+            for id in evidence {
+                guard let reading = try store.measurement(id) else { throw StoreError.notFound(id) }
+                guard Self.evidenceTruth.contains(reading.truth) else { throw InvestigationError.notEvidence(id, reading.truth) }
+            }
+            let now = clock.now()
+            let provenance = Provenance(
+                origin: author, truth: author.defaultTruth, timestamp: now, method: "repair verification", dependencies: evidence
+            )
+            let contained = Set(try store.relationships(from: investigation, kind: .contains).map(\.to))
+            for id in evidence where !contained.contains(id) {
+                try store.relate(Relationship(kind: .contains, from: investigation, to: id, provenance: provenance))
+            }
+            var payload: [String: Value] = ["summary": .string(summary), "evidence": .list(evidence.map(Value.reference))]
+            if let task { payload["task"] = .reference(task) }
+            let event = Event(
+                at: now, kind: .repairVerified, subjects: [investigation] + (task.map { [$0] } ?? []) + evidence,
+                summary: summary, payload: payload, provenance: provenance
+            )
+            try store.record(event)
+            return event
         }
     }
 
     /// Closes the investigation once the repair is verified.
     @discardableResult
     public func close(_ investigation: ObjectID, resolution: String, verifiedBy evidence: [ObjectID], by author: Origin) throws -> ObjectRecord {
-        try requireInvestigation(investigation)
-        let provenance = Provenance(
-            origin: author, truth: author.defaultTruth, timestamp: clock.now(), method: "repair verification", dependencies: evidence
-        )
-        return try store.update(investigation, by: author, instruction: "Closed: \(resolution)") {
-            $0.attributes["status"] = Attribute(.string("closed"), provenance: provenance)
-            $0.attributes["resolution"] = Attribute(.string(resolution), provenance: provenance)
+        try store.batch { store in
+            try requireInvestigation(investigation)
+            let provenance = Provenance(
+                origin: author, truth: author.defaultTruth, timestamp: clock.now(), method: "repair verification", dependencies: evidence
+            )
+            let closed = try store.update(investigation, by: author, instruction: "Closed: \(resolution)") {
+                $0.attributes["status"] = Attribute(.string("closed"), provenance: provenance)
+                $0.attributes["resolution"] = Attribute(.string(resolution), provenance: provenance)
+            }
+            var eventProvenance = provenance
+            eventProvenance.revision = closed.revision
+            try store.record(Event(
+                at: provenance.timestamp, kind: .investigationClosed, subjects: [investigation] + evidence,
+                summary: "Closed: \(resolution)",
+                payload: ["resolution": .string(resolution), "evidence": .list(evidence.map(Value.reference))],
+                provenance: eventProvenance
+            ))
+            return closed
         }
+    }
+
+    /// Investigations that contain a hypothesis or a measurement.
+    public func investigations(containing member: ObjectID) throws -> [ObjectID] {
+        try store.objects(try store.relationships(to: member, kind: .contains).map(\.from))
+            .filter { $0.type == .investigation }
+            .map(\.id)
     }
 
     // MARK: Private

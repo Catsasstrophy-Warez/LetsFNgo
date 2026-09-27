@@ -46,6 +46,8 @@ public struct TaskRuntime: Sendable {
     ///   - project: container that should `contain` the task.
     ///   - lifecycle: defaults to `.draft` for agents and models, `.active`
     ///     otherwise. Agents and models may not ask for anything but `.draft`.
+    ///   - attributes: extra domain attributes (a meeting line, the case a
+    ///     repair belongs to). They cannot replace the task's own fields.
     @discardableResult
     public func create(
         _ title: String,
@@ -56,6 +58,7 @@ public struct TaskRuntime: Sendable {
         dependsOn dependencies: [ObjectID] = [],
         in project: ObjectID? = nil,
         lifecycle: Lifecycle? = nil,
+        attributes extra: [String: Attribute] = [:],
         by author: Origin
     ) throws -> TaskItem {
         if author.isAI, let lifecycle, lifecycle != .draft { throw TaskError.agentMustDraft(author) }
@@ -63,10 +66,11 @@ public struct TaskRuntime: Sendable {
         return try store.batch { store in
             let now = clock.now()
             let provenance = Provenance(origin: author, truth: author.defaultTruth, timestamp: now)
-            var attributes: [String: Attribute] = [
+            var attributes: [String: Attribute] = extra
+            attributes.merge([
                 TaskItem.Keys.status: Attribute(.string(TaskStatus.open.rawValue)),
                 TaskItem.Keys.owner: Attribute((owner ?? author).value),
-            ]
+            ]) { _, own in own }
             if let successCondition { attributes[TaskItem.Keys.successCondition] = Attribute(.string(successCondition)) }
             if let dueAt { attributes[TaskItem.Keys.dueAt] = Attribute(.date(dueAt)) }
             if !requiredEvidence.isEmpty {

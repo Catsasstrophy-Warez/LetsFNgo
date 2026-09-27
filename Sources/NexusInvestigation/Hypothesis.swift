@@ -9,6 +9,16 @@ extension RelationKind {
 
 extension EventKind {
     public static let firstDivergence: EventKind = "firstDivergence"
+    /// A person confirmed a hypothesis as the cause. Payload: `hypothesis`, `statement`.
+    public static let hypothesisConfirmed: EventKind = "hypothesisConfirmed"
+    /// A hypothesis was rejected, by a person or by contradicting evidence.
+    /// Payload: `hypothesis`, `statement`, `reason`, and `measurement` when evidence did it.
+    public static let hypothesisRejected: EventKind = "hypothesisRejected"
+    /// The investigation was closed. Payload: `resolution`, `evidence`.
+    public static let investigationClosed: EventKind = "investigationClosed"
+    /// A repair's field work was verified by observed or recorded readings.
+    /// Payload: `summary`, `evidence`, and `task` when a task carried the repair.
+    public static let repairVerified: EventKind = "repairVerified"
 }
 
 extension ObjectType {
@@ -158,6 +168,10 @@ public enum InvestigationError: Error, Equatable, Sendable {
     case unsupported(ObjectID)
     case divergenceNeedsObservedAndExpected
     case mismatchedMeasurements
+    /// A verification needs at least one reading.
+    case unverified(ObjectID)
+    /// Only observed or recorded readings can verify a repair.
+    case notEvidence(ObjectID, TruthClass)
 }
 
 extension Optional {

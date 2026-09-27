@@ -194,3 +194,83 @@ private func library() throws -> (NexusStore, DocumentLibrary) {
         #expect(again.deduplicated && again.document.id == original.document.id)
     }
 }
+
+/// Stands in for PDFKit on Linux: returns fixed pages, or fails.
+private struct FakePDFExtractor: PDFTextExtractor {
+    var pages: [String]
+    var fails = false
+
+    var identifier: String { "fake-pdf" }
+
+    func pages(of data: Data) throws -> [String] {
+        if fails { throw PDFExtractionError.unreadable }
+        return pages
+    }
+}
+
+@Suite struct PDFExtractionTests {
+    static let pdf = Data("%PDF-1.7\n%âãÏÓ\n1 0 obj\n<<>>\nendobj\n".utf8)
+    static let pages = [
+        "LT-101 Datasheet\n\nLoop powered, 4–20 mA.",
+        "Electrical\n\nMinimum lift-off voltage is 12 V at the terminals.",
+    ]
+
+    private func library(_ extractor: (any PDFTextExtractor)?) throws -> (NexusStore, DocumentLibrary) {
+        let clock = ManualClock(t0)
+        let store = try NexusStore(.inMemory, clock: clock)
+        return (store, DocumentLibrary(store: store, clock: clock, pdfExtractor: extractor))
+    }
+
+    @Test func ingestUsesTheExtractorAndKeepsExactBytes() throws {
+        let (store, library) = try library(FakePDFExtractor(pages: Self.pages))
+        let result = try library.ingest(Self.pdf, title: "Datasheet", mediaType: "application/pdf", by: tech)
+        #expect(try library.extractionState(of: result.document.id) == .extracted)
+        #expect(result.passages.map(\.text) == [
+            "LT-101 Datasheet", "Loop powered, 4–20 mA.", "Electrical", "Minimum lift-off voltage is 12 V at the terminals.",
+        ])
+        #expect(result.passages.map(\.page) == [1, 1, 2, 2])
+        #expect(result.document.attributes["pageCount"]?.value == .int(2))
+        #expect(result.document.provenance.method?.hasPrefix("fake-pdf text") == true)
+        // The original PDF is untouched; passages index into the stored text.
+        #expect(try library.contents(of: result.document.id) == Self.pdf)
+        for passage in result.passages {
+            #expect(try library.sourceText(of: passage) == passage.text)
+        }
+        #expect(try store.blobData(sha256: result.blob.sha256) == Self.pdf)
+
+        let claim = try library.extractClaim(
+            from: result.passages[3].id, statement: "LT-101 needs 12 V at the terminals", sourceClass: .primary, by: tech
+        )
+        #expect(claim.sources == [result.document.id])
+        #expect(claim.passages == ["Minimum lift-off voltage is 12 V at the terminals."])
+        #expect(try library.search("lift-off").first?.passage?.id == result.passages[3].id)
+    }
+
+    @Test func withoutAUsableExtractorThePDFWaits() throws {
+        for extractor in [nil, FakePDFExtractor(pages: [], fails: true), FakePDFExtractor(pages: ["", "  \n"])] as [FakePDFExtractor?] {
+            let (_, library) = try library(extractor)
+            let result = try library.ingest(Self.pdf, title: "Scan", mediaType: "application/pdf", by: tech)
+            #expect(result.passages.isEmpty)
+            #expect(try library.extractionState(of: result.document.id) == .needsExtraction)
+            #expect(try library.extractText(of: result.document.id, by: tech) == nil)
+        }
+    }
+
+    @Test func pendingDocumentsCanBeExtractedLater() throws {
+        let clock = ManualClock(t0)
+        let store = try NexusStore(.inMemory, clock: clock)
+        let stored = try DocumentLibrary(store: store, clock: clock).ingest(Self.pdf, title: "Datasheet", mediaType: "application/pdf", by: tech)
+        #expect(stored.passages.isEmpty)
+
+        let library = DocumentLibrary(store: store, clock: clock, pdfExtractor: FakePDFExtractor(pages: Self.pages))
+        let passages = try #require(try library.extractText(of: stored.document.id, by: tech))
+        #expect(passages.count == 4)
+        #expect(try library.extractionState(of: stored.document.id) == .extracted)
+        #expect(try library.passages(of: stored.document.id) == passages)
+        #expect(try library.sourceText(of: passages[1]) == "Loop powered, 4–20 mA.")
+        #expect(try store.revisions(of: stored.document.id).count == 2)
+        // Extracting again is a no-op that returns the same passages.
+        #expect(try library.extractText(of: stored.document.id, by: tech) == passages)
+        #expect(DocumentLibrary.platformPDFExtractor == nil || DocumentLibrary.platformPDFExtractor?.identifier == "PDFKit")
+    }
+}

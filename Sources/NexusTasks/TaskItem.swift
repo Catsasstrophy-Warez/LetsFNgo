@@ -10,6 +10,9 @@ extension EventKind {
 extension RelationKind {
     /// Task → an object offered as evidence that the task's work was done.
     public static let evidencedBy: RelationKind = "evidencedBy"
+    /// Task → the procedure it carries out. Not a dependency: a procedure is
+    /// instructions, not work that has to be finished first.
+    public static let follows: RelationKind = "follows"
 }
 
 /// Where a task is in its lifecycle.

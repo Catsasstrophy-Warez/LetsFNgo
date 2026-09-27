@@ -69,6 +69,19 @@ private struct Bench {
         #expect(stored.provenance.truth == .recorded)
     }
 
+    @Test func extraAttributesCannotOverrideTaskFields() throws {
+        let bench = try Bench()
+        let task = try bench.runtime.create(
+            "Pull a work order", owner: lead,
+            attributes: ["line": Attribute(.int(3)), "status": Attribute(.string("done")), "owner": Attribute(.string("nobody"))],
+            by: tech
+        )
+        #expect(task.record.attributes["line"]?.value == .int(3))
+        #expect(task.status == .open)
+        #expect(task.owner == lead)
+        #expect(RelationKind.follows.rawValue == "follows")
+    }
+
     @Test func statusChangesAreRevisionsWithEvents() throws {
         let bench = try Bench()
         let task = try bench.runtime.create("Check loop supply", by: tech)
