@@ -69,6 +69,7 @@ final class GoldenSliceUITests: XCTestCase {
 
     @MainActor
     private func record(value: String, unit: String, in app: XCUIApplication) throws {
+        print("Recording \(value) \(unit)")
         try tap(app.buttons["investigation.record"].firstMatch, "Record measurement", in: app)
         try fill("field.value", with: value, in: app)
         try fill("field.unit", with: unit, in: app)
@@ -114,9 +115,13 @@ final class GoldenSliceUITests: XCTestCase {
     /// A failure that lists what was visible, since CI only shows the message.
     @MainActor
     private func failure(_ message: String, in app: XCUIApplication) -> Error {
-        let buttons = app.buttons.allElementsBoundByIndex.prefix(30).map(\.label).filter { !$0.isEmpty }
-        let texts = app.staticTexts.allElementsBoundByIndex.prefix(30).map(\.label).filter { !$0.isEmpty }
-        let detail = "\(message). Buttons: \(buttons). Texts: \(texts)."
+        let buttons = app.buttons.allElementsBoundByIndex.prefix(40).map(\.label).filter { !$0.isEmpty }
+        let texts = app.staticTexts.allElementsBoundByIndex.prefix(80).map(\.label).filter { !$0.isEmpty }
+        let banners = ["command.error", "command.confirmation"].compactMap { id -> String? in
+            let banner = app.descendants(matching: .any).matching(identifier: id).firstMatch
+            return banner.exists ? "\(id): \(banner.label)" : nil
+        }
+        let detail = "\(message). Banners: \(banners). Buttons: \(buttons). Texts: \(texts)."
         XCTFail(detail)
         return NSError(domain: "GoldenSliceUITests", code: 1, userInfo: [NSLocalizedDescriptionKey: detail])
     }

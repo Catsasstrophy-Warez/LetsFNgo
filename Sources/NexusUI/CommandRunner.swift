@@ -323,8 +323,10 @@ struct CommandPresentation: ViewModifier {
             .safeAreaInset(edge: .top) {
                 if let error = runner.error {
                     banner { ClassifiedErrorView(error) } dismiss: { runner.error = nil }
+                        .accessibilityIdentifier("command.error")
                 } else if let confirmation = runner.confirmation {
                     banner { Label(confirmation, systemImage: "checkmark.circle").font(.callout) } dismiss: { runner.confirmation = nil }
+                        .accessibilityIdentifier("command.confirmation")
                         .task(id: confirmation) {
                             try? await Task.sleep(for: .seconds(4))
                             if runner.confirmation == confirmation { runner.confirmation = nil }
