@@ -1,16 +1,5 @@
 import NexusModel
-
-/// Where a command sits in the permission model (P0–P5 in the handoff).
-public enum PermissionLevel: Int, Sendable, Hashable, Comparable, CaseIterable {
-    case observe = 0
-    case analyze = 1
-    case createDraft = 2
-    case modifyInternalState = 3
-    case externalAction = 4
-    case sensitive = 5
-
-    public static func < (lhs: PermissionLevel, rhs: PermissionLevel) -> Bool { lhs.rawValue < rhs.rawValue }
-}
+import NexusPermissions
 
 public struct Command: Sendable, Hashable, Identifiable {
     public var id: String
