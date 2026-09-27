@@ -1,0 +1,17 @@
+import XCTest
+@testable import ControlsSimulation
+final class ReliabilityManagerCareerTests:XCTestCase {
+ func career()throws->ReliabilityManagerCareerRuntime{var p=try PlantShiftManagementTemplates.twentyFourHourCampaign();p.campaignDurationSeconds=10*365*86400;return .init(plant:p,seed:9)}
+ func testCareerStartsWithAgingFleetAndBudget()throws{let r=try career();XCTAssertEqual(r.fleet.assets.count,28);XCTAssertGreaterThan(r.budget.capex,0);XCTAssertEqual(r.careerYear,1)}
+ func testRepairRebuildReplacementEconomics()throws{var r=try career();let m=PlayableMachineKind.pumpStation;let repair=r.propose(machine:m,decision:.repair),rebuild=r.propose(machine:m,decision:.rebuild),replace=r.propose(machine:m,decision:.replace);XCTAssertLessThan(repair.capex,rebuild.capex);XCTAssertLessThan(rebuild.capex,replace.capex);XCTAssertGreaterThan(replace.reliabilityGain,rebuild.reliabilityGain)}
+ func testApprovedReplacementResetsAge()throws{var r=try career();let m=PlayableMachineKind.pumpStation;r.fleet.assets[m]!.lifecycleAgeYears=7;let p=r.propose(machine:m,decision:.replace);XCTAssertTrue(r.approve(p));XCTAssertEqual(r.fleet.assets[m]!.lifecycleAgeYears,0)}
+ func testDeferredCapitalReturnsInYearFour()throws{var r=try career();let m=PlayableMachineKind.boilerSteamPlant;let p=r.propose(machine:m,decision:.defer);XCTAssertFalse(r.approve(p));XCTAssertEqual(r.deferred.first?.maturityYear,4);XCTAssertEqual(r.deferred.first?.createdYear,1)}
+ func testStrongRCAHasLowerRecurrenceRisk()throws{var a=try career();a.performRCA(machine:.pumpStation,quality:.strong);var b=try career();b.performRCA(machine:.pumpStation,quality:.weak);XCTAssertLessThan(a.rcas[0].recurrenceRisk,b.rcas[0].recurrenceRisk);XCTAssertFalse(b.deferred.isEmpty)}
+ func testHiringAndTrainingConsumeBudgets()throws{var r=try career();let before=r.budget.opexSpent;XCTAssertTrue(r.hire(role:.instrumentation));XCTAssertGreaterThan(r.budget.opexSpent,before);let id=r.workforce[0].id,skill=r.workforce[0].skill;XCTAssertTrue(r.train(technicianID:id,hours:40));XCTAssertGreaterThan(r.workforce[0].skill,skill)}
+ func testObsolescenceRanksAllAssets()throws{let r=try career();let x=r.obsolescenceRisks();XCTAssertEqual(x.count,28);XCTAssertGreaterThanOrEqual(x.first!.score,x.last!.score)}
+ func testShutdownDefenseUsesRiskEvidence()throws{var r=try career();for m in PlayableMachineKind.allCases.prefix(6){r.fleet.assets[m]!.health=0.95};let d=r.defendShutdown(requestedHours:24);XCTAssertGreaterThan(d.tasks,0);XCTAssertGreaterThan(d.argumentScore,0)}
+ func testSpareNegotiationConsumesOpex()throws{var r=try career();let before=r.budget.opexSpent;XCTAssertTrue(r.negotiateSpareStrategy(investment:10_000));XCTAssertEqual(r.budget.opexSpent,before+10_000)}
+ func testProgramChangesFleetPolicy()throws{var r=try career();r.setProgram(.reactive);XCTAssertEqual(r.fleet.policy,.runToFailure);r.setProgram(.prescriptive);XCTAssertEqual(r.fleet.policy,.availabilityFirst)}
+ func testYearOneDecisionCanMatureYearFourDeterministically()throws{var r=try career();let m=PlayableMachineKind.boilerSteamPlant;r.deferred.append(.init(createdYear:1,maturityYear:4,machine:m,origin:"Year 1 shortcut",probability:1,cost:100_000,severity:10));r.careerYear=4;let before=r.fleet.assets[m]!.accumulatedDowntimeCost;r.matureDeferredRisks();XCTAssertGreaterThan(r.fleet.assets[m]!.accumulatedDowntimeCost,before);XCTAssertTrue(r.deferred[0].resolved)}
+ func testCareerSupportsEightYears()throws{let r=try career();XCTAssertEqual(r.maxYears,8)}
+}

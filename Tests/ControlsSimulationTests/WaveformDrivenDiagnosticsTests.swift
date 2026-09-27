@@ -1,0 +1,16 @@
+import XCTest
+@testable import ControlsSimulation
+
+final class WaveformDrivenDiagnosticsTests: XCTestCase {
+    func sine(_ f:Double,_ rms:Double,_ fs:Double,_ n:Int)->WaveformSeries { .init(sampleRateHz:fs,samples:(0..<n).map{sqrt(2)*rms*sin(2*Double.pi*f*Double($0)/fs)}) }
+    func testFFTAndTHD() { let fs=3840.0,n=3840; var w=sine(60,120,fs,n); for i in 0..<n { w.samples[i] += sqrt(2)*12*sin(2*Double.pi*180*Double(i)/fs) }; let s=WaveformFFTAnalyzer.analyze(w); XCTAssertEqual(s.fundamentalRMS,120,accuracy:1); XCTAssertEqual(s.thdPercent,10,accuracy:1) }
+    func testSagSwellAndAngleJumpDetection(){ let e=PowerQualityAnalyzer.detect(rmsWindows:[120,80,80,120,140,120],nominalRMS:120,windowSeconds:0.01,phaseAnglesDegrees:[0,0,0,25,25,25]); XCTAssertTrue(e.contains{$0.kind == .sag}); XCTAssertTrue(e.contains{$0.kind == .swell}); XCTAssertTrue(e.contains{$0.kind == .phaseAngleJump}) }
+    func testVFDCommonModeAndBearingCurrentRiseWithDvdt(){ let a=VFDCommonModeModel.evaluate(dcBusVolts:680,switchingEdgeMicroseconds:1,motorCableMeters:30); let b=VFDCommonModeModel.evaluate(dcBusVolts:680,switchingEdgeMicroseconds:0.1,motorCableMeters:30); XCTAssertGreaterThan(b.estimatedBearingCurrentAmps,a.estimatedBearingCurrentAmps) }
+    func testReflectedWaveCableCreatesOvervoltage(){ let r=ReflectedWaveModel.evaluate(dcBusVolts:680,cableMeters:100); XCTAssertGreaterThan(r.motorTerminalPeakVolts,680); XCTAssertGreaterThan(r.riskIndex,0) }
+    func testEMCShieldImprovesSNR(){ let a=EMCCouplingModel.evaluate(aggressorDvdtVPerUs:5000,mutualCapacitancePF:100,victimImpedanceOhms:1000,signalRMSVolts:5); let b=EMCCouplingModel.evaluate(aggressorDvdtVPerUs:5000,mutualCapacitancePF:100,victimImpedanceOhms:1000,signalRMSVolts:5,shieldEffectivenessDB:40); XCTAssertGreaterThan(b.estimatedSNRdB,a.estimatedSNRdB) }
+    func testSensorPulseCanBeMissedByRCLoading(){ let r=SensorPulseDistortionModel.evaluate(sourceResistanceOhms:10000,cableCapacitanceNF:100,inputThresholdFraction:0.7,pulseWidthMicroseconds:500); XCTAssertTrue(r.missedPulse) }
+    func testHealthyFaultedComparatorSeesHarmonics(){ let h=sine(60,120,3840,3840); var f=h; for i in f.samples.indices{f.samples[i]+=20*sin(2*Double.pi*180*Double(i)/3840)}; let c=HealthyFaultedWaveformComparator.compare(healthy:h,faulted:f); XCTAssertGreaterThan(c.thdChangePoints,5); XCTAssertFalse(c.annotations.isEmpty) }
+    func testTransientTriggerCapturesPreAndPost(){ let s=(0..<1000).map{OscilloscopeSample(time:Double($0)/1000,channels:["x":$0<500 ? 0:10])}; let cap=TransientTriggerEngine.capture(from:.init(sampleRateHz:1000,samples:s),trigger:.init(channel:"x",level:5,pretriggerSamples:50,posttriggerSamples:100)); XCTAssertNotNil(cap); XCTAssertEqual(cap?.samples.count,150) }
+    func testClassifierFindsSagAndHarmonics(){ let sag=MachineWaveformDiagnosticEngine.synthesize(machine:.packagingCell,fault:.voltageSag); XCTAssertEqual(sag.classification.faultClass,.voltageSag); let h=MachineWaveformDiagnosticEngine.synthesize(machine:.pumpStation,fault:.harmonicDistortion); XCTAssertEqual(h.classification.faultClass,.harmonicDistortion) }
+    func testAll28MachinesProduceWaveformDiagnostics(){ for m in PlayableMachineKind.allCases { let s=MachineWaveformDiagnosticEngine.synthesize(machine:m); XCTAssertFalse(s.scope.samples.isEmpty); XCTAssertGreaterThan(s.voltageFeatures.rms,200) } }
+}
