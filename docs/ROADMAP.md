@@ -25,13 +25,13 @@ Status as of 2026-09-27. ✅ done · 🟡 partly done (the note says what's miss
 | 13 | Object detail | ✅ Truth badges, relationships, revisions, notes with Writing Tools |
 | 14 | List with multi-select | ✅ |
 | 15 | Search | ✅ |
-| 16 | Investigation screen | ✅ |
+| 16 | Investigation screen | ✅ Ranked next test shown first, above the hypotheses |
 | 17 | Digital twin | ✅ `RealityView` with tap to select |
 | 18 | Telemetry with three depths | ✅ Charts plus a Table |
 | 19 | Timeline and agent activity | ✅ |
 | 20 | Permissions settings | ✅ |
 | 21 | Accessibility pass | 🟡 Text truth badges, chart tables, combined row labels. A VoiceOver and Dynamic Type audit on a device is still to do |
-| 22 | iPhone UI test of the diagnosis | 🟡 In CI; being driven to green |
+| 22 | iPhone UI test of the diagnosis | ✅ `GoldenSliceUITests` passes in macOS CI on the iPhone simulator |
 
 ## C. Local AI
 | # | Step | Status |
