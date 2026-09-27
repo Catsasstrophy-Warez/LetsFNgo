@@ -305,7 +305,7 @@ All of this lives in `NexusAppleIntelligence` behind `canImport`, and it is a *v
 - [x] `NexusLearning`: scenarios from resolved investigations, replay, grading.
 - [x] `NexusReality`: scene description, entity ↔ ObjectID registry, truth-labeled overlays. `NexusRealityKit` is the Apple-only adapter; it compiles to nothing on Linux and still needs its first Xcode build.
 
-Still needs a Mac: SwiftUI shell, RealityKit adapter verification, the Foundation Models / MLX providers behind `LanguageModelProvider`, App Intents and Spotlight.
+- [x] The 50 follow-on steps: see `docs/ROADMAP.md` for the status of each. The app shell, Foundation Models and Private Cloud Compute providers, App Intents, Spotlight, Visual Intelligence, speech, widgets and the RealityKit adapter compile in the macOS CI job. None of them has run on a device yet.
 
 ## Next steps (proposed build order for the first PRs)
 1. **Foundation PR.** Root `Package.swift`, plus `NexusCore` (ObjectID, TruthClass, Provenance, Revision) and `NexusModel`. Add `NexusPersistence` with SQLite, migrations and FTS5, and a round-trip test that proves truth classes survive save and reload. Add a Linux CI workflow.
