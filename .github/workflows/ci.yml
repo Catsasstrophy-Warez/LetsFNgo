@@ -3,6 +3,7 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   linux:
@@ -17,3 +18,34 @@ jobs:
         run: swift build --build-tests
       - name: Test
         run: swift test --skip-build
+
+  # Compiles every Apple-only target and runs the app's UI tests. Mac runner
+  # minutes cost more, so this runs on pull requests and on demand only.
+  apple:
+    name: Apple platforms (Xcode 27)
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: xcode-27
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Build package (macOS, all targets)
+        run: swift build --build-tests
+      - name: Test package on macOS
+        run: swift test --skip-build
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Build app (iOS Simulator)
+        run: xcodebuild build -project Nexus.xcodeproj -scheme NexusApp -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -quiet
+      - name: Build app (macOS)
+        run: xcodebuild build -project Nexus.xcodeproj -scheme NexusApp -destination 'generic/platform=macOS' CODE_SIGNING_ALLOWED=NO -quiet
+      - name: UI tests (iPhone simulator)
+        run: |
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS' in k for x in v if x['name'].startswith('iPhone')))")
+          echo "Simulator: $DEVICE"
+          xcodebuild test -project Nexus.xcodeproj -scheme NexusApp -destination "id=$DEVICE" CODE_SIGNING_ALLOWED=NO -quiet

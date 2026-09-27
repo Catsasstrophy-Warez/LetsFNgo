@@ -1,0 +1,83 @@
+# XcodeGen spec for the Nexus app. Generate with `xcodegen generate`.
+name: Nexus
+options:
+  bundleIdPrefix: com.catsasstrophy.nexus
+  deploymentTarget:
+    iOS: "26.0"
+    macOS: "26.0"
+  createIntermediateGroups: true
+packages:
+  Nexus:
+    path: .
+targets:
+  NexusApp:
+    type: application
+    supportedDestinations: [iOS, macOS]
+    sources:
+      - path: App
+    dependencies:
+      - package: Nexus
+        product: NexusUI
+      - package: Nexus
+        product: NexusAppleIntelligence
+      - target: NexusWidgets
+        destinationFilters: [iOS]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.catsasstrophy.nexus
+        PRODUCT_NAME: Nexus
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Nexus
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_NSCameraUsageDescription: "Nexus reads equipment nameplates to find the matching equipment."
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Nexus records meeting and field notes when you ask it to."
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Nexus transcribes your notes on device."
+        INFOPLIST_KEY_NSSupportsLiveActivities: YES
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        SWIFT_VERSION: "6.0"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_APP_SANDBOX: YES
+        ENABLE_USER_SELECTED_FILES: readwrite
+        TARGETED_DEVICE_FAMILY: "1,2"
+    scheme:
+      testTargets:
+        - NexusAppUITests
+  NexusWidgets:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: Widgets
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: Nexus
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    dependencies:
+      - package: Nexus
+        product: NexusAppleIntelligence
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.catsasstrophy.nexus.widgets
+        SWIFT_VERSION: "6.0"
+        CODE_SIGN_STYLE: Automatic
+  NexusAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: UITests
+    dependencies:
+      - target: NexusApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.catsasstrophy.nexus.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "6.0"
+        TEST_TARGET_NAME: NexusApp

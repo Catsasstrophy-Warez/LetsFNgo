@@ -4,8 +4,8 @@ import PackageDescription
 let package = Package(
     name: "Nexus",
     platforms: [
-        .iOS(.v17),
-        .macOS(.v14),
+        .iOS(.v26),
+        .macOS(.v26),
     ],
     products: [
         .library(name: "NexusCore", targets: ["NexusCore"]),
@@ -22,6 +22,10 @@ let package = Package(
         .library(name: "NexusEngineering", targets: ["NexusEngineering"]),
         .library(name: "NexusLearning", targets: ["NexusLearning"]),
         .library(name: "NexusReality", targets: ["NexusReality"]),
+        .library(name: "NexusDemo", targets: ["NexusDemo"]),
+        .library(name: "NexusUI", targets: ["NexusUI"]),
+        .library(name: "NexusMeetings", targets: ["NexusMeetings"]),
+        .library(name: "NexusAppleIntelligence", targets: ["NexusAppleIntelligence"]),
         .library(name: "NexusRealityKit", targets: ["NexusRealityKit"]),
         .library(name: "ControlsPLC", targets: ["ControlsPLC"]),
         .library(name: "ControlsReasoning", targets: ["ControlsReasoning"]),
@@ -57,8 +61,29 @@ let package = Package(
             dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusInvestigation", "NexusSimulation"]
         ),
         .target(name: "NexusReality", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSimulation"]),
+        .target(
+            name: "NexusDemo",
+            dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusProjects", "NexusInvestigation", "NexusSimulation"]
+        ),
         // Apple-only: empty on Linux, verify in Xcode.
         .target(name: "NexusRealityKit", dependencies: ["NexusCore", "NexusReality"]),
+        .target(name: "NexusMeetings", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
+        // Apple-only SwiftUI app layer: empty on Linux, compiled by the macOS CI job.
+        .target(
+            name: "NexusUI",
+            dependencies: [
+                "NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSearch", "NexusProjects", "NexusPermissions",
+                "NexusInvestigation", "NexusSimulation", "NexusReality", "NexusRealityKit", "NexusAgents", "NexusDemo",
+            ]
+        ),
+        // Apple-only: Siri/Shortcuts, Spotlight, Visual Intelligence, speech, Live Activities, Foundation Models.
+        .target(
+            name: "NexusAppleIntelligence",
+            dependencies: [
+                "NexusCore", "NexusModel", "NexusPersistence", "NexusSearch", "NexusProjects", "NexusPermissions",
+                "NexusInvestigation", "NexusMeetings", "NexusAgents", "NexusAI", "NexusUI",
+            ]
+        ),
         // Deterministic PLC engine, ported from the Controls Tech Trainer core.
         .target(name: "ControlsPLC"),
         // Headless diagnostic reasoning, extracted from the trainer's UI target.
@@ -80,6 +105,8 @@ let package = Package(
         .testTarget(name: "NexusEngineeringTests", dependencies: ["NexusEngineering", "ControlsReasoning", "ControlsPLC"]),
         .testTarget(name: "NexusLearningTests", dependencies: ["NexusLearning"]),
         .testTarget(name: "NexusRealityTests", dependencies: ["NexusReality", "NexusProjects"]),
+        .testTarget(name: "NexusDemoTests", dependencies: ["NexusDemo", "NexusSearch"]),
+        .testTarget(name: "NexusMeetingsTests", dependencies: ["NexusMeetings"]),
         .testTarget(name: "NexusInvestigationTests", dependencies: ["NexusInvestigation"]),
         // End-to-end Golden Vertical Slice (docs/BUILD_PLAN.md §D).
         .testTarget(
