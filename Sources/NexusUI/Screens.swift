@@ -170,6 +170,9 @@ struct ObjectDetailScreen: View {
                         .accessibilityElement(children: .combine)
                     }
                 }
+                Section("Notes") {
+                    NotesEditor(record: record)
+                }
                 Section("Relationships") {
                     ForEach(edges, id: \.relationship.id) { edge in
                         Button {
@@ -197,6 +200,40 @@ struct ObjectDetailScreen: View {
         } else {
             NextActionEmptyState("Nothing selected", message: "Select an object in the context list, in 3D, or with ⌘K.", systemImage: "cube")
         }
+    }
+}
+
+/// Free-text notes on an object, with Writing Tools. Saved as a revision by
+/// the person, so notes carry recorded truth and full history.
+struct NotesEditor: View {
+    @Environment(NexusEnvironment.self) private var env
+    let record: ObjectRecord
+    @State private var text = ""
+    @State private var loaded = false
+
+    var body: some View {
+        VStack(alignment: .trailing) {
+            TextEditor(text: $text)
+                .frame(minHeight: 100)
+                .writingToolsBehavior(.complete)
+                .accessibilityLabel("Notes for \(record.title)")
+            Button("Save notes") {
+                try? env.store.update(record.id, by: env.user, instruction: "Edited notes") {
+                    $0.attributes["notes"] = Attribute(.string(text))
+                }
+            }
+            .disabled(text == current)
+        }
+        .onAppear {
+            guard !loaded else { return }
+            text = current
+            loaded = true
+        }
+    }
+
+    private var current: String {
+        if case .string(let notes)? = record.attributes["notes"]?.value { return notes }
+        return ""
     }
 }
 

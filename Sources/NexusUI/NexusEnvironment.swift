@@ -59,6 +59,13 @@ public final class NexusEnvironment {
         let directory = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             .appendingPathComponent("Nexus", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        #if os(iOS)
+        // Encrypted at rest by Data Protection; readable after first unlock so
+        // Spotlight indexing and background agent runs keep working.
+        try FileManager.default.setAttributes(
+            [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication], ofItemAtPath: directory.path
+        )
+        #endif
         let store = try NexusStore(.file(directory.appendingPathComponent("nexus.sqlite")))
         return try NexusEnvironment(store: store, seedDemo: seedDemo)
     }

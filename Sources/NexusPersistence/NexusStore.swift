@@ -803,6 +803,18 @@ public final class NexusStore: @unchecked Sendable {
         }
     }
 
+    // MARK: Backup
+
+    /// Writes a consistent, compacted copy of the whole database to `url`
+    /// (SQLite `VACUUM INTO`). Safe while the store is in use; the copy opens
+    /// as an ordinary store. Fails if `url` already exists.
+    public func backup(to url: URL) throws {
+        try locked {
+            precondition(savepointDepth == 0, "backup cannot run inside a batch")
+            try db.run("VACUUM INTO ?", [.text(url.path)])
+        }
+    }
+
     // MARK: Settings
 
     /// Small named documents that are configuration rather than world

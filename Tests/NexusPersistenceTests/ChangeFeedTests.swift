@@ -96,3 +96,25 @@ private final class Inbox: @unchecked Sendable {
         #expect(try store.settings("elsewhere").isEmpty)
     }
 }
+
+@Suite struct BackupTests {
+    @Test func backupIsAConsistentOpenableCopy() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("backup-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = try NexusStore(.file(directory.appendingPathComponent("live.sqlite")))
+        let pump = try store.create(ObjectRecord(type: .equipment, title: "Pump P-9", provenance: recorded))
+        try store.putSetting("ns", "k", "v")
+
+        let copyURL = directory.appendingPathComponent("copy.sqlite")
+        try store.backup(to: copyURL)
+        try store.update(pump.id, by: tech) { $0.title = "Pump P-9 (after backup)" }
+
+        let copy = try NexusStore(.file(copyURL))
+        #expect(try copy.object(pump.id)?.title == "Pump P-9")
+        #expect(try copy.search("pump").map(\.id) == [pump.id])
+        #expect(try copy.setting("ns", "k") == "v")
+        #expect(copy.latestChangeSequence == 1)
+        #expect(throws: StoreError.self) { try store.backup(to: copyURL) }
+    }
+}
