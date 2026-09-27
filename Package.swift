@@ -35,11 +35,10 @@ let package = Package(
     targets: [
         .target(name: "NexusCore"),
         .target(name: "NexusModel", dependencies: ["NexusCore"]),
-        .systemLibrary(
-            name: "CSQLite",
-            pkgConfig: "sqlite3",
-            providers: [.apt(["libsqlite3-dev"]), .brew(["sqlite"])]
-        ),
+        // No pkgConfig: the module map links the platform's own libsqlite3
+        // (Apple SDKs, Ubuntu's libsqlite3-dev). pkg-config on a Mac finds
+        // Homebrew's single-architecture build and breaks simulator links.
+        .systemLibrary(name: "CSQLite"),
         .target(name: "NexusPersistence", dependencies: ["NexusCore", "NexusModel", "CSQLite"]),
         .target(name: "NexusGraph", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
         .target(name: "NexusSearch", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph"]),

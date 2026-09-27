@@ -218,7 +218,7 @@ struct NotesEditor: View {
                 .writingToolsBehavior(.complete)
                 .accessibilityLabel("Notes for \(record.title)")
             Button("Save notes") {
-                try? env.store.update(record.id, by: env.user, instruction: "Edited notes") {
+                _ = try? env.store.update(record.id, by: env.user, instruction: "Edited notes") {
                     $0.attributes["notes"] = Attribute(.string(text))
                 }
             }
