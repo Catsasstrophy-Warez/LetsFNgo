@@ -138,7 +138,7 @@ struct CommandInputForm: View {
         let label = field.required ? field.label : "\(field.label) (optional)"
         switch field.kind {
         case .text, .unit, .relationKind, .objectType:
-            TextField(label, text: binding(field.field))
+            TextField(label, text: binding(field.field), axis: field.field == .steps ? .vertical : .horizontal)
                 .accessibilityIdentifier("field.\(field.field.rawValue)")
         case .number:
             TextField(label, text: binding(field.field))
@@ -194,13 +194,16 @@ struct CommandInputForm: View {
     }
 
     private func submit() {
+        // Some fields are alternatives (a procedure, or steps for a new one),
+        // so only an entirely empty form is refused here; the executor asks
+        // again for anything still missing.
+        if request.fields.allSatisfy(isEmpty) {
+            problem = "Fill in at least \(request.fields.first?.label ?? "one field"). Nothing was run."
+            return
+        }
         var parameters = request.parameters
         for field in request.fields {
             let value = text[field.field]?.trimmingCharacters(in: .whitespaces)
-            if field.required, isEmpty(field) {
-                problem = "\(field.label) is needed. Nothing was run."
-                return
-            }
             switch field.field {
             case .title: parameters.title = value
             case .type: parameters.type = value.map { ObjectType(rawValue: $0) }
