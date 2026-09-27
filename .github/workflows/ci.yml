@@ -58,13 +58,4 @@ jobs:
             -resultBundlePath UITests.xcresult -collect-test-diagnostics never -quiet
       - name: UI test failures
         if: failure()
-        run: xcrun xcresulttool get test-results tests --path UITests.xcresult --format json | python3 -c "
-          import json, sys
-          def walk(node, depth=0):
-              if node.get('result') == 'Failed' or node.get('nodeType') == 'Failure Message':
-                  print('  ' * depth + node.get('nodeType', '') + ': ' + node.get('name', ''))
-              for child in node.get('children', []):
-                  walk(child, depth + 1)
-          for node in json.load(sys.stdin).get('testNodes', []):
-              walk(node)
-          "
+        run: xcrun xcresulttool get test-results tests --path UITests.xcresult --format json | python3 .github/scripts/xcresult_failures.py
