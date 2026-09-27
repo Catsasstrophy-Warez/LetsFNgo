@@ -8,6 +8,8 @@ Read `docs/handoff/LOCKED_DECISIONS.md` and `docs/BUILD_PLAN.md` before changing
 - Cloud sessions have no Swift preinstalled. Install it with:
   `curl -sSfL https://download.swift.org/swift-6.2-release/ubuntu2404/swift-6.2-RELEASE/swift-6.2-RELEASE-ubuntu24.04.tar.gz | tar xz -C /opt`
   then `export PATH=/opt/swift-6.2-RELEASE-ubuntu24.04/usr/bin:$PATH`.
+  `.claude/hooks/session-start.sh` does this automatically in cloud sessions.
+- Lint: `swift format lint <files>` (config in `.swift-format`).
 
 ## Rules
 - Everything outside Apple-only targets must build and test on Linux. Apple frameworks (SwiftUI, RealityKit, FoundationModels, AppIntents, CoreSpotlight) go only in Apple-only targets, behind `#if canImport(...)`.
