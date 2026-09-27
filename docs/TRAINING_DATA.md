@@ -18,7 +18,13 @@ swift run NexusDatasetGen --count 200 --seed 42 --split eval --out eval.jsonl
 swift run NexusDatasetGen baseline --train train.jsonl --examples eval.jsonl --out baseline.jsonl
 swift run NexusDatasetGen evaluate --examples eval.jsonl --predictions baseline.jsonl --out baseline.json
 swift run NexusDatasetGen gate --candidate candidate.json --current baseline.json   # exit 0 pass, 1 refuse
+swift run NexusDatasetGen --count 1000 --seed 42 --domain mixed --out train.jsonl   # loop (default) | automotive | mixed
+swift run NexusDatasetGen gate-selfcheck --train train.jsonl --examples eval.jsonl  # exit 0 when the gate behaves
+swift run NexusDatasetGen register --registry models.json --id ID --kind mlxWeights \
+    --base-model ID --base-version REV --artifact PATH --metrics candidate.json      # registers only if the gate passes
 ```
+
+Fine-tuning on these files (mlx-lm LoRA, then evaluation and registration) is in `Training/README.md`.
 
 `generate` is the default subcommand. A usage or input error exits with code 2. In a debug build the generator makes about 5 examples a second, so 1,000 examples take about 3 minutes; add `-c release` for large runs.
 
@@ -27,6 +33,7 @@ swift run NexusDatasetGen gate --candidate candidate.json --current baseline.jso
 - Example `i` of a run with `--seed S` uses scenario seed `base(split) + ((S << 20) + i) mod 2^40`. The base is 0 for `train` and 2^40 for `eval`, so **the splits draw from disjoint seed ranges** whatever the arguments. Within a split, consecutive `--seed` values address non-overlapping blocks of 2^20 examples. `--count` is capped at 2^20.
 - All randomness comes from `SplitMix64`; nothing uses Foundation randomness. Object IDs, names, fault draws and the intermittent-contact schedule all derive from the scenario seed. Stores run on a `ManualClock`. The same arguments give byte-identical JSONL: keys are sorted, one example per line.
 - Kinds rotate with the index: `i % 4` of 0 or 1 is `diagnosis`, 2 is `toolTranscript`, 3 is `ladderWhy`. So 200 examples are 100/50/50.
+- `--domain automotive` makes only `chargingDiagnosis` examples. `--domain mixed` rotates over five: two `diagnosis`, a `toolTranscript`, a `ladderWhy`, then a `chargingDiagnosis`. The default `loop` domain is unchanged, byte for byte.
 
 ## Loop fault kinds (step 31)
 
@@ -70,6 +77,25 @@ The same kind of case, worked as a conversation. A coin drawn from the seed pick
 
 The assistant calls `search_objects` → `related_objects` → `get_measurements`, using the WorldTools names and arguments from `Sources/NexusAgents/WorldTools.swift`. Tool results come from the same public store, graph and search calls the tools make, over a store that holds the case's objects and readings. A test runs the real tools through `AgentRuntime` and requires identical output. The final answer cites every value with its truth class, and for the cause goal it notes that a technician must confirm.
 
+### `chargingDiagnosis`
+
+The automotive second domain (`NexusAutomotive`, `docs/AUTOMOTIVE.md`), on "cranks slowly / battery light on":
+
+- **The car:** a seeded vehicle with a valid North American VIN, odometer reading and shop access costs. Access covers where the battery sits, whether a helper can crank, how hard the ground strap is to reach, and how long the modules take to sleep.
+- **The fault:** one of `weakBattery`, `failingAlternator`, `highResistanceGround` or `parasiticDraw`, at a severity in [0, 1].
+- **The runs:** `ChargingSystemSolver` runs the standard check (`ChargingProtocol`) for the field and for a healthy twin: an hour's drive at 2000 rpm, 36 h parked, one crank, then 5 min at 2000 rpm.
+
+The example fields:
+- `prompt`: the customer's complaint (claimed), plus the scan tool's PID 42 and cranking speed and any stored P0562.
+- `observations`:
+  - display: the dash lamp and the ECU PIDs
+  - recorded: the odometer and stored codes
+  - modeled: the healthy twin's cranking and charging voltages
+- `tests`: resting voltage, key-off draw, cranking voltage, ground-strap drop (caution) and charging voltage at 2000 rpm, with costs from the access factors.
+- `hypotheses`: one per fault kind. The intervals come from `ChargingDiagnosis.intervals()`: each kind is simulated across a severity grid, padded by the instrument tolerance, and overlaps are merged.
+- `answer`: `nextTest`, `ranking` and `expertPath` come from `InvestigationRuntime` over an in-memory store. Meter readings are observed. `firstDivergence` compares field and twin along alternator output → ground drop → alternator current → battery current → battery voltage → starter voltage → state of charge.
+- `vehicle`: the hidden setup (fault, severity, overrides, VIN, odometer). It replaces `scenario` for this kind.
+
 ### `ladderWhy`
 
 "Why isn't X on?" over a generated ladder routine. The routine has zero to two intermediate permissive rungs (series `XIC`/`XIO` contacts driving an `OTE`) and a final rung driving the output. Inputs are drawn so the output is off. The routine runs two scans on `ControlsPLC`, and the trainer's `CausalJournal` answers the question: `explainWhy` gives the trail and `diagnose` gives the blockers and the next check. `answer.cause` is the root-condition input tag.
@@ -81,7 +107,7 @@ Every line is a `TrainingExample` (`Sources/NexusTrainingData/TrainingExample.sw
 | Field | Type | Notes |
 |---|---|---|
 | `id` | string | `<split>-<scenarioSeed>-<kind>` |
-| `kind` | `diagnosis` \| `toolTranscript` \| `ladderWhy` | |
+| `kind` | `diagnosis` \| `toolTranscript` \| `ladderWhy` \| `chargingDiagnosis` | |
 | `split`, `seed` | string, integer | scenario seed; `DatasetSplit.containing(seed)` gives the split back |
 | `prompt` | string | symptom, user goal or question |
 | `observations[]` | `{name, object, value, unit, truth, source}` | `truth` is a `TruthClass` raw value |
@@ -91,6 +117,7 @@ Every line is a `TrainingExample` (`Sources/NexusTrainingData/TrainingExample.sw
 | `messages[]` | `{role, content, toolCalls?[{id, name, arguments}], toolCallID?}` | transcripts; roles `system`, `user`, `assistant`, `tool` |
 | `ladder` | `{routine, rungs[{number, text}], target}` | ladder kind |
 | `answer` | `{cause, nextTest?, text, ranking?, expertPath?, firstDivergence?, trail?, blockers?}` | the answer key |
+| `vehicle` | `{fault, severity, overrides[{object, parameter, value}], vin, odometerKm}` | automotive hidden setup |
 
 ### Samples
 

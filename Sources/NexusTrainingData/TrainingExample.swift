@@ -39,6 +39,17 @@ public enum ExampleKind: String, Codable, Sendable, CaseIterable {
     case toolTranscript
     /// "Why isn't X on?" over a generated ladder permissive chain, answered with the causal trail.
     case ladderWhy
+    /// Automotive "cranks slowly / battery light on" → hypotheses, next test, cause, first divergence.
+    case chargingDiagnosis
+}
+
+/// Which simulators a run draws from. `loop` is the original rotation and
+/// stays byte-identical; `automotive` makes only charging-system cases;
+/// `mixed` adds one charging case after every loop rotation.
+public enum DatasetDomain: String, Codable, Sendable, CaseIterable {
+    case loop
+    case automotive
+    case mixed
 }
 
 /// One value the model may see, with its truth class and where it came from.
@@ -206,4 +217,6 @@ public struct TrainingExample: Codable, Sendable, Hashable, Identifiable {
     public var messages: [MessageExample]?
     public var ladder: LadderContextExample?
     public var answer: AnswerKey
+    /// Automotive examples: the hidden vehicle setup.
+    public var vehicle: VehicleScenarioExample? = nil
 }
