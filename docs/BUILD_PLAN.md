@@ -120,7 +120,7 @@ struct ObjectRecord { id, type: ObjectType, title, attributes: [String: Value], 
 struct Relationship { id, kind: RelationKind, from: ObjectID, to: ObjectID, validFrom/validTo, confidence, provenance }
 struct Event { id, at: Date, kind, subjects: [ObjectID], payload, provenance }
 struct Claim { id, statement, sources: [ObjectID], passages, sourceClass, applicability, confidence, counterevidence: [ObjectID] }
-struct Measurement { id, quantity, value, unit, uncertainty, resolution, range, testPoint: ObjectID, instrument: ObjectID?, loading, sampledAt, truth /* observed|modeled|display */ }
+struct MeasurementRecord { id, quantity, value, unit, uncertainty, resolution, range, testPoint: ObjectID, instrument: ObjectID?, loading, sampledAt, truth /* observed|modeled|display */ }
 struct Hypothesis { id, investigation, statement, state: candidate|confirmed|rejected|unknown, supports, contradicts, requiredObservations, discriminatingTests, safetyConstraints }
 struct AgentRun { id, agent, goal, plan, steps: [AgentStep], permissionsUsed, outputs: [ObjectID], errors, approvals, model: ModelRef, usage }
 struct Revision { id, object, parent, author: Origin, instruction: String?, diff, at }
@@ -128,7 +128,7 @@ struct ModelRef { provider, modelID, adapterID?, adapterVersion?, promptHash }  
 ```
 
 SQLite layout:
-- `objects(id PK, type, title, attrs JSON, lifecycle, created_at, prov JSON)`
+- `objects(row_id INTEGER PK, id UNIQUE, type, title, lifecycle, truth, created_at, updated_at, head_revision, record JSON)`. The explicit `row_id` keeps the FTS rowid link stable across VACUUM.
 - `relationships(id, kind, from_id, to_id, valid_from, valid_to, confidence, prov)`, indexed on `(from_id, kind)` and `(to_id, kind)`
 - `events(id, at, kind, payload, prov)` and `event_subjects(event_id, object_id)`
 - `revisions`
