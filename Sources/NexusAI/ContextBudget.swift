@@ -101,7 +101,7 @@ public struct ContextBudget: Sendable, Hashable {
                 trim.shortenedResults += 1
                 trim.trimmedCharacters += content.count
                 if try await done() {
-                    return (GenerationRequest(messages: messages, tools: request.tools, maxOutputTokens: request.maxOutputTokens), trim)
+                    return (request.with(messages: messages), trim)
                 }
             }
         }
@@ -122,7 +122,7 @@ public struct ContextBudget: Sendable, Hashable {
             messages.removeSubrange(index ... end)
             trim.droppedMessages += end - index + 1
             if try await done() {
-                return (GenerationRequest(messages: messages, tools: request.tools, maxOutputTokens: request.maxOutputTokens), trim)
+                return (request.with(messages: messages), trim)
             }
         }
         throw AIError.contextTooLarge

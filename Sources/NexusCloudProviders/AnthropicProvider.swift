@@ -22,6 +22,9 @@ public struct AnthropicConfiguration: Sendable, Hashable {
     public var maxBackoff: Duration
     /// A `retry-after` longer than this fails at once instead of waiting.
     public var maxRetryAfter: Duration
+    /// Per-token price, for cost accounting. Defaults to the list price of
+    /// known models; nil when unknown.
+    public var price: ModelPrice?
 
     public init(
         model: String = "claude-opus-5",
@@ -34,7 +37,8 @@ public struct AnthropicConfiguration: Sendable, Hashable {
         maxRetries: Int = 3,
         initialBackoff: Duration = .milliseconds(500),
         maxBackoff: Duration = .seconds(30),
-        maxRetryAfter: Duration = .seconds(60)
+        maxRetryAfter: Duration = .seconds(60),
+        price: ModelPrice? = nil
     ) {
         self.model = model
         self.maxTokens = maxTokens
@@ -47,7 +51,18 @@ public struct AnthropicConfiguration: Sendable, Hashable {
         self.initialBackoff = initialBackoff
         self.maxBackoff = maxBackoff
         self.maxRetryAfter = maxRetryAfter
+        self.price = price ?? Self.listPrices[model]
     }
+
+    /// First-party list prices in USD per million tokens (input, output).
+    public static let listPrices: [String: ModelPrice] = [
+        "claude-fable-5-1": ModelPrice(inputPerMillionTokens: 10, outputPerMillionTokens: 50),
+        "claude-fable-5": ModelPrice(inputPerMillionTokens: 10, outputPerMillionTokens: 50),
+        "claude-opus-5-5": ModelPrice(inputPerMillionTokens: 4, outputPerMillionTokens: 20),
+        "claude-opus-5": ModelPrice(inputPerMillionTokens: 5, outputPerMillionTokens: 25),
+        "claude-sonnet-5": ModelPrice(inputPerMillionTokens: 2, outputPerMillionTokens: 10),
+        "claude-haiku-4-5": ModelPrice(inputPerMillionTokens: 1, outputPerMillionTokens: 5),
+    ]
 }
 
 /// Failures talking to the Messages API. None of them carries the API key.
@@ -123,7 +138,7 @@ public struct AnthropicProvider: LanguageModelProvider, CustomStringConvertible,
         self.sleeper = sleeper
         descriptor = ModelDescriptor(
             ref: ModelRef(provider: "anthropic", modelID: configuration.model), tier: .thirdPartyCloud,
-            contextTokens: configuration.contextTokens, supportsTools: true, supportsImages: true
+            contextTokens: configuration.contextTokens, supportsTools: true, supportsImages: true, price: configuration.price
         )
     }
 
@@ -142,7 +157,7 @@ public struct AnthropicProvider: LanguageModelProvider, CustomStringConvertible,
             var retryAfter: Duration?
             do {
                 let response = try await transport.send(http)
-                if (200 ..< 300).contains(response.status) { return try parse(response.body) }
+                if (200 ..< 300).contains(response.status) { return try parse(response.body, schema: request.responseSchema) }
                 failure = error(for: response)
                 retryAfter = response.header("retry-after").flatMap(Double.init).map { .milliseconds(Int64(($0 * 1_000).rounded())) }
             } catch let error as AnthropicError {
@@ -184,6 +199,9 @@ public struct AnthropicProvider: LanguageModelProvider, CustomStringConvertible,
         if !system.isEmpty { fields["system"] = JSONValue.quoted(system.joined(separator: "\n\n")) }
         if !request.tools.isEmpty { fields["tools"] = JSONValue.array(request.tools.map(toolDefinition)).serialized }
         if let fallbacks = configuration.fallbacks { fields["fallbacks"] = JSONValue.quoted(fallbacks) }
+        if let schema = request.responseSchema {
+            fields["output_config"] = JSONValue.object(["format": .object(["type": .string("json_schema"), "schema": schema])]).serialized
+        }
         return "{" + fields.keys.sorted().map { JSONValue.quoted($0) + ":" + fields[$0]! }.joined(separator: ",") + "}"
     }
 
@@ -250,7 +268,9 @@ public struct AnthropicProvider: LanguageModelProvider, CustomStringConvertible,
 
     // MARK: Response
 
-    func parse(_ data: Data) throws -> ModelResponse {
+    /// With a `schema`, a finished answer's text is parsed as JSON into
+    /// `structured` (nil if it isn't JSON).
+    func parse(_ data: Data, schema: JSONValue? = nil) throws -> ModelResponse {
         let json: JSONValue
         do { json = try JSONValue(parsing: data) } catch { throw AnthropicError.invalidResponse("body is not JSON") }
         let usage = Usage(
@@ -286,9 +306,10 @@ public struct AnthropicProvider: LanguageModelProvider, CustomStringConvertible,
             }
         }
         let raw = try? JSONValue.rawMember("content", in: data)
+        let structured = schema != nil && stopReason == .endTurn ? try? JSONValue(parsing: text) : nil
         return ModelResponse(
             message: ChatMessage(role: .assistant, text: text, toolCalls: calls, providerContent: raw),
-            stopReason: stopReason, usage: usage
+            stopReason: stopReason, usage: usage, structured: structured
         )
     }
 

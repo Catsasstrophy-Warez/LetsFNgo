@@ -239,7 +239,7 @@ public struct AgentEvalRunner: Sendable {
                     failures.append("Produced object \(id) does not exist")
                     continue
                 }
-                if record.provenance.truth != .agentInterpretation {
+                if !AgentRuntime.acceptableTruth(of: record) {
                     failures.append("Produced \(record.title) is \(record.provenance.truth.rawValue), not agentInterpretation")
                 }
             }
@@ -248,38 +248,10 @@ public struct AgentEvalRunner: Sendable {
     }
 }
 
-/// Numbers written in `text`, for the hallucinated-number check.
-///
-/// Names are not numbers: object IDs (UUIDs), digits glued to a preceding
-/// letter ("A7", "v1.2") and tag numbers after a hyphen ("LT-101", "TB-4")
-/// are skipped. A hyphen after a space is a minus sign ("at -3 V" is -3).
+/// Numbers written in `text`, for the hallucinated-number check. See
+/// `QuantityScanner` for what counts as a number.
 func numbers(in text: String) -> [Double] {
-    let uuid = #/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/#
-    let characters = Array(text.replacing(uuid, with: " "))
-    var found: [Double] = []
-    var index = 0
-    func isWordCharacter(_ position: Int) -> Bool {
-        position >= 0 && position < characters.count && (characters[position].isLetter || characters[position].isNumber)
-    }
-    while index < characters.count {
-        guard characters[index].isASCII, characters[index].isNumber, !isWordCharacter(index - 1),
-            index == 0 || characters[index - 1] != "."
-        else {
-            index += 1
-            continue
-        }
-        var start = index
-        let hyphenated = index > 0 && characters[index - 1] == "-"
-        if hyphenated, !isWordCharacter(index - 2) { start = index - 1 }
-        let isTag = hyphenated && isWordCharacter(index - 2)
-        while index < characters.count, characters[index].isASCII, characters[index].isNumber { index += 1 }
-        if index + 1 < characters.count, characters[index] == ".", characters[index + 1].isASCII, characters[index + 1].isNumber {
-            index += 1
-            while index < characters.count, characters[index].isASCII, characters[index].isNumber { index += 1 }
-        }
-        if !isTag, let number = Double(String(characters[start ..< index])) { found.append(number) }
-    }
-    return found
+    QuantityScanner.numbers(in: text)
 }
 
 // MARK: - Instrument-loop suite

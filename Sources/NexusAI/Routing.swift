@@ -62,6 +62,11 @@ public struct ModelRouter: Sendable {
 
 /// A deterministic model for tests and offline development: it replays a
 /// script of responses, or answers through a closure that sees each request.
+///
+/// Structured output: when a request carries a `responseSchema` and the
+/// scripted response has no `structured` value, the response text is parsed
+/// as JSON and returned as `structured` (nil if it is not JSON), the way a
+/// provider with native structured output would.
 public final class ScriptedModel: LanguageModelProvider, @unchecked Sendable {
     public let descriptor: ModelDescriptor
     private let lock = NSLock()
@@ -88,9 +93,17 @@ public final class ScriptedModel: LanguageModelProvider, @unchecked Sendable {
     public func respond(to request: GenerationRequest) async throws -> ModelResponse {
         try lock.withLock {
             requests.append(request)
-            if let responder { return try responder(request) }
-            guard !script.isEmpty else { throw AIError.scriptExhausted }
-            return script.removeFirst()
+            var response: ModelResponse
+            if let responder {
+                response = try responder(request)
+            } else {
+                guard !script.isEmpty else { throw AIError.scriptExhausted }
+                response = script.removeFirst()
+            }
+            if request.responseSchema != nil, response.structured == nil, response.stopReason == .endTurn {
+                response.structured = try? JSONValue(parsing: response.message.text.trimmingCharacters(in: .whitespacesAndNewlines))
+            }
+            return response
         }
     }
 }

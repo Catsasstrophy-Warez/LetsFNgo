@@ -11,16 +11,30 @@ import NexusSearch
 /// Tools over the canonical world model. They read through the same store,
 /// graph and search as the UI; writes are agent interpretations or drafts.
 public enum WorldTools {
+    /// Every tool: the world-model tools, then tasks, documents, meetings,
+    /// research and delegation.
     public static var all: [any AgentTool] {
+        world + WorkTools.all + [DelegateTool()]
+    }
+
+    /// Tools over objects, relationships and measurements.
+    public static var world: [any AgentTool] {
         [SearchObjects(), GetObject(), RelatedObjects(), GetMeasurements(), ProposeHypothesis(), AnnotateObject(), SendMessage()]
     }
 }
 
-private func objectArg(_ description: String) -> Value {
+/// The type of the object `key` names, for permission scoping. Empty when
+/// the argument is missing or names nothing: the call then fails in `run`.
+func targetTypes(_ arguments: [String: Value], _ key: String, in context: ToolContext) throws -> Set<ObjectType> {
+    guard let id = try? arguments.objectID(key), let record = try context.store.object(id) else { return [] }
+    return [record.type]
+}
+
+func objectArg(_ description: String) -> Value {
     .map(["type": .string("string"), "description": .string(description)])
 }
 
-private func schema(_ properties: [String: Value], required: [String]) -> Value {
+func schema(_ properties: [String: Value], required: [String]) -> Value {
     .map(["type": .string("object"), "properties": .map(properties), "required": .list(required.map(Value.string))])
 }
 
@@ -32,6 +46,8 @@ public struct SearchObjects: AgentTool {
         name: "search_objects", description: "Search the world model by text. Returns IDs, types and titles.",
         parameters: schema(["query": objectArg("Words to search for")], required: ["query"]), permission: .observe
     )
+
+    public var declaredScope: ToolScope { ToolScope(dataSource: ToolScope.worldModel) }
 
     public func run(_ arguments: [String: Value], in context: ToolContext) throws -> ToolOutcome {
         let graph = ObjectGraph(store: context.store, clock: context.clock)
@@ -52,6 +68,10 @@ public struct GetObject: AgentTool {
         parameters: schema(["id": objectArg("Object ID")], required: ["id"]), permission: .observe
     )
 
+    public func scope(for arguments: [String: Value], in context: ToolContext) throws -> ToolScope {
+        ToolScope(objectTypes: try targetTypes(arguments, "id", in: context), dataSource: ToolScope.worldModel)
+    }
+
     public func run(_ arguments: [String: Value], in context: ToolContext) throws -> ToolOutcome {
         let id = try arguments.objectID("id")
         guard let record = try context.store.object(id) else { throw ToolError.notFound(id.description) }
@@ -71,6 +91,16 @@ public struct RelatedObjects: AgentTool {
         name: "related_objects", description: "List objects related to an object and how.",
         parameters: schema(["id": objectArg("Object ID")], required: ["id"]), permission: .observe
     )
+
+    /// The object and every neighbor it would reveal.
+    public func scope(for arguments: [String: Value], in context: ToolContext) throws -> ToolScope {
+        var types = try targetTypes(arguments, "id", in: context)
+        if !types.isEmpty, let id = try? arguments.objectID("id") {
+            let edges = try ObjectGraph(store: context.store, clock: context.clock).edges(of: id)
+            types.formUnion(try context.store.objects(edges.map(\.neighbor)).map(\.type))
+        }
+        return ToolScope(objectTypes: types, dataSource: ToolScope.worldModel)
+    }
 
     public func run(_ arguments: [String: Value], in context: ToolContext) throws -> ToolOutcome {
         let id = try arguments.objectID("id")
@@ -95,6 +125,10 @@ public struct GetMeasurements: AgentTool {
         parameters: schema(["test_point": objectArg("Test point ID")], required: ["test_point"]), permission: .observe
     )
 
+    public func scope(for arguments: [String: Value], in context: ToolContext) throws -> ToolScope {
+        ToolScope(objectTypes: try targetTypes(arguments, "test_point", in: context).union([.measurement]), dataSource: ToolScope.measurements)
+    }
+
     public func run(_ arguments: [String: Value], in context: ToolContext) throws -> ToolOutcome {
         let point = try arguments.objectID("test_point")
         let readings = try context.store.measurements(at: point)
@@ -117,6 +151,8 @@ public struct ProposeHypothesis: AgentTool {
         ], required: ["investigation", "statement"]),
         permission: .createDraft
     )
+
+    public var declaredScope: ToolScope { ToolScope(objectTypes: [.investigation, .hypothesis]) }
 
     public func run(_ arguments: [String: Value], in context: ToolContext) throws -> ToolOutcome {
         let investigation = try arguments.objectID("investigation")
@@ -146,6 +182,10 @@ public struct AnnotateObject: AgentTool {
         permission: .modifyInternalState
     )
 
+    public func scope(for arguments: [String: Value], in context: ToolContext) throws -> ToolScope {
+        ToolScope(objectTypes: try targetTypes(arguments, "id", in: context))
+    }
+
     public func run(_ arguments: [String: Value], in context: ToolContext) throws -> ToolOutcome {
         let id = try arguments.objectID("id")
         let key = try arguments.string("key")
@@ -164,22 +204,39 @@ public struct SendMessage: AgentTool {
 
     public let spec = ToolSpec(
         name: "send_message", description: "Send a message to a person outside Nexus.",
-        parameters: schema(["to": objectArg("Recipient"), "text": objectArg("Message")], required: ["to", "text"]),
+        parameters: schema([
+            "to": objectArg("Recipient"), "text": objectArg("Message"),
+            "channel": objectArg("How to send it: message (default), email, sms, …"),
+        ], required: ["to", "text"]),
         permission: .externalAction
     )
 
+    /// The channel is the external service, so policy can treat email and SMS differently.
+    public func scope(for arguments: [String: Value], in context: ToolContext) throws -> ToolScope {
+        ToolScope(service: try Self.channel(arguments))
+    }
+
+    static func channel(_ arguments: [String: Value]) throws -> String {
+        guard let channel = try arguments.optionalText("channel", maxLength: 40) else { return "message" }
+        guard channel.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" || $0 == "." }) else {
+            throw ToolError.invalidArgument("channel")
+        }
+        return channel.lowercased()
+    }
+
     public func run(_ arguments: [String: Value], in context: ToolContext) throws -> ToolOutcome {
+        let channel = try Self.channel(arguments)
         let event = Event(
             at: context.clock.now(), kind: .message, subjects: [context.run],
-            summary: "To \(try arguments.string("to")): \(try arguments.string("text"))",
-            payload: ["outbox": .bool(true)], provenance: context.provenance(method: "outbox")
+            summary: "To \(try arguments.text("to", maxLength: 200)): \(try arguments.text("text", maxLength: 10_000))",
+            payload: ["outbox": .bool(true), "channel": .string(channel)], provenance: context.provenance(method: "outbox")
         )
         try context.store.record(event)
         return ToolOutcome(content: "Queued message \(event.id)")
     }
 }
 
-private func render(_ value: Value) -> String {
+func render(_ value: Value) -> String {
     switch value {
     case .string(let text): text
     case .int(let number): String(number)

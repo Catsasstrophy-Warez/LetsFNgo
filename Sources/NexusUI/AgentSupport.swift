@@ -4,21 +4,6 @@ import NexusPermissions
 import Observation
 import SwiftUI
 
-extension AgentProfile {
-    /// The default assistant for engineering work: reads the world model,
-    /// proposes hypotheses, may annotate (asks once per project) and may send
-    /// messages (asks every time).
-    public static let diagnostician = AgentProfile(
-        id: "diagnostic",
-        instructions: """
-            You help a technician diagnose equipment. Use the tools to read the \
-            world model; never state a value you did not read from a tool. \
-            Propose hypotheses with testable predictions rather than conclusions.
-            """,
-        tools: ["search_objects", "get_object", "related_objects", "get_measurements", "propose_hypothesis", "annotate_object", "send_message"]
-    )
-}
-
 @MainActor
 enum AgentRequestFactory {
     static func request(goal: String, env: NexusEnvironment) -> AgentRequest {

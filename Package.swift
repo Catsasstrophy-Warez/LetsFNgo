@@ -40,6 +40,7 @@ let package = Package(
         .library(name: "NexusMeasurement", targets: ["NexusMeasurement"]),
         .library(name: "NexusVisualization", targets: ["NexusVisualization"]),
         .library(name: "NexusTelemetry", targets: ["NexusTelemetry"]),
+        .library(name: "NexusResearch", targets: ["NexusResearch"]),
     ],
     targets: [
         .target(name: "NexusCore"),
@@ -56,7 +57,10 @@ let package = Package(
         .target(name: "NexusAI", dependencies: ["NexusCore", "NexusModel", "NexusPermissions"]),
         .target(
             name: "NexusAgents",
-            dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSearch", "NexusPermissions", "NexusAI", "NexusInvestigation"]
+            dependencies: [
+                "NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSearch", "NexusPermissions", "NexusAI", "NexusInvestigation",
+                "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusResearch",
+            ]
         ),
         // Optional cloud models (L4). Plain HTTP, so it builds and tests on Linux.
         .target(name: "NexusCloudProviders", dependencies: ["NexusAI", "NexusCore", "NexusModel"]),
@@ -119,7 +123,10 @@ let package = Package(
         .testTarget(name: "NexusSimulationTests", dependencies: ["NexusSimulation", "ControlsSimulation"]),
         .testTarget(name: "NexusPermissionsTests", dependencies: ["NexusPermissions", "NexusPersistence"]),
         .testTarget(name: "NexusAITests", dependencies: ["NexusAI"]),
-        .testTarget(name: "NexusAgentsTests", dependencies: ["NexusAgents", "NexusInvestigation"]),
+        .testTarget(
+            name: "NexusAgentsTests",
+            dependencies: ["NexusAgents", "NexusInvestigation", "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusResearch"]
+        ),
         .testTarget(name: "NexusCloudProvidersTests", dependencies: ["NexusCloudProviders", "NexusAI"]),
         .testTarget(name: "NexusEngineeringTests", dependencies: ["NexusEngineering", "ControlsReasoning", "ControlsPLC"]),
         .testTarget(name: "NexusLearningTests", dependencies: ["NexusLearning"]),
@@ -157,6 +164,12 @@ let package = Package(
         ),
         .testTarget(name: "NexusTasksTests", dependencies: ["NexusTasks"]),
         .testTarget(name: "NexusDocumentsTests", dependencies: ["NexusDocuments"]),
+        // Research over local sources: plan, discovery, classification, claims, contradictions, applicability, synthesis.
+        .target(
+            name: "NexusResearch",
+            dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusAI", "NexusDocuments", "NexusInvestigation"]
+        ),
+        .testTarget(name: "NexusResearchTests", dependencies: ["NexusResearch", "NexusDocuments", "NexusAI", "NexusInvestigation"]),
         .testTarget(name: "NexusMeasurementTests", dependencies: ["NexusMeasurement", "ControlsReasoning", "ControlsPLC"]),
         // Visualization models and transforms; no UI, so it tests on Linux.
         .target(name: "NexusVisualization", dependencies: ["NexusCore"]),

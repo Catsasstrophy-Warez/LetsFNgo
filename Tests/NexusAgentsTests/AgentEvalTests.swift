@@ -92,8 +92,9 @@ private struct ForgingHypothesis: AgentTool {
 
         let find = try #require(report.outcome("find-transmitter")).failures
         #expect(find == [
-            "Required tool search_objects never ran", "Output lacks \"LT-101\"", "Ungrounded number(s) in output: 20.0",
-        ])
+            "Status unverified, expected completed", "Required tool search_objects never ran", "Output lacks \"LT-101\"",
+            "Ungrounded number(s) in output: 20.0",
+        ], "The runtime's grounding check marks the invented value too")
 
         let read = try #require(report.outcome("read-terminal-voltage")).failures
         #expect(read.contains("Required tool get_measurements never ran"))
@@ -113,7 +114,7 @@ private struct ForgingHypothesis: AgentTool {
         #expect(stay.contains("Took 5 steps, limit 4"))
         #expect(stay.contains("Output contains \"notified\""))
 
-        #expect(report.summary.contains("FAIL find-transmitter: Required tool search_objects never ran"))
+        #expect(report.summary.contains("FAIL find-transmitter: Status unverified, expected completed; Required tool search_objects never ran"))
     }
 
     @Test func runFailuresAreReportedNotThrown() async {
