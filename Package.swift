@@ -21,6 +21,8 @@ let package = Package(
         .library(name: "NexusAgents", targets: ["NexusAgents"]),
         .library(name: "NexusEngineering", targets: ["NexusEngineering"]),
         .library(name: "NexusLearning", targets: ["NexusLearning"]),
+        .library(name: "NexusReality", targets: ["NexusReality"]),
+        .library(name: "NexusRealityKit", targets: ["NexusRealityKit"]),
         .library(name: "ControlsPLC", targets: ["ControlsPLC"]),
         .library(name: "ControlsReasoning", targets: ["ControlsReasoning"]),
     ],
@@ -52,6 +54,9 @@ let package = Package(
             name: "NexusLearning",
             dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusInvestigation", "NexusSimulation"]
         ),
+        .target(name: "NexusReality", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSimulation"]),
+        // Apple-only: empty on Linux, verify in Xcode.
+        .target(name: "NexusRealityKit", dependencies: ["NexusCore", "NexusReality"]),
         // Deterministic PLC engine, ported from the Controls Tech Trainer core.
         .target(name: "ControlsPLC"),
         // Headless diagnostic reasoning, extracted from the trainer's UI target.
@@ -68,11 +73,12 @@ let package = Package(
         .testTarget(name: "NexusAgentsTests", dependencies: ["NexusAgents", "NexusInvestigation"]),
         .testTarget(name: "NexusEngineeringTests", dependencies: ["NexusEngineering", "ControlsReasoning", "ControlsPLC"]),
         .testTarget(name: "NexusLearningTests", dependencies: ["NexusLearning"]),
+        .testTarget(name: "NexusRealityTests", dependencies: ["NexusReality", "NexusProjects"]),
         .testTarget(name: "NexusInvestigationTests", dependencies: ["NexusInvestigation"]),
         // End-to-end Golden Vertical Slice (docs/BUILD_PLAN.md §D).
         .testTarget(
             name: "GoldenSliceTests",
-            dependencies: ["NexusInvestigation", "NexusSimulation", "NexusProjects", "NexusSearch", "NexusGraph", "NexusLearning"]
+            dependencies: ["NexusInvestigation", "NexusSimulation", "NexusProjects", "NexusSearch", "NexusGraph", "NexusLearning", "NexusReality"]
         ),
         .testTarget(name: "ControlsPLCTests", dependencies: ["ControlsPLC"]),
         .testTarget(name: "ControlsReasoningTests", dependencies: ["ControlsReasoning", "ControlsPLC"]),

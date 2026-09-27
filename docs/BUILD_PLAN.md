@@ -299,9 +299,13 @@ All of this lives in `NexusAppleIntelligence` behind `canImport`, and it is a *v
 - [x] 3. `ControlsPLC`: trainer Core ported verbatim; its 37 tests pass unchanged.
 - [x] 4. `ControlsReasoning`: trainer reasoning extracted from its UI target unchanged; 39 trainer tests moved with it.
 - [x] 5. `NexusSimulation` (fixed-step runtime, ObjectID-keyed state, faults, first divergence) with the instrument-loop solvers; `NexusInvestigation` (hypotheses with testable predictions, truth-disciplined evidence, information-gain test ranking, first divergence, human-only confirmation, lineage-cited reports).
-- [x] Golden Slice, headless: `Tests/GoldenSliceTests` covers acceptance steps 1–12 and 14 on a file-backed store with save/reload. Step 13 (training scenario) waits for `NexusLearning`; the 3D half of step 4 waits for `NexusReality`.
+- [x] Golden Slice, headless: `Tests/GoldenSliceTests` covers all 14 acceptance steps on a file-backed store with save/reload, including the 3D identity check (scene entity → ObjectID) and a replayable, graded training scenario.
+- [x] 6. AI layer: `NexusPermissions` (P0–P5 policy engine), `NexusAI` (provider-agnostic model protocol, local-first router, `ScriptedModel`), `NexusAgents` (execution envelope, per-tool rollback, ledger, verification).
+- [x] `NexusEngineering`: trainer PLC diagnoses import as Nexus hypotheses and recorded evidence.
+- [x] `NexusLearning`: scenarios from resolved investigations, replay, grading.
+- [x] `NexusReality`: scene description, entity ↔ ObjectID registry, truth-labeled overlays. `NexusRealityKit` is the Apple-only adapter; it compiles to nothing on Linux and still needs its first Xcode build.
 
-Not yet unified: the trainer's own hypothesis/evidence types in `ControlsReasoning` still stand alone. The next step is an adapter that turns their PLC-level findings into `NexusInvestigation` hypotheses and measurements.
+Still needs a Mac: SwiftUI shell, RealityKit adapter verification, the Foundation Models / MLX providers behind `LanguageModelProvider`, App Intents and Spotlight.
 
 ## Next steps (proposed build order for the first PRs)
 1. **Foundation PR.** Root `Package.swift`, plus `NexusCore` (ObjectID, TruthClass, Provenance, Revision) and `NexusModel`. Add `NexusPersistence` with SQLite, migrations and FTS5, and a round-trip test that proves truth classes survive save and reload. Add a Linux CI workflow.

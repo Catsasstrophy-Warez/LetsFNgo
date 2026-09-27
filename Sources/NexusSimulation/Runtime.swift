@@ -84,6 +84,12 @@ public struct Snapshot: Sendable, Hashable, Codable {
     public var tick: Int
     public var seconds: Double
     public var values: [StateKey: Double]
+
+    public init(tick: Int, seconds: Double, values: [StateKey: Double]) {
+        self.tick = tick
+        self.seconds = seconds
+        self.values = values
+    }
 }
 
 /// Fixed-step deterministic simulation: SimulationClock → WorldState →

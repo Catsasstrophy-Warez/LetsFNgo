@@ -6,6 +6,7 @@ import NexusLearning
 import NexusModel
 import NexusPersistence
 import NexusProjects
+import NexusReality
 import NexusSearch
 import NexusSimulation
 import Testing
@@ -72,7 +73,9 @@ import Testing
         let viaSearch = try world.search.search(SearchQuery("LT-101 transmitter", scope: project)).first?.id
         let viaProject = try world.projects.members(of: project, types: [.sensor], transitive: true).first?.id
         let viaGraph = try world.graph.shortestPath(from: valve, to: transmitter)?.last?.neighbor
-        #expect(viaSearch == transmitter && viaProject == transmitter && viaGraph == transmitter)
+        let scene = try SceneBuilder.build(root: tank, graph: world.graph)
+        let viaSpatial = scene.entity(for: transmitter).flatMap(scene.object(for:))
+        #expect(viaSearch == transmitter && viaProject == transmitter && viaGraph == transmitter && viaSpatial == transmitter)
 
         // 5. Simulated fault in the field, alongside a healthy twin.
         let loop = InstrumentLoop(tank: tank, transmitter: transmitter, terminal: terminal, card: card, controller: controller, valve: valve)
@@ -180,6 +183,11 @@ import Testing
         )
         #expect(abs(loaded.value.value - 12) < 1e-6)
         #expect(abs(expected.value.value - 19.03) < 0.1)
+
+        // The 3D view shows the twin's value and the meter's value side by side, labeled.
+        let atTerminal = (OverlayBuilder.modeled(twin.history.last!, in: scene) + (try OverlayBuilder.measured(in: scene, store: world.store)))
+            .filter { $0.entity == scene.entity(for: terminal) && $0.quantity == "terminalVoltage" }
+        #expect(Set(atTerminal.map(\.truth)) == [.modeled, .observed])
 
         #expect(throws: InvestigationError.requiresHuman(.agent(id: "diag", run: nil))) {
             try world.investigations.confirm(compliance.id, in: investigation, by: .agent(id: "diag", run: nil))
