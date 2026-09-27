@@ -100,6 +100,15 @@ extension NexusStore {
         return url
     }
 
+    /// Copies a file store's blob directory next to another database file, so
+    /// a backup carries the bytes its `blobs` rows point at.
+    func copyBlobs(toDatabaseAt url: URL) throws {
+        guard case .directory(let directory) = try blobLocation(),
+            FileManager.default.fileExists(atPath: directory.path)
+        else { return }
+        try FileManager.default.copyItem(at: directory, to: URL(fileURLWithPath: url.path + ".blobs", isDirectory: true))
+    }
+
     // MARK: Private
 
     private enum BlobLocation {

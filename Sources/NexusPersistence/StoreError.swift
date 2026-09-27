@@ -15,4 +15,12 @@ public enum StoreError: Error, Equatable, Sendable {
     /// Measurements are append-only; claims change through claim APIs.
     case immutableRecord(ObjectID, ObjectType)
     case corruptRecord(table: String, id: String)
+    /// The revision does not exist or belongs to a different object.
+    case revisionNotFound(object: ObjectID, revision: RevisionID)
+    /// The lifecycle transition is not allowed. See `NexusStore.allowedTransitions`.
+    case invalidTransition(object: ObjectID, from: Lifecycle, to: Lifecycle)
+    /// A file offered as a backup is not a Nexus store this build can open.
+    case invalidBackup(reason: String)
+    /// Restoring a backup would overwrite an existing file.
+    case destinationExists(String)
 }

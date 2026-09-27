@@ -138,9 +138,19 @@ private struct LoopFixture {
         #expect(try store.measurements(at: fixture.terminal.id, truth: .modeled) == [fixture.modeled])
         #expect(try store.measurements(at: fixture.terminal.id, truth: .display) == [fixture.display])
 
-        #expect(try store.timeline() == [fixture.event])
-        #expect(try store.events(about: fixture.transmitter.id) == [fixture.event])
-        #expect(try store.timeline(from: t0 + 31).isEmpty)
+        // The store adds a `measured` event per measurement (at its sample
+        // time) and an `objectEdited` event for the update (at clock time).
+        let timeline = try store.timeline()
+        #expect(timeline.map(\.kind) == [.faultInjected, .measured, .measured, .measured, .objectEdited])
+        #expect(timeline.first == fixture.event)
+        let aboutTransmitter = try store.events(about: fixture.transmitter.id)
+        #expect(aboutTransmitter.first == fixture.event)
+        #expect(aboutTransmitter.last?.payload["changedAttributes"] == .list([.string("model")]))
+        #expect(aboutTransmitter.last?.provenance.revision == transmitter.revision)
+        let measuredTruths = timeline.filter { $0.kind == .measured }.map(\.provenance.truth)
+        #expect(Set(measuredTruths) == [.observed, .modeled, .display])
+        #expect(try store.timeline(from: t0 + 31).map(\.kind) == [.measured, .measured, .measured, .objectEdited])
+        #expect(try store.timeline(from: t0 + 121).isEmpty)
     }
 
     @Test func simulationCannotOverwriteObservedTruth() throws {

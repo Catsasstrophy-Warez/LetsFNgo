@@ -19,11 +19,20 @@ extension Optional where Wrapped == Double {
 private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
 /// Minimal SQLite connection. Not thread-safe; `NexusStore` serializes access.
+///
+/// `run` and `query` keep compiled statements in a small cache keyed by SQL
+/// text and reset them after each use, so the store's constant SQL is parsed
+/// once per connection rather than once per call.
 final class SQLiteConnection {
     private var handle: OpaquePointer?
+    private var cache: [String: Statement] = [:]
+    /// Upper bound on cached statements. Store SQL comes from a small closed
+    /// set; the bound only matters for generated `IN (?, ?, …)` lists.
+    static let cacheLimit = 128
 
-    init(path: String) throws {
-        let flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_NOMUTEX
+    init(path: String, readOnly: Bool = false) throws {
+        let flags =
+            (readOnly ? SQLITE_OPEN_READONLY : SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE) | SQLITE_OPEN_NOMUTEX
         let code = sqlite3_open_v2(path, &handle, flags, nil)
         guard code == SQLITE_OK else {
             let message = handle.map { String(cString: sqlite3_errmsg($0)) } ?? "unable to open database"
@@ -33,6 +42,8 @@ final class SQLiteConnection {
     }
 
     deinit {
+        // Statements must be finalized before the connection closes.
+        cache.removeAll()
         sqlite3_close_v2(handle)
     }
 
@@ -47,20 +58,53 @@ final class SQLiteConnection {
     }
 
     func run(_ sql: String, _ values: [SQLValue] = []) throws {
-        let statement = try prepare(sql)
-        try statement.bind(values)
-        while try statement.step() {}
+        try withStatement(sql) { statement in
+            try statement.bind(values)
+            while try statement.step() {}
+        }
     }
 
     func query<T>(_ sql: String, _ values: [SQLValue] = [], row: (Statement) throws -> T) throws -> [T] {
-        let statement = try prepare(sql)
-        try statement.bind(values)
-        var rows: [T] = []
-        while try statement.step() {
-            rows.append(try row(statement))
+        try withStatement(sql) { statement in
+            try statement.bind(values)
+            var rows: [T] = []
+            while try statement.step() {
+                rows.append(try row(statement))
+            }
+            return rows
         }
-        return rows
     }
+
+    /// Borrows a cached statement for `sql`, compiling it on first use, and
+    /// resets it afterwards. A statement already in use further up the stack
+    /// (a re-entrant query with the same text) gets a private, uncached copy.
+    private func withStatement<T>(_ sql: String, _ body: (Statement) throws -> T) throws -> T {
+        let statement: Statement
+        if let cached = cache[sql], !cached.inUse {
+            statement = cached
+        } else {
+            statement = try prepare(sql)
+            if cache[sql] == nil {
+                if cache.count >= Self.cacheLimit {
+                    cache = cache.filter { $0.value.inUse }
+                }
+                cache[sql] = statement
+            }
+        }
+        statement.inUse = true
+        defer {
+            statement.reset()
+            statement.inUse = false
+        }
+        return try body(statement)
+    }
+
+    /// Drops every cached statement, e.g. before closing or after a schema change.
+    func clearStatementCache() {
+        cache = cache.filter { $0.value.inUse }
+    }
+
+    var cachedStatementCount: Int { cache.count }
 
     func prepare(_ sql: String) throws -> Statement {
         var statement: OpaquePointer?
@@ -68,7 +112,7 @@ final class SQLiteConnection {
         guard code == SQLITE_OK, let statement else {
             throw StoreError.sqlite(code: code, message: lastErrorMessage)
         }
-        return Statement(statement, connection: self)
+        return Statement(statement)
     }
 
     var lastInsertRowID: Int64 {
@@ -81,15 +125,23 @@ final class SQLiteConnection {
 
     final class Statement {
         private let handle: OpaquePointer
-        private let connection: SQLiteConnection
+        fileprivate var inUse = false
 
-        fileprivate init(_ handle: OpaquePointer, connection: SQLiteConnection) {
+        fileprivate init(_ handle: OpaquePointer) {
             self.handle = handle
-            self.connection = connection
         }
 
         deinit {
             sqlite3_finalize(handle)
+        }
+
+        private var lastErrorMessage: String {
+            sqlite3_db_handle(handle).map { String(cString: sqlite3_errmsg($0)) } ?? "no connection"
+        }
+
+        fileprivate func reset() {
+            sqlite3_reset(handle)
+            sqlite3_clear_bindings(handle)
         }
 
         func bind(_ values: [SQLValue]) throws {
@@ -103,7 +155,7 @@ final class SQLiteConnection {
                 case .text(let text): code = sqlite3_bind_text(handle, index, text, -1, transient)
                 }
                 guard code == SQLITE_OK else {
-                    throw StoreError.sqlite(code: code, message: connection.lastErrorMessage)
+                    throw StoreError.sqlite(code: code, message: lastErrorMessage)
                 }
             }
         }
@@ -114,13 +166,25 @@ final class SQLiteConnection {
             switch code {
             case SQLITE_ROW: return true
             case SQLITE_DONE: return false
-            default: throw StoreError.sqlite(code: code, message: connection.lastErrorMessage)
+            default: throw StoreError.sqlite(code: code, message: lastErrorMessage)
             }
         }
 
         func text(_ column: Int32) -> String? {
             guard let pointer = sqlite3_column_text(handle, column) else { return nil }
             return String(cString: pointer)
+        }
+
+        /// The column's UTF-8 bytes, copied once, for decoding JSON without an
+        /// intermediate `String`.
+        func data(_ column: Int32) -> Data? {
+            guard let pointer = sqlite3_column_text(handle, column) else { return nil }
+            let count = Int(sqlite3_column_bytes(handle, column))
+            return Data(bytes: pointer, count: count)
+        }
+
+        func isNull(_ column: Int32) -> Bool {
+            sqlite3_column_type(handle, column) == SQLITE_NULL
         }
 
         func int(_ column: Int32) -> Int64 {

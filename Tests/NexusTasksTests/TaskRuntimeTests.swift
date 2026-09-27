@@ -108,7 +108,7 @@ private struct Bench {
         // Reopening is the one way out of a closed status.
         #expect(try bench.runtime.setStatus(.open, of: task.id, by: tech).status == .open)
         // A refused change leaves no revision or event behind.
-        #expect(try bench.store.events(about: task.id).count == 3)
+        #expect(try bench.store.events(about: task.id).filter { $0.kind == .taskStatusChanged }.count == 3)
     }
 
     @Test func agentsOnlyDraftAndNeverComplete() throws {

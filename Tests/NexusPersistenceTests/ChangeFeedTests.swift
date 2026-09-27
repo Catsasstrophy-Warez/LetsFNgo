@@ -26,12 +26,14 @@ private final class Inbox: @unchecked Sendable {
         try store.end(link.id, at: t0 + 1, by: tech)
         try store.record(Event(at: t0, kind: .note, subjects: [b], summary: "n", provenance: recorded))
 
+        // The update also appends its objectEdited event in the same write.
         let changes = try store.changes()
-        #expect(changes.map(\.kind) == [.created, .created, .updated, .related, .related, .related, .related, .event])
-        #expect(changes.map(\.seq) == Array(1...8).map(Int64.init))
+        #expect(changes.map(\.kind) == [.created, .created, .updated, .event, .related, .related, .related, .related, .event])
+        #expect(changes.map(\.seq) == Array(1...9).map(Int64.init))
+        #expect(changes[3].object == a)
         #expect(changes.last?.object == b)
-        #expect(try store.changes(after: 6).count == 2)
-        #expect(store.latestChangeSequence == 8)
+        #expect(try store.changes(after: 7).count == 2)
+        #expect(store.latestChangeSequence == 9)
     }
 
     @Test func observersSeeOnlyCommittedWorkOncePerOutermostWrite() throws {
