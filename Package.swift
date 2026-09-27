@@ -142,7 +142,10 @@ let package = Package(
         .testTarget(name: "NexusEngineeringTests", dependencies: ["NexusEngineering", "ControlsReasoning", "ControlsPLC"]),
         .testTarget(name: "NexusLearningTests", dependencies: ["NexusLearning"]),
         .testTarget(name: "NexusRealityTests", dependencies: ["NexusReality", "NexusProjects"]),
-        .testTarget(name: "NexusDemoTests", dependencies: ["NexusDemo", "NexusSearch"]),
+        .testTarget(
+            name: "NexusDemoTests",
+            dependencies: ["NexusDemo", "NexusSearch", "NexusActions", "NexusInvestigation", "NexusModel", "NexusPersistence", "NexusCore"]
+        ),
         .testTarget(name: "NexusMeetingsTests", dependencies: ["NexusMeetings", "NexusTasks"]),
         .testTarget(name: "NexusInvestigationTests", dependencies: ["NexusInvestigation"]),
         // End-to-end Golden Vertical Slice (docs/BUILD_PLAN.md §D).
