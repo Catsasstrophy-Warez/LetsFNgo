@@ -1,0 +1,39 @@
+You are inheriting a production software project called NEXUS (temporary codename). Read every file in this handoff package before making architectural changes.
+
+MISSION
+Build an Apple-first native personal AI operating environment for iPhone, iPad, and Mac. It combines the useful capabilities of personal assistants, document research, email, meetings, second-brain knowledge, research agents, coding agents, career/tutoring, CRM, personal finance, investment research, scheduling, project management, SOPs, field troubleshooting, maintenance, engineering, digital twins, electrical simulation, automotive diagnostics/tuning, meal planning, travel, study, writing, social content, image/video/audio creation, commerce, web creation, architecture/interiors, 3D, data visualization, and general agent platforms.
+
+DO NOT implement these as 36 disconnected apps.
+
+CANONICAL MODEL
+Project -> Object -> Relationship -> Event -> Evidence -> Action.
+Objects own context. Projects organize objects. Agents act on objects. Artifacts communicate about objects.
+
+NON-NEGOTIABLES
+1. One canonical world model. No parallel domain truth stores.
+2. Chat is an interface, not the database.
+3. Every important object has a stable ObjectID.
+4. Relationships are first-class.
+5. Recorded, observed, modeled, claimed, derived, displayed, and agent-interpreted truth remain distinguishable.
+6. Every meaningful value can carry provenance.
+7. Agent actions are inspectable, permissioned, versioned, and reversible where possible.
+8. RealityKit entities map to canonical ObjectIDs.
+9. Metal consumes runtime snapshots; it does not own simulation truth.
+10. Build the Golden Vertical Slice before expanding all domains.
+11. iPhone is not a shrunken Mac UI. Use object/task-centric mobile UX.
+12. Accessibility, offline operation, deterministic simulation where applicable, and testability are foundation requirements.
+
+FIRST IMPLEMENTATION TARGET
+Create the Nexus Foundation and a Golden Vertical Slice: diagnose an instrument-loop failure from project -> equipment -> source research -> 3D/digital twin -> investigation -> measurement -> hypothesis -> simulation -> first divergence -> repair procedure -> verification -> report -> training scenario -> persistent knowledge.
+
+BUILD ORDER
+NexusCore -> NexusModel -> NexusPersistence -> NexusGraph -> NexusSearch -> Project Runtime -> 18-screen SwiftUI shell -> Command/Selection/Context Runtime -> Documents/Sources -> Claims/Evidence -> Agent Runtime -> Permissions -> Tasks/Workflow -> Measurement -> Visualization -> Investigation -> Simulation -> RealityKit bridge -> Golden Vertical Slice.
+
+Before coding, produce:
+A. repository/package plan,
+B. canonical schemas,
+C. dependency graph,
+D. Golden Vertical Slice acceptance plan,
+E. risks and migration strategy.
+
+Then implement incrementally with tests. Do not rename or weaken locked concepts without documenting the reason and migration impact.
