@@ -171,8 +171,12 @@ private func makeStore(chunkSize: Int = 1_000) throws -> TelemetryStore {
         #expect(middle.first?.time == t0 + 40)
         #expect(overview.count == 2_000)
         #expect(overview.last?.time == t0 + Double(total - 1) / 10_000)
-        // Generous limits for debug builds on CI; release is far faster.
-        #expect(appendTime < .seconds(10))
+        // Appends are bounded by structure, not wall time (which varies with
+        // parallel test load on CI): a million samples are a few hundred
+        // chunk rows, never a row per sample.
+        let chunks = try await telemetry.perform { try $0.telemetryChunks(channel: channel.id).count }
+        #expect((245...250).contains(chunks), "\(chunks) chunks for 1M samples at 4,096 per chunk")
+        // Reads touch only the chunks in range. Generous limits for debug builds.
         #expect(rangeTime < .seconds(2))
         #expect(overviewTime < .seconds(10))
     }
