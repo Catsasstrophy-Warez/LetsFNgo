@@ -36,6 +36,19 @@ struct InvestigationScreen: View {
                         Label(summary, systemImage: "arrow.triangle.branch").foregroundStyle(.orange)
                     }
                 }
+                // The next action comes first: on iPhone, hypotheses fill the screen.
+                Section("Next test") {
+                    ForEach(Array(ranked.enumerated()), id: \.offset) { index, recommendation in
+                        HStack {
+                            Text(index == 0 ? "Best" : "#\(index + 1)").font(.caption.bold()).frame(width: 40, alignment: .leading)
+                            Text(recommendation.option.title)
+                            Spacer()
+                            Text("\(recommendation.informationGain.formatted(.number.precision(.fractionLength(2)))) bits")
+                                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
+                }
                 Section("Hypotheses") {
                     ForEach(hypotheses) { hypothesis in
                         VStack(alignment: .leading, spacing: 4) {
@@ -52,18 +65,6 @@ struct InvestigationScreen: View {
                                 Button("Confirm as cause") { confirm(hypothesis.id, in: id) }
                                     .font(.caption)
                             }
-                        }
-                        .accessibilityElement(children: .combine)
-                    }
-                }
-                Section("Next test") {
-                    ForEach(Array(ranked.enumerated()), id: \.offset) { index, recommendation in
-                        HStack {
-                            Text(index == 0 ? "Best" : "#\(index + 1)").font(.caption.bold()).frame(width: 40, alignment: .leading)
-                            Text(recommendation.option.title)
-                            Spacer()
-                            Text("\(recommendation.informationGain.formatted(.number.precision(.fractionLength(2)))) bits")
-                                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                         }
                         .accessibilityElement(children: .combine)
                     }

@@ -45,7 +45,13 @@ final class GoldenSliceUITests: XCTestCase {
     @MainActor
     private func expect(_ text: String, in app: XCUIApplication) throws {
         let element = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
-        guard element.waitForExistence(timeout: 15) else {
+        // Lists render lazily, so text further down only exists once scrolled to.
+        var swipes = 0
+        while !element.waitForExistence(timeout: swipes == 0 ? 15 : 2), swipes < 4 {
+            app.swipeUp()
+            swipes += 1
+        }
+        guard element.exists else {
             throw failure("Couldn't find text containing “\(text)”", in: app)
         }
     }
