@@ -3,6 +3,7 @@ import Foundation
 import NexusAgents
 import NexusCore
 import NexusDemo
+import NexusDocuments
 import NexusGraph
 import NexusInvestigation
 import NexusModel
@@ -10,6 +11,7 @@ import NexusPermissions
 import NexusPersistence
 import NexusProjects
 import NexusSearch
+import NexusTasks
 import Observation
 
 /// The composition root: one store and every runtime over it.
@@ -27,6 +29,8 @@ public final class NexusEnvironment {
     public let investigations: InvestigationRuntime
     public let permissions: PermissionEngine
     public let context: ContextRuntime
+    public let tasks: TaskRuntime
+    public let documents: DocumentLibrary
     /// Set by the app once a language model is available on this device.
     public var agents: AgentRuntime?
     /// Names of the installed language models, for Settings.
@@ -53,6 +57,8 @@ public final class NexusEnvironment {
         investigations = InvestigationRuntime(store: store)
         permissions = try PermissionEngine(store: store)
         context = ContextRuntime(store: store)
+        tasks = TaskRuntime(store: store)
+        documents = DocumentLibrary(store: store)
         if seedDemo {
             demo = try DemoWorld.seedIfNeeded(into: store)
         }
@@ -101,6 +107,19 @@ public final class NexusEnvironment {
 
     public func title(_ id: ObjectID) -> String {
         object(id)?.title ?? id.description
+    }
+
+    /// Who or what an origin is, in words.
+    public func describe(_ origin: Origin) -> String {
+        switch origin {
+        case .user(let id): id == "local" ? "You" : id
+        case .agent(let id, _): "Agent \(id)"
+        case .importer(let source): "Imported from \(title(source))"
+        case .simulation: "Simulation"
+        case .instrument(let id): title(id)
+        case .model(let ref): ref.modelID
+        case .system: "Nexus"
+        }
     }
 }
 #endif

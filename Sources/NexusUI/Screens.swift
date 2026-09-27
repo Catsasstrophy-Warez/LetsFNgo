@@ -17,16 +17,20 @@ struct Workspace: View {
         Group {
             switch env.context.screen {
             case .commandCenter: CommandCenterScreen()
-            case .project, .collection: CollectionScreen()
+            case .project: ProjectScreen()
+            case .collection: CollectionScreen()
             case .search: SearchScreen()
-            case .objectDetail, .document, .research: ObjectDetailScreen(id: env.context.focus)
+            case .objectDetail, .research: ObjectDetailScreen(id: env.context.focus)
+            case .document: DocumentScreen()
+            case .taskWorkflow: TaskWorkflowScreen()
+            case .calendar: CalendarScreen()
             case .investigation: InvestigationScreen()
             case .simulation: DigitalTwinScreen()
             case .telemetry: TelemetryScreen()
             case .timeline: TimelineScreen()
             case .agentActivity: AgentActivityScreen()
             case .settings: PermissionsScreen()
-            case .conversation, .meeting, .taskWorkflow, .calendar, .creative:
+            case .conversation, .meeting, .creative:
                 NextActionEmptyState(
                     env.context.screen.title, message: "This workspace arrives after the Golden Slice. Use Search or ⌘K meanwhile.",
                     systemImage: env.context.screen.symbol
