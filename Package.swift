@@ -38,6 +38,8 @@ let package = Package(
         .library(name: "NexusTasks", targets: ["NexusTasks"]),
         .library(name: "NexusDocuments", targets: ["NexusDocuments"]),
         .library(name: "NexusMeasurement", targets: ["NexusMeasurement"]),
+        .library(name: "NexusVisualization", targets: ["NexusVisualization"]),
+        .library(name: "NexusTelemetry", targets: ["NexusTelemetry"]),
     ],
     targets: [
         .target(name: "NexusCore"),
@@ -58,7 +60,8 @@ let package = Package(
         ),
         // Optional cloud models (L4). Plain HTTP, so it builds and tests on Linux.
         .target(name: "NexusCloudProviders", dependencies: ["NexusAI", "NexusCore", "NexusModel"]),
-        .target(name: "NexusSimulation", dependencies: ["NexusCore", "NexusModel"]),
+        // ControlsSimulation supplies trainer physics wrapped as solvers (TrainerSolvers.swift).
+        .target(name: "NexusSimulation", dependencies: ["NexusCore", "NexusModel", "ControlsSimulation"]),
         .target(name: "NexusInvestigation", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
         .target(
             name: "NexusEngineering",
@@ -113,7 +116,7 @@ let package = Package(
         .testTarget(name: "NexusGraphTests", dependencies: ["NexusGraph"]),
         .testTarget(name: "NexusSearchTests", dependencies: ["NexusSearch"]),
         .testTarget(name: "NexusProjectsTests", dependencies: ["NexusProjects", "NexusSearch"]),
-        .testTarget(name: "NexusSimulationTests", dependencies: ["NexusSimulation"]),
+        .testTarget(name: "NexusSimulationTests", dependencies: ["NexusSimulation", "ControlsSimulation"]),
         .testTarget(name: "NexusPermissionsTests", dependencies: ["NexusPermissions", "NexusPersistence"]),
         .testTarget(name: "NexusAITests", dependencies: ["NexusAI"]),
         .testTarget(name: "NexusAgentsTests", dependencies: ["NexusAgents", "NexusInvestigation"]),
@@ -155,5 +158,17 @@ let package = Package(
         .testTarget(name: "NexusTasksTests", dependencies: ["NexusTasks"]),
         .testTarget(name: "NexusDocumentsTests", dependencies: ["NexusDocuments"]),
         .testTarget(name: "NexusMeasurementTests", dependencies: ["NexusMeasurement", "ControlsReasoning", "ControlsPLC"]),
+        // Visualization models and transforms; no UI, so it tests on Linux.
+        .target(name: "NexusVisualization", dependencies: ["NexusCore"]),
+        // Time-series storage on the canonical store (migration 5).
+        .target(
+            name: "NexusTelemetry",
+            dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusSimulation", "NexusVisualization"]
+        ),
+        .testTarget(name: "NexusVisualizationTests", dependencies: ["NexusVisualization"]),
+        .testTarget(
+            name: "NexusTelemetryTests",
+            dependencies: ["NexusTelemetry", "NexusPersistence", "NexusSimulation", "NexusVisualization", "NexusModel"]
+        ),
     ]
 )
