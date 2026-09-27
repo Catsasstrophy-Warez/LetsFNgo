@@ -84,10 +84,11 @@ final class GoldenSliceUITests: XCTestCase {
 
     @MainActor
     private func tap(_ element: XCUIElement, _ what: String, in app: XCUIApplication) throws {
-        // Forms render lazily and may place the control below the fold.
+        // Forms render lazily and may place the control off screen, above
+        // or below: look further down first, then back up.
         var swipes = 0
-        while !(element.waitForExistence(timeout: swipes == 0 ? 10 : 2) && element.isHittable), swipes < 4 {
-            app.swipeUp()
+        while !(element.waitForExistence(timeout: swipes == 0 ? 10 : 2) && element.isHittable), swipes < 10 {
+            if swipes < 3 { app.swipeUp() } else { app.swipeDown() }
             swipes += 1
         }
         guard element.exists else {
@@ -101,8 +102,8 @@ final class GoldenSliceUITests: XCTestCase {
         let element = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
         // Lists render lazily, so text further down only exists once scrolled to.
         var swipes = 0
-        while !element.waitForExistence(timeout: swipes == 0 ? 15 : 2), swipes < 4 {
-            app.swipeUp()
+        while !element.waitForExistence(timeout: swipes == 0 ? 15 : 2), swipes < 10 {
+            if swipes < 3 { app.swipeUp() } else { app.swipeDown() }
             swipes += 1
         }
         guard element.exists else {
