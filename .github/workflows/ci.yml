@@ -5,6 +5,12 @@ on:
   pull_request:
   workflow_dispatch:
 
+# A newer push to the same branch cancels older in-flight runs, so
+# superseded commits don't spend Mac runner minutes.
+concurrency:
+  group: ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
 jobs:
   linux:
     name: Linux (Swift 6.2)
