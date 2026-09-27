@@ -556,7 +556,7 @@ public final class NexusStore: @unchecked Sendable {
                 if let instrument = measurement.instrument {
                     try requireExists(instrument)
                 }
-                let title = "\(measurement.quantityName) \(measurement.value.value) \(measurement.value.unit)"
+                let title = "\(measurement.quantityName) \(String(format: "%.6g", measurement.value.value)) \(measurement.value.unit)"
                 let object = ObjectRecord(
                     id: measurement.id, type: .measurement, title: title,
                     attributes: ["quantity": Attribute(.string(measurement.quantityName))],

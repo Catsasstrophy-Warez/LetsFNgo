@@ -297,6 +297,11 @@ All of this lives in `NexusAppleIntelligence` behind `canImport`, and it is a *v
 - [x] 1. Foundation: `NexusCore`, `NexusModel`, `NexusPersistence` (SQLite + FTS5 + migrations), Linux CI.
 - [x] 2. `NexusGraph` (validity-aware traversal, shortest path), `NexusSearch` (exact ID/title + FTS5 + pluggable semantic, fused by reciprocal rank; structured, temporal and project-scope filters), `NexusProjects` (project runtime; context/selection runtime; selection-driven command surface).
 - [x] 3. `ControlsPLC`: trainer Core ported verbatim; its 37 tests pass unchanged.
+- [x] 4. `ControlsReasoning`: trainer reasoning extracted from its UI target unchanged; 39 trainer tests moved with it.
+- [x] 5. `NexusSimulation` (fixed-step runtime, ObjectID-keyed state, faults, first divergence) with the instrument-loop solvers; `NexusInvestigation` (hypotheses with testable predictions, truth-disciplined evidence, information-gain test ranking, first divergence, human-only confirmation, lineage-cited reports).
+- [x] Golden Slice, headless: `Tests/GoldenSliceTests` covers acceptance steps 1–12 and 14 on a file-backed store with save/reload. Step 13 (training scenario) waits for `NexusLearning`; the 3D half of step 4 waits for `NexusReality`.
+
+Not yet unified: the trainer's own hypothesis/evidence types in `ControlsReasoning` still stand alone. The next step is an adapter that turns their PLC-level findings into `NexusInvestigation` hypotheses and measurements.
 
 ## Next steps (proposed build order for the first PRs)
 1. **Foundation PR.** Root `Package.swift`, plus `NexusCore` (ObjectID, TruthClass, Provenance, Revision) and `NexusModel`. Add `NexusPersistence` with SQLite, migrations and FTS5, and a round-trip test that proves truth classes survive save and reload. Add a Linux CI workflow.

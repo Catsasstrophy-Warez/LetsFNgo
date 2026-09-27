@@ -15,6 +15,7 @@ let package = Package(
         .library(name: "NexusSearch", targets: ["NexusSearch"]),
         .library(name: "NexusProjects", targets: ["NexusProjects"]),
         .library(name: "NexusSimulation", targets: ["NexusSimulation"]),
+        .library(name: "NexusInvestigation", targets: ["NexusInvestigation"]),
         .library(name: "ControlsPLC", targets: ["ControlsPLC"]),
         .library(name: "ControlsReasoning", targets: ["ControlsReasoning"]),
     ],
@@ -31,6 +32,7 @@ let package = Package(
         .target(name: "NexusSearch", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph"]),
         .target(name: "NexusProjects", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph"]),
         .target(name: "NexusSimulation", dependencies: ["NexusCore", "NexusModel"]),
+        .target(name: "NexusInvestigation", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
         // Deterministic PLC engine, ported from the Controls Tech Trainer core.
         .target(name: "ControlsPLC"),
         // Headless diagnostic reasoning, extracted from the trainer's UI target.
@@ -42,6 +44,12 @@ let package = Package(
         .testTarget(name: "NexusSearchTests", dependencies: ["NexusSearch"]),
         .testTarget(name: "NexusProjectsTests", dependencies: ["NexusProjects", "NexusSearch"]),
         .testTarget(name: "NexusSimulationTests", dependencies: ["NexusSimulation"]),
+        .testTarget(name: "NexusInvestigationTests", dependencies: ["NexusInvestigation"]),
+        // End-to-end Golden Vertical Slice (docs/BUILD_PLAN.md §D).
+        .testTarget(
+            name: "GoldenSliceTests",
+            dependencies: ["NexusInvestigation", "NexusSimulation", "NexusProjects", "NexusSearch", "NexusGraph"]
+        ),
         .testTarget(name: "ControlsPLCTests", dependencies: ["ControlsPLC"]),
         .testTarget(name: "ControlsReasoningTests", dependencies: ["ControlsReasoning", "ControlsPLC"]),
     ]
