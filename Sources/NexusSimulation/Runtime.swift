@@ -59,6 +59,16 @@ public struct WorldState: Sendable, Hashable, Codable {
         return value
     }
 
+    /// A parameter with any active fault applied, or `fallback` when the state
+    /// does not configure it. Used for parameters added after a model shipped,
+    /// so older saved states keep solving exactly as before.
+    public func parameter(_ key: StateKey, default fallback: Double) -> Double {
+        if let fault = faults.last(where: { $0.parameter == key }) {
+            return fault.value
+        }
+        return parameters[key] ?? fallback
+    }
+
     public func value(_ key: StateKey) throws -> Double {
         guard let value = values[key] else { throw SimulationError.missingValue(key) }
         return value
