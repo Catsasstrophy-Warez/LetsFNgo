@@ -1,6 +1,7 @@
 import Foundation
 import NexusCore
 import NexusModel
+import NexusPersistence
 
 /// P0–P5 from the handoff.
 public enum PermissionLevel: Int, Codable, Sendable, Hashable, Comparable, CaseIterable {
@@ -63,7 +64,8 @@ public struct PermissionRequest: Sendable, Hashable {
     }
 }
 
-public struct PolicyRule: Sendable, Hashable {
+public struct PolicyRule: Codable, Sendable, Hashable, Identifiable {
+    public var id: ObjectID
     public var agent: String?
     public var action: String?
     public var level: PermissionLevel?
@@ -74,6 +76,7 @@ public struct PolicyRule: Sendable, Hashable {
     public var grant: Grant
 
     public init(
+        id: ObjectID = .make(),
         agent: String? = nil,
         action: String? = nil,
         level: PermissionLevel? = nil,
@@ -83,6 +86,7 @@ public struct PolicyRule: Sendable, Hashable {
         service: String? = nil,
         grant: Grant
     ) {
+        self.id = id
         self.agent = agent
         self.action = action
         self.level = level
@@ -109,6 +113,10 @@ public struct PolicyRule: Sendable, Hashable {
     }
 }
 
+public enum PermissionError: Error, Equatable, Sendable {
+    case policyChangeRequiresPerson(Origin)
+}
+
 public enum PermissionDecision: Sendable, Hashable {
     case allow
     /// A person must approve. `grant` says how long an approval lasts.
@@ -125,18 +133,66 @@ public enum PermissionDecision: Sendable, Hashable {
 /// Two invariants no rule can override: sensitive or irreversible actions (P5)
 /// are asked every time, and external actions (P4) are never granted
 /// `always` by a rule that doesn't name the agent and the action.
+///
+/// With a backing store, rules and per-project approvals survive restarts;
+/// session approvals never do. Only people and the system may change policy.
 public final class PermissionEngine: @unchecked Sendable {
     public private(set) var rules: [PolicyRule]
     private let lock = NSLock()
+    private let store: NexusStore?
     private var sessionApprovals: Set<ApprovalKey> = []
     private var projectApprovals: Set<ApprovalKey> = []
 
+    static let rulesNamespace = "permissions.rules"
+    static let approvalsNamespace = "permissions.projectApprovals"
+
+    /// An in-memory engine, for tests and previews.
     public init(rules: [PolicyRule] = []) {
         self.rules = rules
+        self.store = nil
     }
 
+    /// An engine backed by the store: loads saved rules and project approvals.
+    public init(store: NexusStore) throws {
+        self.store = store
+        let decoder = JSONDecoder()
+        rules = try store.settings(Self.rulesNamespace).values
+            .map { try decoder.decode(PolicyRule.self, from: Data($0.utf8)) }
+            .sorted { $0.id < $1.id }
+        projectApprovals = Set(try store.settings(Self.approvalsNamespace).values
+            .map { try decoder.decode(ApprovalKey.self, from: Data($0.utf8)) })
+    }
+
+    /// Adds a rule without persisting it or checking the author; for
+    /// in-memory engines and fixtures.
     public func add(_ rule: PolicyRule) {
         lock.withLock { rules.append(rule) }
+    }
+
+    /// Adds and persists a rule. Agents and models may never change policy.
+    public func add(_ rule: PolicyRule, by author: Origin) throws {
+        try requirePerson(author)
+        try store?.putSetting(Self.rulesNamespace, rule.id.description, try encode(rule))
+        lock.withLock { rules.append(rule) }
+    }
+
+    public func remove(_ ruleID: ObjectID, by author: Origin) throws {
+        try requirePerson(author)
+        try store?.putSetting(Self.rulesNamespace, ruleID.description, nil)
+        lock.withLock { rules.removeAll { $0.id == ruleID } }
+    }
+
+    private func requirePerson(_ author: Origin) throws {
+        switch author {
+        case .user, .system: return
+        default: throw PermissionError.policyChangeRequiresPerson(author)
+        }
+    }
+
+    private func encode<T: Encodable>(_ value: T) throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return String(decoding: try encoder.encode(value), as: UTF8.self)
     }
 
     public func evaluate(_ request: PermissionRequest) -> PermissionDecision {
@@ -157,14 +213,25 @@ public final class PermissionEngine: @unchecked Sendable {
         }
     }
 
-    /// Records a person's approval so later identical requests follow the grant's lifetime.
+    /// Records a person's approval so later identical requests follow the
+    /// grant's lifetime. Project approvals are persisted when store-backed.
     public func recordApproval(of request: PermissionRequest, grant: Grant) {
-        lock.withLock {
+        let persist: ApprovalKey? = lock.withLock {
             switch grant {
-            case .askOncePerSession: sessionApprovals.insert(ApprovalKey(request, project: false))
-            case .askOncePerProject: projectApprovals.insert(ApprovalKey(request, project: true))
-            case .always, .askEveryTime, .never: break
+            case .askOncePerSession:
+                sessionApprovals.insert(ApprovalKey(request, project: false))
+                return nil
+            case .askOncePerProject:
+                let key = ApprovalKey(request, project: true)
+                return projectApprovals.insert(key).inserted ? key : nil
+            case .always, .askEveryTime, .never:
+                return nil
             }
+        }
+        if let key = persist, let store {
+            // An approval that fails to save still holds for this run; it
+            // will simply be asked again after a restart.
+            try? store.putSetting(Self.approvalsNamespace, key.storageKey, try encode(key))
         }
     }
 
@@ -198,7 +265,7 @@ public final class PermissionEngine: @unchecked Sendable {
         }
     }
 
-    private struct ApprovalKey: Hashable {
+    private struct ApprovalKey: Hashable, Codable {
         var agent: String
         var action: String
         var level: PermissionLevel
@@ -209,6 +276,10 @@ public final class PermissionEngine: @unchecked Sendable {
             action = request.action
             level = request.level
             self.project = project ? request.project : nil
+        }
+
+        var storageKey: String {
+            "\(agent)|\(action)|\(level.rawValue)|\(project?.description ?? "-")"
         }
     }
 }

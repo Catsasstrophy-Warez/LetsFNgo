@@ -103,6 +103,23 @@ enum Migrations {
         Migration(version: 2, name: "exact title lookup", sql: """
             CREATE INDEX objects_title_nocase ON objects(title COLLATE NOCASE);
             """),
+        Migration(version: 3, name: "change feed and settings", sql: """
+            CREATE TABLE changes (
+                seq INTEGER PRIMARY KEY AUTOINCREMENT,
+                object_id TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                at REAL NOT NULL
+            );
+            CREATE INDEX changes_object ON changes(object_id, seq);
+
+            CREATE TABLE settings (
+                namespace TEXT NOT NULL,
+                key TEXT NOT NULL,
+                value TEXT NOT NULL,
+                updated_at REAL NOT NULL,
+                PRIMARY KEY (namespace, key)
+            );
+            """),
     ]
 
     static var latestVersion: Int { all.last?.version ?? 0 }

@@ -23,7 +23,7 @@ private func prov(_ truth: TruthClass, _ origin: Origin = tech, at offset: TimeI
         // Roll the file back to exactly what migration 1 produced.
         do {
             let connection = try SQLiteConnection(path: url.path)
-            try connection.execute("DROP INDEX objects_title_nocase; DELETE FROM schema_migrations WHERE version > 1;")
+            try connection.execute("DROP INDEX objects_title_nocase; DROP TABLE changes; DROP TABLE settings; DELETE FROM schema_migrations WHERE version > 1;")
         }
         let store = try NexusStore(.file(url))
         #expect(store.schemaVersion == Migrations.latestVersion)

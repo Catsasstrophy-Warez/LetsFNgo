@@ -71,6 +71,10 @@ final class SQLiteConnection {
         return Statement(statement, connection: self)
     }
 
+    var lastInsertRowID: Int64 {
+        sqlite3_last_insert_rowid(handle)
+    }
+
     var lastErrorMessage: String {
         handle.map { String(cString: sqlite3_errmsg($0)) } ?? "no connection"
     }

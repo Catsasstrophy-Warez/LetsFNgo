@@ -39,7 +39,7 @@ let package = Package(
         .target(name: "NexusPersistence", dependencies: ["NexusCore", "NexusModel", "CSQLite"]),
         .target(name: "NexusGraph", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
         .target(name: "NexusSearch", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph"]),
-        .target(name: "NexusPermissions", dependencies: ["NexusCore", "NexusModel"]),
+        .target(name: "NexusPermissions", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
         .target(name: "NexusProjects", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusPermissions"]),
         .target(name: "NexusAI", dependencies: ["NexusCore", "NexusModel", "NexusPermissions"]),
         .target(
@@ -74,7 +74,7 @@ let package = Package(
         .testTarget(name: "NexusSearchTests", dependencies: ["NexusSearch"]),
         .testTarget(name: "NexusProjectsTests", dependencies: ["NexusProjects", "NexusSearch"]),
         .testTarget(name: "NexusSimulationTests", dependencies: ["NexusSimulation"]),
-        .testTarget(name: "NexusPermissionsTests", dependencies: ["NexusPermissions"]),
+        .testTarget(name: "NexusPermissionsTests", dependencies: ["NexusPermissions", "NexusPersistence"]),
         .testTarget(name: "NexusAITests", dependencies: ["NexusAI"]),
         .testTarget(name: "NexusAgentsTests", dependencies: ["NexusAgents", "NexusInvestigation"]),
         .testTarget(name: "NexusEngineeringTests", dependencies: ["NexusEngineering", "ControlsReasoning", "ControlsPLC"]),

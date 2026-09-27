@@ -1,5 +1,7 @@
 import NexusCore
+import Foundation
 import NexusModel
+import NexusPersistence
 import Testing
 @testable import NexusPermissions
 
@@ -81,4 +83,40 @@ private func request(_ level: PermissionLevel, agent: String = "diag", action: S
 
 private extension ObjectType {
     static let transaction: ObjectType = "transaction"
+}
+
+@Suite struct PersistentPermissionTests {
+    @Test func rulesAndProjectApprovalsSurviveRestartSessionApprovalsDoNot() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("perm-\(UUID().uuidString).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let project = ObjectID.make()
+        let rule = PolicyRule(agent: "diag", action: "annotate", grant: .never)
+        do {
+            let engine = try PermissionEngine(store: try NexusStore(.file(url)))
+            try engine.add(rule, by: .user(id: "admin"))
+            engine.add(PolicyRule(action: "sync", grant: .askOncePerSession))
+            engine.recordApproval(of: request(.modifyInternalState, project: project), grant: .askOncePerProject)
+            engine.recordApproval(of: request(.modifyInternalState, action: "sync"), grant: .askOncePerSession)
+        }
+        let engine = try PermissionEngine(store: try NexusStore(.file(url)))
+        #expect(engine.rules == [rule], "Only rules added with an author are persisted")
+        #expect(engine.evaluate(request(.modifyInternalState, project: project)) == .allow)
+        #expect(engine.evaluate(request(.modifyInternalState, action: "sync")) == .needsApproval(.askOncePerProject))
+        #expect(engine.evaluate(request(.analyze, action: "annotate")) == .deny(reason: "Policy forbids annotate for diag"))
+
+        try engine.remove(rule.id, by: .system)
+        #expect(try PermissionEngine(store: try NexusStore(.file(url))).rules.isEmpty)
+    }
+
+    @Test func agentsCannotChangePolicy() throws {
+        let engine = try PermissionEngine(store: try NexusStore(.inMemory))
+        let agent = Origin.agent(id: "diag", run: nil)
+        #expect(throws: PermissionError.policyChangeRequiresPerson(agent)) {
+            try engine.add(PolicyRule(grant: .always), by: agent)
+        }
+        #expect(throws: PermissionError.policyChangeRequiresPerson(.model(ModelRef(provider: "p", modelID: "m")))) {
+            try engine.remove(.make(), by: .model(ModelRef(provider: "p", modelID: "m")))
+        }
+        #expect(engine.rules.isEmpty)
+    }
 }

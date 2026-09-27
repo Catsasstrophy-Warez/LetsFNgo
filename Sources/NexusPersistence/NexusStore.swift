@@ -27,6 +27,44 @@ public struct SearchFilter: Sendable, Hashable {
     }
 }
 
+/// One committed change to an object: it was created, updated, gained or
+/// lost a relationship, or appeared in an event.
+public struct StoreChange: Sendable, Hashable {
+    public enum Kind: String, Sendable, Hashable {
+        case created
+        case updated
+        case related
+        case event
+    }
+
+    public var seq: Int64
+    public var object: ObjectID
+    public var kind: Kind
+    public var at: Date
+}
+
+/// Keeps a change observer registered until cancelled or released.
+public final class ChangeObservation: @unchecked Sendable {
+    private var cancelHandler: (() -> Void)?
+    private let lock = NSLock()
+
+    init(cancel: @escaping () -> Void) {
+        cancelHandler = cancel
+    }
+
+    public func cancel() {
+        let handler = lock.withLock {
+            defer { cancelHandler = nil }
+            return cancelHandler
+        }
+        handler?()
+    }
+
+    deinit {
+        cancel()
+    }
+}
+
 public struct SearchHit: Sendable, Hashable {
     public var id: ObjectID
     public var type: ObjectType
@@ -51,6 +89,12 @@ public final class NexusStore: @unchecked Sendable {
     private let clock: NexusClock
     private let lock = NSRecursiveLock()
     private var savepointDepth = 0
+    private var lockDepth = 0
+    /// Changes made inside each open savepoint, innermost last.
+    private var pendingChanges: [[StoreChange]] = []
+    /// Committed changes waiting to be delivered once the lock is released.
+    private var outbox: [StoreChange] = []
+    private var observers: [UUID: @Sendable ([StoreChange]) -> Void] = [:]
 
     private let encoder: JSONEncoder = {
         let encoder = JSONEncoder()
@@ -114,7 +158,21 @@ public final class NexusStore: @unchecked Sendable {
 
     private func locked<T>(_ body: () throws -> T) rethrows -> T {
         lock.lock()
-        defer { lock.unlock() }
+        lockDepth += 1
+        defer {
+            lockDepth -= 1
+            var delivery: [StoreChange] = []
+            var handlers: [@Sendable ([StoreChange]) -> Void] = []
+            if lockDepth == 0, !outbox.isEmpty {
+                delivery = outbox
+                outbox = []
+                handlers = Array(observers.values)
+            }
+            lock.unlock()
+            for handler in handlers {
+                handler(delivery)
+            }
+        }
         return try body()
     }
 
@@ -122,13 +180,21 @@ public final class NexusStore: @unchecked Sendable {
         let name = "nexus_sp_\(savepointDepth)"
         try db.execute("SAVEPOINT \(name)")
         savepointDepth += 1
+        pendingChanges.append([])
         do {
             let result = try body()
             savepointDepth -= 1
             try db.execute("RELEASE \(name)")
+            let committed = pendingChanges.removeLast()
+            if pendingChanges.isEmpty {
+                outbox += committed
+            } else {
+                pendingChanges[pendingChanges.count - 1] += committed
+            }
             return result
         } catch {
             savepointDepth -= 1
+            pendingChanges.removeLast()
             try? db.execute("ROLLBACK TO \(name)")
             try? db.execute("RELEASE \(name)")
             throw error
@@ -266,6 +332,7 @@ public final class NexusStore: @unchecked Sendable {
             )
         )
         try reindex(record.id, title: record.title, body: record.searchableText)
+        try logChange(record.id, .created)
         return record
     }
 
@@ -294,6 +361,7 @@ public final class NexusStore: @unchecked Sendable {
             )
         )
         try reindex(record.id, title: record.title, body: record.searchableText)
+        try logChange(record.id, .updated)
         return record
     }
 
@@ -368,6 +436,8 @@ public final class NexusStore: @unchecked Sendable {
                         .text(try encode(relationship)),
                     ]
                 )
+                try logChange(relationship.from, .related)
+                try logChange(relationship.to, .related)
                 return relationship
             }
         }
@@ -402,6 +472,8 @@ public final class NexusStore: @unchecked Sendable {
                     "UPDATE relationships SET valid_to = ?, record = ? WHERE id = ?",
                     [.real(date.timeIntervalSinceReferenceDate), .text(try encode(relationship)), .text(id.description)]
                 )
+                try logChange(relationship.from, .related)
+                try logChange(relationship.to, .related)
                 return relationship
             }
         }
@@ -449,11 +521,12 @@ public final class NexusStore: @unchecked Sendable {
                         .text(event.kind.rawValue), .text(event.provenance.truth.rawValue), .text(try encode(event)),
                     ]
                 )
-                for subject in Set(event.subjects) {
+                for subject in Set(event.subjects).sorted() {
                     try db.run(
                         "INSERT INTO event_subjects (event_id, object_id) VALUES (?, ?)",
                         [.text(event.id.description), .text(subject.description)]
                     )
+                    try logChange(subject, .event)
                 }
             }
         }
@@ -681,6 +754,89 @@ public final class NexusStore: @unchecked Sendable {
             "INSERT INTO search_index (rowid, object_id, title, body) VALUES (?, ?, ?, ?)",
             [.int(rowid), .text(id.description), .text(title), .text(body)]
         )
+    }
+
+    // MARK: Change feed
+
+    /// Changes committed after sequence number `seq`, oldest first.
+    public func changes(after seq: Int64 = 0, limit: Int = 1_000) throws -> [StoreChange] {
+        try locked {
+            try db.query(
+                "SELECT seq, object_id, kind, at FROM changes WHERE seq > ? ORDER BY seq LIMIT ?",
+                [.int(seq), .int(Int64(limit))]
+            ) { row in
+                guard let id = row.text(1).flatMap(ObjectID.init), let kind = row.text(2).flatMap(StoreChange.Kind.init) else {
+                    throw StoreError.corruptRecord(table: "changes", id: String(row.int(0)))
+                }
+                return StoreChange(seq: row.int(0), object: id, kind: kind, at: Date(timeIntervalSinceReferenceDate: row.real(3)))
+            }
+        }
+    }
+
+    /// The newest committed sequence number, or 0 for an empty feed.
+    public var latestChangeSequence: Int64 {
+        locked { (try? db.query("SELECT COALESCE(MAX(seq), 0) FROM changes") { $0.int(0) }.first) ?? 0 }
+    }
+
+    /// Calls `handler` with each batch of committed changes, after the write
+    /// that made them has fully committed and the store is unlocked. Rolled
+    /// back work is never reported. Keep the returned token to stay subscribed.
+    public func observeChanges(_ handler: @escaping @Sendable ([StoreChange]) -> Void) -> ChangeObservation {
+        let id = UUID()
+        locked { observers[id] = handler }
+        return ChangeObservation { [weak self] in
+            self?.locked { self?.observers[id] = nil }
+        }
+    }
+
+    private func logChange(_ id: ObjectID, _ kind: StoreChange.Kind) throws {
+        let now = clock.now()
+        try db.run(
+            "INSERT INTO changes (object_id, kind, at) VALUES (?, ?, ?)",
+            [.text(id.description), .text(kind.rawValue), .real(now.timeIntervalSinceReferenceDate)]
+        )
+        let change = StoreChange(seq: db.lastInsertRowID, object: id, kind: kind, at: now)
+        if pendingChanges.isEmpty {
+            outbox.append(change)
+        } else {
+            pendingChanges[pendingChanges.count - 1].append(change)
+        }
+    }
+
+    // MARK: Settings
+
+    /// Small named documents that are configuration rather than world
+    /// objects, such as permission policy. Values are opaque strings (JSON).
+    public func setting(_ namespace: String, _ key: String) throws -> String? {
+        try locked {
+            try db.query("SELECT value FROM settings WHERE namespace = ? AND key = ?", [.text(namespace), .text(key)]) { $0.text(0) }.first ?? nil
+        }
+    }
+
+    public func settings(_ namespace: String) throws -> [String: String] {
+        try locked {
+            let rows = try db.query("SELECT key, value FROM settings WHERE namespace = ?", [.text(namespace)]) { ($0.text(0) ?? "", $0.text(1) ?? "") }
+            return Dictionary(rows, uniquingKeysWith: { _, last in last })
+        }
+    }
+
+    /// Stores a value, or deletes it when `value` is nil.
+    public func putSetting(_ namespace: String, _ key: String, _ value: String?) throws {
+        try locked {
+            try transaction {
+                if let value {
+                    try db.run(
+                        """
+                        INSERT INTO settings (namespace, key, value, updated_at) VALUES (?, ?, ?, ?)
+                        ON CONFLICT (namespace, key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+                        """,
+                        [.text(namespace), .text(key), .text(value), .real(clock.now().timeIntervalSinceReferenceDate)]
+                    )
+                } else {
+                    try db.run("DELETE FROM settings WHERE namespace = ? AND key = ?", [.text(namespace), .text(key)])
+                }
+            }
+        }
     }
 
     // MARK: Coding
