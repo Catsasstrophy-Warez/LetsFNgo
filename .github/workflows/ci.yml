@@ -54,4 +54,17 @@ jobs:
         run: |
           DEVICE=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k,v in sorted(d.items(), reverse=True) if 'iOS' in k for x in v if x['name'].startswith('iPhone')))")
           echo "Simulator: $DEVICE"
-          xcodebuild test -project Nexus.xcodeproj -scheme NexusApp -destination "id=$DEVICE" CODE_SIGNING_ALLOWED=NO -quiet
+          xcodebuild test -project Nexus.xcodeproj -scheme NexusApp -destination "id=$DEVICE" CODE_SIGNING_ALLOWED=NO \
+            -resultBundlePath UITests.xcresult -collect-test-diagnostics never -quiet
+      - name: UI test failures
+        if: failure()
+        run: xcrun xcresulttool get test-results tests --path UITests.xcresult --format json | python3 -c "
+          import json, sys
+          def walk(node, depth=0):
+              if node.get('result') == 'Failed' or node.get('nodeType') == 'Failure Message':
+                  print('  ' * depth + node.get('nodeType', '') + ': ' + node.get('name', ''))
+              for child in node.get('children', []):
+                  walk(child, depth + 1)
+          for node in json.load(sys.stdin).get('testNodes', []):
+              walk(node)
+          "
