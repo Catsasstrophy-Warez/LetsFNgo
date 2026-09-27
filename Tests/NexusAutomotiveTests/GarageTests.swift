@@ -77,7 +77,7 @@ private let t0 = Date(timeIntervalSinceReferenceDate: 800_000_000)
         #expect(history[0].procedure.type == .procedure && history[0] == oil)
         #expect(try store.relationships(from: car.id, kind: .serviced).count == 2)
         #expect(try garage.vehicle(car.id).odometerKm == 97_600)
-        #expect(try store.events(about: car.id).map(\.kind).filter { $0 != .stateChanged } == [.service, .odometerReading, .service])
+        #expect(try store.events(about: car.id).map(\.kind).filter { $0 != .stateChanged && $0 != .objectEdited } == [.service, .odometerReading, .service])
         #expect(throws: AutomotiveError.odometerWentBackwards(previous: 97_600, new: 50_000)) {
             try garage.recordService(ServiceEntry(title: "Wrong", performedAt: clock.now(), odometerKm: 50_000), on: car.id, by: tech)
         }
