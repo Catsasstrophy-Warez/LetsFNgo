@@ -148,10 +148,12 @@ struct CompactRoot: View {
                         Menu {
                             ForEach(ScreenFamily.allCases, id: \.self) { family in
                                 Button { env.context.open(family) } label: { Label(family.title, systemImage: family.symbol) }
+                                    .accessibilityIdentifier("screen.\(family.rawValue)")
                             }
                         } label: {
                             Label("More", systemImage: "ellipsis.circle")
                         }
+                        .accessibilityIdentifier("more")
                     }
                 }
         }
