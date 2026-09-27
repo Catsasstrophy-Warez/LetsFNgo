@@ -100,6 +100,9 @@ enum Migrations {
                 tokenize = 'unicode61 remove_diacritics 2'
             );
             """),
+        Migration(version: 2, name: "exact title lookup", sql: """
+            CREATE INDEX objects_title_nocase ON objects(title COLLATE NOCASE);
+            """),
     ]
 
     static var latestVersion: Int { all.last?.version ?? 0 }

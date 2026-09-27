@@ -293,6 +293,11 @@ All of this lives in `NexusAppleIntelligence` behind `canImport`, and it is a *v
 
 ---
 
+## Progress
+- [x] 1. Foundation: `NexusCore`, `NexusModel`, `NexusPersistence` (SQLite + FTS5 + migrations), Linux CI.
+- [x] 2. `NexusGraph` (validity-aware traversal, shortest path), `NexusSearch` (exact ID/title + FTS5 + pluggable semantic, fused by reciprocal rank; structured, temporal and project-scope filters), `NexusProjects` (project runtime; context/selection runtime; selection-driven command surface).
+- [x] 3. `ControlsPLC`: trainer Core ported verbatim; its 37 tests pass unchanged.
+
 ## Next steps (proposed build order for the first PRs)
 1. **Foundation PR.** Root `Package.swift`, plus `NexusCore` (ObjectID, TruthClass, Provenance, Revision) and `NexusModel`. Add `NexusPersistence` with SQLite, migrations and FTS5, and a round-trip test that proves truth classes survive save and reload. Add a Linux CI workflow.
 2. **Graph, Search and Project runtime** with the context and selection runtime.

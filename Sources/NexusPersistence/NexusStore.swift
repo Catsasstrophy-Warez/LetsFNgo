@@ -2,6 +2,31 @@ import Foundation
 import NexusCore
 import NexusModel
 
+/// Filters for `NexusStore.search`. Every set field must match.
+public struct SearchFilter: Sendable, Hashable {
+    public var types: Set<ObjectType>?
+    /// Truth class of the object itself (its provenance).
+    public var truth: Set<TruthClass>?
+    public var updatedFrom: Date?
+    public var updatedTo: Date?
+    /// Restrict results to these objects, e.g. a project's members.
+    public var scope: Set<ObjectID>?
+
+    public init(
+        types: Set<ObjectType>? = nil,
+        truth: Set<TruthClass>? = nil,
+        updatedFrom: Date? = nil,
+        updatedTo: Date? = nil,
+        scope: Set<ObjectID>? = nil
+    ) {
+        self.types = types
+        self.truth = truth
+        self.updatedFrom = updatedFrom
+        self.updatedTo = updatedTo
+        self.scope = scope
+    }
+}
+
 public struct SearchHit: Sendable, Hashable {
     public var id: ObjectID
     public var type: ObjectType
@@ -163,6 +188,35 @@ public final class NexusStore: @unchecked Sendable {
         }
     }
 
+    /// Fetches several objects at once, in the order of `ids`. Unknown IDs are skipped.
+    public func objects(_ ids: [ObjectID]) throws -> [ObjectRecord] {
+        guard !ids.isEmpty else { return [] }
+        return try locked {
+            var byID: [ObjectID: ObjectRecord] = [:]
+            // Stay well under SQLite's bound-parameter limit.
+            for chunk in stride(from: 0, to: ids.count, by: 500).map({ ids[$0..<min($0 + 500, ids.count)] }) {
+                let placeholders = Array(repeating: "?", count: chunk.count).joined(separator: ", ")
+                let records = try db.query(
+                    "SELECT record FROM objects WHERE id IN (\(placeholders))", chunk.map { .text($0.description) }
+                ) { try decode(ObjectRecord.self, $0, table: "objects") }
+                for record in records {
+                    byID[record.id] = record
+                }
+            }
+            return ids.compactMap { byID[$0] }
+        }
+    }
+
+    /// Objects whose title equals `title`, ignoring case. Deleted objects are excluded.
+    public func objects(titled title: String) throws -> [ObjectRecord] {
+        try locked {
+            try db.query(
+                "SELECT record FROM objects WHERE title = ? COLLATE NOCASE AND lifecycle != 'deleted' ORDER BY id",
+                [.text(title)]
+            ) { try decode(ObjectRecord.self, $0, table: "objects") }
+        }
+    }
+
     /// All revisions of an object, oldest first.
     public func revisions(of id: ObjectID) throws -> [Revision] {
         try locked {
@@ -306,6 +360,46 @@ public final class NexusStore: @unchecked Sendable {
                 return relationship
             }
         }
+    }
+
+    public func relationship(_ id: ObjectID) throws -> Relationship? {
+        try locked { try fetchRelationship(id) }
+    }
+
+    /// Closes a relationship's validity interval at `date`. The relationship is
+    /// kept, so history ("was in this project until…") stays queryable.
+    ///
+    /// Ending a recorded or observed relationship is limited to users and the
+    /// system, the same rule as removing a protected attribute.
+    @discardableResult
+    public func end(_ id: ObjectID, at date: Date, by author: Origin) throws -> Relationship {
+        try locked {
+            try transaction {
+                guard var relationship = try fetchRelationship(id) else { throw StoreError.notFound(id) }
+                if relationship.validTo != nil {
+                    throw StoreError.immutableField(object: id, field: "validTo")
+                }
+                if TruthPolicy.protected.contains(relationship.provenance.truth) {
+                    switch author {
+                    case .user, .system: break
+                    default: throw StoreError.protectedRemoval(object: id, attribute: "validTo", by: author)
+                    }
+                }
+                relationship.validTo = date
+                try relationship.validate()
+                try db.run(
+                    "UPDATE relationships SET valid_to = ?, record = ? WHERE id = ?",
+                    [.real(date.timeIntervalSinceReferenceDate), .text(try encode(relationship)), .text(id.description)]
+                )
+                return relationship
+            }
+        }
+    }
+
+    private func fetchRelationship(_ id: ObjectID) throws -> Relationship? {
+        try db.query("SELECT record FROM relationships WHERE id = ?", [.text(id.description)]) {
+            try decode(Relationship.self, $0, table: "relationships")
+        }.first
     }
 
     public func relationships(from id: ObjectID, kind: RelationKind? = nil) throws -> [Relationship] {
@@ -502,33 +596,69 @@ public final class NexusStore: @unchecked Sendable {
     /// Full-text search over titles and string attributes. Every word in
     /// `text` must match, as a prefix.
     public func search(_ text: String, types: Set<ObjectType>? = nil, limit: Int = 50) throws -> [SearchHit] {
+        try search(text, filter: SearchFilter(types: types), limit: limit)
+    }
+
+    /// Full-text search with structured, temporal and scope filters applied in
+    /// SQL, so `limit` counts only results that pass every filter.
+    public func search(_ text: String, filter: SearchFilter, limit: Int = 50) throws -> [SearchHit] {
         let tokens = text
             .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
             .map { "\"\($0)\"*" }
-        guard !tokens.isEmpty else { return [] }
+        guard !tokens.isEmpty, limit > 0 else { return [] }
+        if let scope = filter.scope, scope.isEmpty { return [] }
 
         return try locked {
-            var sql = """
-                SELECT o.id, o.type, o.title, bm25(search_index) AS score
-                FROM search_index JOIN objects o ON o.rowid = search_index.rowid
-                WHERE search_index MATCH ? AND o.lifecycle != 'deleted'
-                """
-            var values: [SQLValue] = [.text(tokens.joined(separator: " "))]
-            if let types, !types.isEmpty {
-                sql += " AND o.type IN (\(Array(repeating: "?", count: types.count).joined(separator: ", ")))"
-                values += types.map(\.rawValue).sorted().map(SQLValue.text)
-            }
-            sql += " ORDER BY score, o.id LIMIT ?"
-            values.append(.int(Int64(limit)))
-            return try db.query(sql, values) { row in
-                guard let idText = row.text(0), let id = ObjectID(idText) else {
-                    throw StoreError.corruptRecord(table: "objects", id: row.text(0) ?? "?")
+            try transaction {
+                var sql = """
+                    SELECT o.id, o.type, o.title, bm25(search_index) AS score
+                    FROM search_index JOIN objects o ON o.rowid = search_index.rowid
+                    WHERE search_index MATCH ? AND o.lifecycle != 'deleted'
+                    """
+                var values: [SQLValue] = [.text(tokens.joined(separator: " "))]
+                if let types = filter.types, !types.isEmpty {
+                    sql += " AND o.type IN (\(placeholders(types.count)))"
+                    values += types.map(\.rawValue).sorted().map(SQLValue.text)
                 }
-                return SearchHit(
-                    id: id, type: ObjectType(rawValue: row.text(1) ?? ""), title: row.text(2) ?? "", score: row.real(3)
-                )
+                if let truth = filter.truth, !truth.isEmpty {
+                    sql += " AND o.truth IN (\(placeholders(truth.count)))"
+                    values += truth.map(\.rawValue).sorted().map(SQLValue.text)
+                }
+                if let from = filter.updatedFrom {
+                    sql += " AND o.updated_at >= ?"
+                    values.append(.real(from.timeIntervalSinceReferenceDate))
+                }
+                if let to = filter.updatedTo {
+                    sql += " AND o.updated_at <= ?"
+                    values.append(.real(to.timeIntervalSinceReferenceDate))
+                }
+                if let scope = filter.scope {
+                    try db.execute("CREATE TEMP TABLE IF NOT EXISTS search_scope (id TEXT PRIMARY KEY); DELETE FROM search_scope;")
+                    for id in scope {
+                        try db.run("INSERT INTO search_scope (id) VALUES (?)", [.text(id.description)])
+                    }
+                    sql += " AND o.id IN (SELECT id FROM search_scope)"
+                }
+                sql += " ORDER BY score, o.id LIMIT ?"
+                values.append(.int(Int64(limit)))
+                let hits = try db.query(sql, values) { row in
+                    guard let idText = row.text(0), let id = ObjectID(idText) else {
+                        throw StoreError.corruptRecord(table: "objects", id: row.text(0) ?? "?")
+                    }
+                    return SearchHit(
+                        id: id, type: ObjectType(rawValue: row.text(1) ?? ""), title: row.text(2) ?? "", score: row.real(3)
+                    )
+                }
+                if filter.scope != nil {
+                    try db.execute("DELETE FROM search_scope;")
+                }
+                return hits
             }
         }
+    }
+
+    private func placeholders(_ count: Int) -> String {
+        Array(repeating: "?", count: count).joined(separator: ", ")
     }
 
     /// The FTS row shares the object's rowid, so updates replace it directly.
