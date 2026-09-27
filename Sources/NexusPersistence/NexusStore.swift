@@ -47,8 +47,8 @@ public final class NexusStore: @unchecked Sendable {
         case file(URL)
     }
 
-    private let db: SQLiteConnection
-    private let clock: NexusClock
+    let db: SQLiteConnection
+    let clock: NexusClock
     private let lock = NSRecursiveLock()
     private var savepointDepth = 0
 
@@ -112,13 +112,13 @@ public final class NexusStore: @unchecked Sendable {
         try locked { try transaction { try body(self) } }
     }
 
-    private func locked<T>(_ body: () throws -> T) rethrows -> T {
+    func locked<T>(_ body: () throws -> T) rethrows -> T {
         lock.lock()
         defer { lock.unlock() }
         return try body()
     }
 
-    private func transaction<T>(_ body: () throws -> T) throws -> T {
+    func transaction<T>(_ body: () throws -> T) throws -> T {
         let name = "nexus_sp_\(savepointDepth)"
         try db.execute("SAVEPOINT \(name)")
         savepointDepth += 1

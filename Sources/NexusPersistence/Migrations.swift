@@ -103,6 +103,20 @@ enum Migrations {
         Migration(version: 2, name: "exact title lookup", sql: """
             CREATE INDEX objects_title_nocase ON objects(title COLLATE NOCASE);
             """),
+        // 3 reserved: permissions/change feed.
+        // Version 4 depends only on version 1's tables, never on version 3's.
+        Migration(version: 4, name: "content-addressed blobs", sql: """
+            -- Metadata only; the bytes live in a content-addressed directory
+            -- next to the database (see NexusStore+Blobs.swift). IF NOT EXISTS
+            -- so a file rolled back to an earlier schema version re-applies cleanly.
+            CREATE TABLE IF NOT EXISTS blobs (
+                id TEXT PRIMARY KEY,
+                sha256 TEXT NOT NULL UNIQUE,
+                byte_count INTEGER NOT NULL,
+                media_type TEXT NOT NULL,
+                created_at REAL NOT NULL
+            );
+            """),
     ]
 
     static var latestVersion: Int { all.last?.version ?? 0 }
