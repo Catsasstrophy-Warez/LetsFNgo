@@ -2,6 +2,7 @@ import Foundation
 import NexusCore
 import NexusGraph
 import NexusInvestigation
+import NexusLearning
 import NexusModel
 import NexusPersistence
 import NexusProjects
@@ -222,6 +223,32 @@ import Testing
         #expect(body.contains("relies on: LT-101 needs at least 12 V"))
         #expect(body.contains("## Verification\n- terminalVoltage = 19.03 V (observed, high level)"))
 
+        // 13. Training scenario from the case, replayable and gradable.
+        let learning = LearningRuntime(store: world.store, clock: clock)
+        let scenario = try learning.makeScenario(from: investigation, loop: loop, fault: fault, tests: options, by: tech)
+        #expect(scenario.cause == compliance.statement)
+        #expect(scenario.expertPath == ["Read channel span from controller", "Terminal voltage at TB-4 under load"])
+        #expect(scenario.choices.count == 4)
+        let replay = try scenario.makeField()
+        #expect(abs(try replay.value(loop.terminalVoltage) - loaded.value.value) < 1e-9, "Replay reproduces the case")
+        let learner = Origin.user(id: "apprentice-7")
+        let expert = try learning.grade(scenario.id, learner: learner, testsRun: scenario.expertPath, diagnosis: scenario.cause)
+        #expect(expert.score == 100)
+        let reckless = try learning.grade(
+            scenario.id, learner: learner, testsRun: ["Measure 24 V bus with covers off"], diagnosis: failed.statement
+        )
+        #expect(reckless.score == 0 && reckless.jumpedToConclusion && reckless.hazardousTests.count == 1)
+        // Repeating every test doubles the cost: half efficiency, 60 + 15 + 10.
+        let repetitive = try learning.grade(
+            scenario.id, learner: learner, testsRun: scenario.expertPath + scenario.expertPath, diagnosis: scenario.cause
+        )
+        #expect(repetitive.correctDiagnosis && abs(repetitive.efficiency - 0.5) < 1e-9 && repetitive.score == 85)
+        let decisive = try learning.grade(
+            scenario.id, learner: learner, testsRun: ["Terminal voltage at TB-4 under load"], diagnosis: scenario.cause
+        )
+        // The loaded voltage alone contradicts every rival here, so skipping the span read costs nothing.
+        #expect(decisive.correctDiagnosis && abs(decisive.efficiency - 1) < 1e-9 && decisive.score == 100)
+
         // 14. Save, reload, and compare everything.
         let before = try Snapshot(of: world.store, project: project, investigation: investigation, report: report.id, graph: world.graph)
         world = try World(url: url, clock: clock)
@@ -229,6 +256,7 @@ import Testing
         #expect(reloaded == before)
         #expect(reloaded.hypotheses[compliance.id] == .confirmed)
         #expect(reloaded.timeline.contains { $0.kind == .firstDivergence })
+        #expect(try LearningRuntime(store: world.store).scenario(scenario.id) == scenario)
     }
 }
 

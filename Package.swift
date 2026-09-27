@@ -20,6 +20,7 @@ let package = Package(
         .library(name: "NexusAI", targets: ["NexusAI"]),
         .library(name: "NexusAgents", targets: ["NexusAgents"]),
         .library(name: "NexusEngineering", targets: ["NexusEngineering"]),
+        .library(name: "NexusLearning", targets: ["NexusLearning"]),
         .library(name: "ControlsPLC", targets: ["ControlsPLC"]),
         .library(name: "ControlsReasoning", targets: ["ControlsReasoning"]),
     ],
@@ -47,6 +48,10 @@ let package = Package(
             name: "NexusEngineering",
             dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusInvestigation", "ControlsPLC", "ControlsReasoning"]
         ),
+        .target(
+            name: "NexusLearning",
+            dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusInvestigation", "NexusSimulation"]
+        ),
         // Deterministic PLC engine, ported from the Controls Tech Trainer core.
         .target(name: "ControlsPLC"),
         // Headless diagnostic reasoning, extracted from the trainer's UI target.
@@ -62,11 +67,12 @@ let package = Package(
         .testTarget(name: "NexusAITests", dependencies: ["NexusAI"]),
         .testTarget(name: "NexusAgentsTests", dependencies: ["NexusAgents", "NexusInvestigation"]),
         .testTarget(name: "NexusEngineeringTests", dependencies: ["NexusEngineering", "ControlsReasoning", "ControlsPLC"]),
+        .testTarget(name: "NexusLearningTests", dependencies: ["NexusLearning"]),
         .testTarget(name: "NexusInvestigationTests", dependencies: ["NexusInvestigation"]),
         // End-to-end Golden Vertical Slice (docs/BUILD_PLAN.md §D).
         .testTarget(
             name: "GoldenSliceTests",
-            dependencies: ["NexusInvestigation", "NexusSimulation", "NexusProjects", "NexusSearch", "NexusGraph"]
+            dependencies: ["NexusInvestigation", "NexusSimulation", "NexusProjects", "NexusSearch", "NexusGraph", "NexusLearning"]
         ),
         .testTarget(name: "ControlsPLCTests", dependencies: ["ControlsPLC"]),
         .testTarget(name: "ControlsReasoningTests", dependencies: ["ControlsReasoning", "ControlsPLC"]),
