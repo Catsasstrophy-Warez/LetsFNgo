@@ -82,6 +82,7 @@ public struct RootView: View {
             CommandPalette()
                 .environment(env)
         }
+        .commandPresentation()
         .background {
             Button("Command Palette") { showPalette = true }
                 .keyboardShortcut("k", modifiers: .command)
@@ -142,7 +143,7 @@ struct CompactRoot: View {
                         Spacer()
                         Button { showIntelligence = true } label: { Label("Ask", systemImage: "sparkles") }
                         Spacer()
-                        Button { env.context.open(.search) } label: { Label("New", systemImage: "plus.circle.fill") }
+                        Button { env.commands.run(.create, title: "New") } label: { Label("New", systemImage: "plus.circle.fill") }
                         Spacer()
                         Button { showPalette = true } label: { Label("Actions", systemImage: "bolt") }
                         Spacer()
@@ -229,8 +230,7 @@ struct CommandPalette: View {
                 Section("Commands") {
                     ForEach(commands) { command in
                         Button {
-                            perform(command.id)
-                            dismiss()
+                            perform(command)
                         } label: {
                             HStack {
                                 Text(command.title)
@@ -260,16 +260,12 @@ struct CommandPalette: View {
         .frame(minWidth: 420, minHeight: 360)
     }
 
-    private func perform(_ id: String) {
-        switch id {
-        case "open": env.context.open(.objectDetail)
-        case "search": env.context.open(.search)
-        case "investigate": env.context.open(.investigation)
-        case "simulate", "trace": env.context.open(.simulation)
-        case "measure": env.context.open(.telemetry)
-        case "ask", "analyze": env.context.open(.agentActivity)
-        case "compare", "runAnalysis", "group", "export": env.context.open(.collection)
-        default: env.context.open(.commandCenter)
+    private func perform(_ command: Command) {
+        dismiss()
+        // Let the palette close before a command's own form can appear.
+        Task {
+            try? await Task.sleep(for: .milliseconds(350))
+            env.commands.run(command.commandID, title: command.title)
         }
     }
 }

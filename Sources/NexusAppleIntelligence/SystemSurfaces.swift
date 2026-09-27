@@ -72,6 +72,7 @@ public func objectID(fromSpotlightActivity activity: NSUserActivity) -> ObjectID
 
 #if canImport(Vision)
 import CoreGraphics
+import ImageIO
 import Vision
 
 public enum NameplateReader {
@@ -89,6 +90,15 @@ public enum NameplateReader {
     public static func identify(_ image: CGImage, in env: NexusEnvironment) async throws -> [NameplateMatcher.Match] {
         let lines = try await read(image)
         return try NameplateMatcher(engine: env.search).match(lines: lines, scope: env.context.activeProject ?? env.demo?.project)
+    }
+
+    /// `identify` for encoded image bytes (a photo from the picker or camera).
+    @MainActor
+    public static func identify(imageData data: Data, in env: NexusEnvironment) async throws -> [ObjectID] {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil), let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+            throw AppleIntelligenceError.unavailable("Reading that image")
+        }
+        return try await identify(image, in: env).map(\.object)
     }
 }
 #endif
@@ -119,6 +129,15 @@ public struct NameplateValueQuery: IntentValueQuery {
 import Speech
 
 public enum SpeechNotes {
+    /// Asks for speech permission if needed, then transcribes on device.
+    public static func authorizeAndTranscribe(_ url: URL) async throws -> String {
+        let status = await withCheckedContinuation { continuation in
+            SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) }
+        }
+        guard status == .authorized else { throw AppleIntelligenceError.unavailable("Speech recognition permission") }
+        return try await transcribe(url)
+    }
+
     /// Transcribes a recording on device when the recognizer supports it.
     public static func transcribe(_ url: URL, locale: Locale = .current) async throws -> String {
         guard let recognizer = SFSpeechRecognizer(locale: locale), recognizer.isAvailable else {

@@ -1,11 +1,13 @@
 #if canImport(SwiftUI)
 import Charts
+import NexusActions
 import NexusCore
 import NexusInvestigation
 import NexusModel
 import NexusPersistence
 import NexusReality
 import NexusSimulation
+import NexusVisualization
 import SwiftUI
 #if canImport(RealityKit)
 import NexusRealityKit
@@ -13,10 +15,11 @@ import RealityKit
 #endif
 
 /// Observations, hypotheses, evidence, the discriminating next test, and the
-/// first divergence, for the focused investigation (or the demo's).
+/// first divergence, for the focused investigation (or the demo's). Every
+/// action goes through a command, so the field workflow is the same here, in
+/// the palette and in Siri.
 struct InvestigationScreen: View {
     @Environment(NexusEnvironment.self) private var env
-    @State private var error: String?
 
     private var investigationID: ObjectID? {
         if let focus = env.object(env.context.focus), focus.type == .investigation { return focus.id }
@@ -24,23 +27,38 @@ struct InvestigationScreen: View {
     }
 
     var body: some View {
-        if let id = investigationID, let record = env.object(id) {
-            let hypotheses = (try? env.investigations.hypotheses(of: id)) ?? []
-            let evidence = (try? env.store.relationships(from: id, kind: .contains).map(\.to).compactMap { try env.store.measurement($0) }) ?? []
-            let tests = options(for: hypotheses)
-            let ranked = (try? env.investigations.rankTests(tests, for: id)) ?? []
-            Form {
-                Section("Symptom") {
-                    Text(record.title).font(.headline)
-                    if case .map(let divergence)? = record.attributes["firstDivergence"]?.value, case .string(let summary)? = divergence["summary"] {
-                        Label(summary, systemImage: "arrow.triangle.branch").foregroundStyle(.orange)
-                    }
+        _ = env.revision
+        return Group {
+            if let id = investigationID, let record = env.object(id) {
+                content(id, record)
+            } else {
+                NextActionEmptyState("No investigation", message: "Select equipment and choose Start Investigation from ⌘K.", systemImage: "stethoscope")
+            }
+        }
+    }
+
+    private func content(_ id: ObjectID, _ record: ObjectRecord) -> some View {
+        let hypotheses = (try? env.investigations.hypotheses(of: id)) ?? []
+        let evidence = (try? env.store.relationships(from: id, kind: .contains).map(\.to).compactMap { try env.store.measurement($0) }) ?? []
+        let tests = options(for: hypotheses, in: id)
+        let ranked = (try? env.investigations.rankTests(tests, for: id)) ?? []
+        let status = record.attributes["status"]?.value
+        let closed = status == .string("closed")
+        let confirmed = hypotheses.first { $0.state == .confirmed }
+        return Form {
+            Section("Symptom") {
+                Text(record.title).font(.headline)
+                if case .map(let divergence)? = record.attributes["firstDivergence"]?.value, case .string(let summary)? = divergence["summary"] {
+                    Label(summary, systemImage: "arrow.triangle.branch").foregroundStyle(.orange)
                 }
+                if closed { Label("Closed", systemImage: "checkmark.seal.fill") }
+            }
+            if !closed {
                 // The next action comes first: on iPhone, hypotheses fill the screen.
                 Section("Next test") {
                     ForEach(Array(ranked.enumerated()), id: \.offset) { index, recommendation in
                         HStack {
-                            Text(index == 0 ? "Best" : "#\(index + 1)").font(.caption.bold()).frame(width: 40, alignment: .leading)
+                            Text(index == 0 ? "Best" : "#\(index + 1)").font(.caption.bold()).frame(minWidth: 40, alignment: .leading)
                             Text(recommendation.option.title)
                             Spacer()
                             Text("\(recommendation.informationGain.formatted(.number.precision(.fractionLength(2)))) bits")
@@ -48,48 +66,109 @@ struct InvestigationScreen: View {
                         }
                         .accessibilityElement(children: .combine)
                     }
-                }
-                Section("Hypotheses") {
-                    ForEach(hypotheses) { hypothesis in
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(hypothesis.statement)
-                                Spacer()
-                                HypothesisStateBadge(hypothesis.state)
-                            }
-                            ForEach(hypothesis.predictions, id: \.self) { prediction in
-                                Text("predicts \(prediction.quantity) \(prediction.low.formatted())–\(prediction.high.formatted()) \(prediction.unit) at \(env.title(prediction.testPoint))")
-                                    .font(.caption).foregroundStyle(.secondary)
-                            }
-                            if hypothesis.state.isLive {
-                                Button("Confirm as cause") { confirm(hypothesis.id, in: id) }
-                                    .font(.caption)
-                            }
-                        }
-                        .accessibilityElement(children: .combine)
+                    Button {
+                        record(in: id, tests: tests, suggested: ranked.first?.option)
+                    } label: {
+                        Label("Record measurement", systemImage: "gauge.with.dots.needle.bottom.50percent")
                     }
-                }
-                Section("Evidence") {
-                    ForEach(evidence) { reading in
-                        HStack {
-                            Text("\(reading.quantityName) = \(reading.value.value.formatted()) \(reading.value.unit)")
-                            Spacer()
-                            TruthBadge(reading.truth)
-                        }
-                    }
-                }
-                if let error {
-                    Section { Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red) }
+                    .accessibilityIdentifier("investigation.record")
                 }
             }
-            .formStyle(.grouped)
-        } else {
-            NextActionEmptyState("No investigation", message: "Select equipment and choose Start Investigation from ⌘K.", systemImage: "stethoscope")
+            Section("Hypotheses") {
+                ForEach(hypotheses) { hypothesis in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(hypothesis.statement)
+                            Spacer()
+                            HypothesisStateBadge(hypothesis.state)
+                        }
+                        ForEach(hypothesis.predictions, id: \.self) { prediction in
+                            Text("predicts \(prediction.quantity) \(prediction.low.formatted())–\(prediction.high.formatted()) \(prediction.unit) at \(env.title(prediction.testPoint))")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
+                    if hypothesis.state.isLive && !closed {
+                        HStack {
+                            Button("Confirm as cause") {
+                                env.commands.run(.confirmHypothesis, title: "Confirm", selection: [hypothesis.id], parameters: .with { $0.investigation = id })
+                            }
+                            .accessibilityIdentifier("confirm.\(hypothesis.id)")
+                            Button("Reject", role: .destructive) {
+                                env.commands.run(.rejectHypothesis, title: "Reject", selection: [hypothesis.id], parameters: .with { $0.investigation = id })
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.regular)
+                    }
+                }
+                if !closed {
+                    Button("Add hypothesis") { env.commands.run(.proposeHypothesis, title: "Add hypothesis", selection: [id]) }
+                }
+            }
+            Section("Evidence") {
+                // System truth (observed, recorded) and display truth side by side, never merged.
+                let system = evidence.filter { $0.truth == .observed || $0.truth == .recorded }
+                let display = evidence.filter { $0.truth == .display }
+                let modeled = evidence.filter { $0.truth == .modeled || $0.truth == .derived }
+                if evidence.isEmpty {
+                    NextActionEmptyState("No readings yet", message: "Take the best next test above and record it.", systemImage: "gauge")
+                }
+                evidenceGroup("System truth", system)
+                evidenceGroup("Display truth", display)
+                evidenceGroup("Modeled", modeled)
+            }
+            Section("Resolve") {
+                if let confirmed, !closed {
+                    Label("Cause: \(confirmed.statement)", systemImage: "checkmark.seal")
+                    Button("Create repair task") {
+                        env.commands.run(.createRepairTask, title: "Create repair task", selection: [id])
+                    }
+                    Button("Close investigation") {
+                        env.commands.run(.closeInvestigation, title: "Close investigation", selection: [id])
+                    }
+                }
+                Button("Generate report") { env.commands.run(.generateReport, title: "Report", selection: [id]) }
+                if confirmed != nil {
+                    Button("Make a training scenario") {
+                        env.commands.run(.generateTrainingScenario, title: "Training scenario", selection: [id])
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    @ViewBuilder
+    private func evidenceGroup(_ title: String, _ readings: [MeasurementRecord]) -> some View {
+        if !readings.isEmpty {
+            Text(title).font(.caption.bold()).foregroundStyle(.secondary)
+            ForEach(readings) { reading in
+                HStack {
+                    Text("\(reading.quantityName) = \(reading.value.value.formatted()) \(reading.value.unit)")
+                    if let spread = reading.uncertainty { Text("± \(spread.formatted())").font(.caption).foregroundStyle(.secondary) }
+                    Spacer()
+                    TruthBadge(reading.truth)
+                }
+                .accessibilityElement(children: .combine)
+            }
         }
     }
 
-    private func options(for hypotheses: [Hypothesis]) -> [TestOption] {
-        if let demo = env.demo { return demo.tests }
+    /// Opens the reading form, prefilled with the best next test.
+    private func record(in investigation: ObjectID, tests: [TestOption], suggested: TestOption?) {
+        let parameters = ActionParameters.with {
+            $0.investigation = investigation
+            $0.tests = tests
+            $0.testPoint = suggested?.testPoint
+            $0.quantity = suggested?.quantity
+            $0.truth = .observed
+        }
+        env.commands.run(.recordMeasurement, title: "Record measurement", selection: [investigation], parameters: parameters)
+    }
+
+    private func options(for hypotheses: [Hypothesis], in investigation: ObjectID) -> [TestOption] {
+        if let demo = env.demo, demo.investigation == investigation { return demo.tests }
         var seen: Set<String> = []
         return hypotheses.flatMap(\.predictions).compactMap { prediction in
             let key = "\(prediction.testPoint)|\(prediction.quantity)|\(prediction.condition ?? "")"
@@ -98,16 +177,6 @@ struct InvestigationScreen: View {
                 title: "\(prediction.quantity) at \(env.title(prediction.testPoint))", testPoint: prediction.testPoint,
                 quantity: prediction.quantity, condition: prediction.condition, cost: 5
             )
-        }
-    }
-
-    private func confirm(_ hypothesis: ObjectID, in investigation: ObjectID) {
-        do {
-            try env.investigations.confirm(hypothesis, in: investigation, by: env.user)
-            error = nil
-        } catch {
-            // Errors explain what happened and what survived.
-            self.error = "Not confirmed: \(error). Nothing was changed; take a supporting field measurement first."
         }
     }
 }
@@ -235,6 +304,9 @@ struct TelemetryScreen: View {
                 .padding()
                 .accessibilityLabel("Chart of \(Set(visibleSeries.map(\.signal)).sorted().joined(separator: ", ")) over time")
                 Toggle("Show as table", isOn: $showTable).padding(.horizontal)
+                if depth == .expert {
+                    expertViews
+                }
                 if showTable || depth == .expert {
                     Table(visibleSeries.filter { Int($0.seconds) % 30 == 0 }) {
                         TableColumn("Signal", value: \.signal)
@@ -247,6 +319,34 @@ struct TelemetryScreen: View {
         .task { await load() }
     }
 
+    /// Distribution and spectrum of the terminal voltage, from NexusVisualization.
+    @ViewBuilder
+    private var expertViews: some View {
+        let values = series.filter { $0.signal == "terminalVoltage" }
+        if let histogram = try? Histogram.bin(values.map(\.value), binCount: 20) {
+            Chart {
+                ForEach(histogram.counts.indices, id: \.self) { index in
+                    BarMark(x: .value("Terminal voltage (V)", histogram.centers[index]), y: .value("Samples", histogram.counts[index]))
+                }
+            }
+            .frame(height: 140)
+            .padding(.horizontal)
+            .accessibilityLabel("Histogram of terminal voltage, \(histogram.total) samples")
+        }
+        if values.count > 8, let dt = zip(values.dropFirst(), values).map({ $0.seconds - $1.seconds }).first, dt > 0,
+            let spectrum = try? Spectrum.analyze(values.map(\.value), sampleRate: 1 / dt)
+        {
+            Chart {
+                ForEach(spectrum.frequencies.indices.dropFirst(), id: \.self) { index in
+                    LineMark(x: .value("Frequency (Hz)", spectrum.frequencies[index]), y: .value("dB", spectrum.magnitudesDB[index]))
+                }
+            }
+            .frame(height: 140)
+            .padding(.horizontal)
+            .accessibilityLabel("Spectrum of terminal voltage")
+        }
+    }
+
     private var visibleSeries: [Sample] {
         depth == .expert ? series : series.filter { $0.signal != "loopCurrent" }
     }
@@ -255,6 +355,14 @@ struct TelemetryScreen: View {
         let latest = Dictionary(series.map { ($0.signal, $0) }, uniquingKeysWith: { lhs, rhs in lhs.seconds > rhs.seconds ? lhs : rhs })
         return Form {
             if let level = latest["level"], let reading = latest["measuredLevel"] {
+                Section("Level") {
+                    Gauge(value: min(max(level.value, 0), 100), in: 0...100) { Text("Tank") } currentValueLabel: {
+                        Text("\(level.value.formatted(.number.precision(.fractionLength(0)))) %")
+                    }
+                    Gauge(value: min(max(reading.value, 0), 100), in: 0...100) { Text("Transmitter") } currentValueLabel: {
+                        Text("\(reading.value.formatted(.number.precision(.fractionLength(0)))) %")
+                    }
+                }
                 Section("What's happening") {
                     Text("The tank is at \(level.value.formatted(.number.precision(.fractionLength(1)))) % but the transmitter reports \(reading.value.formatted(.number.precision(.fractionLength(1)))) %.")
                     if abs(level.value - reading.value) > 2 {

@@ -1,15 +1,18 @@
 #if canImport(SwiftUI)
 import Foundation
+import NexusActions
 import NexusAgents
 import NexusCore
 import NexusDemo
 import NexusDocuments
 import NexusGraph
 import NexusInvestigation
+import NexusLearning
 import NexusModel
 import NexusPermissions
 import NexusPersistence
 import NexusProjects
+import NexusResearch
 import NexusSearch
 import NexusTasks
 import Observation
@@ -31,6 +34,11 @@ public final class NexusEnvironment {
     public let context: ContextRuntime
     public let tasks: TaskRuntime
     public let documents: DocumentLibrary
+    /// Carries out every command against the store, as `user`.
+    public let actions: ActionExecutor
+    /// Runs commands for the UI: input forms, navigation, errors.
+    public let commands = CommandRunner()
+    public let research: ResearchRuntime
     /// Set by the app once a language model is available on this device.
     public var agents: AgentRuntime?
     /// Names of the installed language models, for Settings.
@@ -40,6 +48,11 @@ public final class NexusEnvironment {
     /// Mirrors an agent run somewhere outside the app (a Live Activity).
     /// Receives the goal and the run's events; runs off the main actor.
     @ObservationIgnored public var runMirror: (@Sendable (String, AsyncStream<AgentEvent>) async -> Void)?
+    /// Transcribes an audio file on device (Speech). Set by the app.
+    @ObservationIgnored public var transcribe: (@Sendable (URL) async throws -> String)?
+    /// Reads an equipment nameplate in a photo and returns matching objects
+    /// (Vision OCR). Set by the app.
+    @ObservationIgnored public var identifyNameplate: (@MainActor (Data) async throws -> [ObjectID])?
     public private(set) var demo: DemoWorld?
     /// Advances on every committed change; read it in `body` to refresh.
     public private(set) var revision = 0
@@ -58,10 +71,17 @@ public final class NexusEnvironment {
         permissions = try PermissionEngine(store: store)
         context = ContextRuntime(store: store)
         tasks = TaskRuntime(store: store)
-        documents = DocumentLibrary(store: store)
-        if seedDemo {
-            demo = try DemoWorld.seedIfNeeded(into: store)
-        }
+        documents = DocumentLibrary(store: store, pdfExtractor: DocumentLibrary.platformPDFExtractor)
+        research = ResearchRuntime(store: store)
+        let seeded = seedDemo ? try DemoWorld.seedIfNeeded(into: store) : nil
+        let loops = seeded.map { [LoopBinding(loop: $0.loop, faults: [$0.fault], tests: $0.tests)] } ?? []
+        actions = ActionExecutor(
+            store: store, graph: graph, projects: projects, investigations: investigations, tasks: tasks, documents: documents,
+            learning: LearningRuntime(store: store), searchEngine: search, actor: user, loops: loops
+        )
+        // Observable properties are set only once every stored `let` is.
+        demo = seeded
+        commands.env = self
         observation = store.observeChanges { [weak self] _ in
             Task { @MainActor in self?.revision += 1 }
         }

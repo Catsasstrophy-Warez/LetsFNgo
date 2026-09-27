@@ -26,6 +26,15 @@ public enum AppleIntelligence {
         }
         Task { await ModelProviders.install(into: env) }
         #endif
+        #if canImport(Speech)
+        env.transcribe = { url in try await SpeechNotes.authorizeAndTranscribe(url) }
+        #endif
+        #if canImport(Vision)
+        env.identifyNameplate = { [weak env] data in
+            guard let env else { return [] }
+            return try await NameplateReader.identify(imageData: data, in: env)
+        }
+        #endif
         #if canImport(ActivityKit) && os(iOS)
         env.runMirror = { goal, events in
             // All ActivityKit calls stay in this one task (Activity isn't Sendable).

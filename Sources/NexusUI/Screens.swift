@@ -7,6 +7,7 @@ import NexusPermissions
 import NexusPersistence
 import NexusProjects
 import NexusSearch
+import PhotosUI
 import SwiftUI
 
 /// The workspace shows the current screen family for the focused object.
@@ -20,7 +21,11 @@ struct Workspace: View {
             case .project: ProjectScreen()
             case .collection: CollectionScreen()
             case .search: SearchScreen()
-            case .objectDetail, .research: ObjectDetailScreen(id: env.context.focus)
+            case .objectDetail: ObjectDetailScreen(id: env.context.focus)
+            case .research: ResearchScreen()
+            case .meeting: MeetingScreen()
+            case .conversation: ConversationScreen()
+            case .creative: CreativeScreen()
             case .document: DocumentScreen()
             case .taskWorkflow: TaskWorkflowScreen()
             case .calendar: CalendarScreen()
@@ -30,11 +35,6 @@ struct Workspace: View {
             case .timeline: TimelineScreen()
             case .agentActivity: AgentActivityScreen()
             case .settings: PermissionsScreen()
-            case .conversation, .meeting, .creative:
-                NextActionEmptyState(
-                    env.context.screen.title, message: "This workspace arrives after the Golden Slice. Use Search or ⌘K meanwhile.",
-                    systemImage: env.context.screen.symbol
-                )
             }
         }
         .navigationTitle(env.context.screen.title)
@@ -51,7 +51,8 @@ struct Workspace: View {
     }
 }
 
-/// Now / Continue: open investigations and recent changes.
+/// Now, Continue, Watching and Today, with universal Ask / Create / Analyze /
+/// Run. Home reports what changed rather than advertising modules.
 struct CommandCenterScreen: View {
     @Environment(NexusEnvironment.self) private var env
 
@@ -60,7 +61,37 @@ struct CommandCenterScreen: View {
         let investigations = (try? env.store.objects(ofType: .investigation)) ?? []
         let open = investigations.filter { $0.attributes["status"]?.value != .string("closed") }
         let recent = ((try? env.store.changes(after: max(0, env.store.latestChangeSequence - 20))) ?? []).reversed()
+        let runs = ((try? env.store.objects(ofType: "agentRun")) ?? []).filter { $0.attributes["status"]?.value == .string("running") }
+        let ready = (try? env.tasks.ready(in: env.context.activeProject ?? env.demo?.project)) ?? []
+        let drafts = ((try? env.tasks.allTasks()) ?? []).filter(\.isDraft)
+        let dueToday = ((try? env.tasks.allTasks()) ?? []).filter { task in
+            guard let due = task.dueAt, !task.status.isClosed else { return false }
+            return Calendar.current.isDateInToday(due) || due < Date()
+        }
         return List {
+            Section {
+                HStack {
+                    Button("Ask", systemImage: "sparkles") { env.context.open(.conversation) }
+                    Button("Create", systemImage: "plus") { env.commands.run(.create, title: "Create") }
+                    Button("Analyze", systemImage: "chart.bar.xaxis") { env.commands.run(.analyze, title: "Analyze") }
+                    Button("Run", systemImage: "play") { env.commands.run(.run, title: "Run simulation") }
+                }
+                .buttonStyle(.bordered)
+                .labelStyle(.titleAndIcon)
+            }
+            Section("Now") {
+                if runs.isEmpty && drafts.isEmpty {
+                    Text("Nothing is running or waiting for approval.").foregroundStyle(.secondary)
+                }
+                ForEach(runs) { run in
+                    Button { try? env.context.open(run.id, in: .agentActivity, from: .command) } label: {
+                        Label(run.title, systemImage: "gearshape.2")
+                    }
+                }
+                ForEach(drafts) { task in
+                    Button { env.context.open(.taskWorkflow) } label: { Label("Approve draft: \(task.title)", systemImage: "checkmark.circle.badge.questionmark") }
+                }
+            }
             Section("Continue") {
                 if open.isEmpty {
                     Text("No open investigations. Select equipment and choose Start Investigation (⌘K).").foregroundStyle(.secondary)
@@ -73,7 +104,14 @@ struct CommandCenterScreen: View {
                     }
                 }
             }
-            Section("Recently changed") {
+            Section("Today") {
+                if dueToday.isEmpty && ready.isEmpty {
+                    Text("Nothing due. Tasks with a due date show here.").foregroundStyle(.secondary)
+                }
+                ForEach(dueToday) { TaskRow(task: $0) }
+                ForEach(ready.prefix(5)) { TaskRow(task: $0) }
+            }
+            Section("Watching — recently changed") {
                 ForEach(Array(recent), id: \.seq) { change in
                     Button {
                         try? env.context.open(change.object, from: .timeline)
@@ -97,9 +135,10 @@ struct CollectionScreen: View {
                 ScrollView(.horizontal) {
                     HStack {
                         ForEach(commands) { command in
-                            Text(command.title)
-                                .padding(.horizontal, 10).padding(.vertical, 6)
-                                .background(.quaternary, in: Capsule())
+                            Button(command.title) { env.commands.run(command.commandID, title: command.title) }
+                                .buttonStyle(.bordered)
+                                .buttonBorderShape(.capsule)
+                                .accessibilityIdentifier("command.\(command.id)")
                         }
                     }
                     .padding()
@@ -113,32 +152,111 @@ struct SearchScreen: View {
     @Environment(NexusEnvironment.self) private var env
     @State private var query = ""
     @State private var truth: TruthClass?
+    @State private var type: ObjectType?
+    @State private var window = Window.any
+    @State private var inProject = false
+    @State private var photo: PhotosPickerItem?
+    @State private var nameplateMatches: [ObjectID] = []
+    @State private var reading = false
+    @State private var error: ClassifiedError?
+
+    enum Window: String, CaseIterable {
+        case any = "Any time"
+        case day = "Last day"
+        case week = "Last week"
+        case month = "Last month"
+
+        var start: Date? {
+            switch self {
+            case .any: nil
+            case .day: Date().addingTimeInterval(-86_400)
+            case .week: Date().addingTimeInterval(-7 * 86_400)
+            case .month: Date().addingTimeInterval(-30 * 86_400)
+            }
+        }
+    }
+
+    private static let types: [ObjectType] = [.equipment, .component, .testPoint, .document, .claim, .investigation, .hypothesis, .task, .measurement]
 
     var body: some View {
         _ = env.revision
-        let results = query.isEmpty ? [] : ((try? env.search.search(SearchQuery(query, truth: truth.map { [$0] }, limit: 50))) ?? [])
-        return List(results) { result in
-            Button {
-                try? env.context.open(result.id, from: .search)
-            } label: {
-                VStack(alignment: .leading) {
-                    Text(result.title)
-                    Text("\(result.type.rawValue) · \(result.matchedBy.map(\.rawValue).sorted().joined(separator: ", "))")
-                        .font(.caption).foregroundStyle(.secondary)
+        let project = inProject ? (env.context.activeProject ?? env.demo?.project) : nil
+        let search = SearchQuery(
+            query, types: type.map { [$0] }, truth: truth.map { [$0] }, updatedFrom: window.start, scope: project, limit: 50
+        )
+        let results = query.isEmpty ? [] : ((try? env.search.search(search)) ?? [])
+        return List {
+            if !nameplateMatches.isEmpty {
+                Section("From the nameplate photo") {
+                    ForEach(nameplateMatches, id: \.self) { id in
+                        Button(env.title(id)) { try? env.context.open(id, from: .search) }
+                    }
+                }
+            }
+            if reading { ProgressView("Reading the nameplate on device…") }
+            if let error { ClassifiedErrorView(error) }
+            Section {
+                ForEach(results) { result in
+                    Button {
+                        try? env.context.open(result.id, from: .search)
+                    } label: {
+                        VStack(alignment: .leading) {
+                            Text(result.title)
+                            Text("\(result.type.rawValue) · \(result.matchedBy.map(\.rawValue).sorted().joined(separator: ", "))")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
                 }
             }
         }
         .overlay {
-            if query.isEmpty {
-                NextActionEmptyState("Search everything", message: "Type a tag, a title, a phrase from a manual, or paste an object ID.", systemImage: "magnifyingglass")
+            if query.isEmpty && nameplateMatches.isEmpty {
+                NextActionEmptyState("Search everything", message: "Type a tag, a title, a phrase from a manual, paste an object ID, or photograph a nameplate.", systemImage: "magnifyingglass")
             }
         }
         .searchable(text: $query)
         .toolbar {
-            Picker("Truth", selection: $truth) {
-                Text("Any truth").tag(TruthClass?.none)
-                ForEach(TruthClass.allCases, id: \.self) { Text($0.label).tag(TruthClass?.some($0)) }
+            ToolbarItemGroup {
+                Menu {
+                    Picker("Type", selection: $type) {
+                        Text("Any type").tag(ObjectType?.none)
+                        ForEach(Self.types, id: \.self) { Text($0.rawValue).tag(ObjectType?.some($0)) }
+                    }
+                    Picker("Truth", selection: $truth) {
+                        Text("Any truth").tag(TruthClass?.none)
+                        ForEach(TruthClass.allCases, id: \.self) { Text($0.label).tag(TruthClass?.some($0)) }
+                    }
+                    Picker("Changed", selection: $window) {
+                        ForEach(Window.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    }
+                    Toggle("Only this project", isOn: $inProject)
+                } label: {
+                    Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
+                }
+                if env.identifyNameplate != nil {
+                    PhotosPicker(selection: $photo, matching: .images) {
+                        Label("Nameplate photo", systemImage: "camera.viewfinder")
+                    }
+                }
             }
+        }
+        .onChange(of: photo) { identify() }
+    }
+
+    private func identify() {
+        guard let photo, let identify = env.identifyNameplate else { return }
+        reading = true
+        Task {
+            do {
+                guard let data = try await photo.loadTransferable(type: Data.self) else { throw CocoaError(.fileReadCorruptFile) }
+                nameplateMatches = try await identify(data)
+                error = nameplateMatches.isEmpty
+                    ? ClassifiedError(category: .dataSource, whatHappened: "No equipment matched the text on that nameplate.", nextActions: [NextAction("Type the tag instead")])
+                    : nil
+            } catch {
+                self.error = classify(error).preserving("Search is unchanged.")
+            }
+            reading = false
         }
     }
 }
@@ -186,9 +304,16 @@ struct ObjectDetailScreen: View {
                         }
                     }
                 }
+                Section("Actions") {
+                    let commands = CommandRegistry().commands(for: [record]).filter { $0.commandID != .open }
+                    ForEach(commands) { command in
+                        Button(command.title) { env.commands.run(command.commandID, title: command.title, selection: [record.id]) }
+                            .accessibilityIdentifier("action.\(command.id)")
+                    }
+                }
                 Section("Revisions") {
-                    ForEach(revisions) { revision in
-                        LabeledContent("#\(revision.sequence) \(revision.instruction ?? "")", value: revision.at.formatted(date: .abbreviated, time: .shortened))
+                    ForEach(revisions.reversed()) { revision in
+                        RevisionRow(record: record, revision: revision, isHead: revision.id == revisions.last?.id)
                     }
                 }
                 Section("Timeline") {
@@ -203,6 +328,57 @@ struct ObjectDetailScreen: View {
             .formStyle(.grouped)
         } else {
             NextActionEmptyState("Nothing selected", message: "Select an object in the context list, in 3D, or with ⌘K.", systemImage: "cube")
+        }
+    }
+}
+
+/// One revision: who changed what (with each value's truth class), and a
+/// restore that writes a new revision rather than rewriting history.
+struct RevisionRow: View {
+    @Environment(NexusEnvironment.self) private var env
+    let record: ObjectRecord
+    let revision: Revision
+    let isHead: Bool
+    @State private var error: ClassifiedError?
+
+    var body: some View {
+        DisclosureGroup {
+            if let parent = revision.parent, let diff = try? env.store.diff(of: record.id, from: parent, to: revision.id) {
+                if let title = diff.title { Text("Title: \(title.old) → \(title.new)").font(.caption) }
+                if let lifecycle = diff.lifecycle { Text("Lifecycle: \(lifecycle.old.rawValue) → \(lifecycle.new.rawValue)").font(.caption) }
+                ForEach(diff.attributes, id: \.key) { change in
+                    HStack {
+                        Text("\(change.key): \(change.old.map { render($0.value) } ?? "—") → \(change.new.map { render($0.value) } ?? "—")")
+                            .font(.caption)
+                        Spacer()
+                        if let truth = change.newTruth ?? change.oldTruth { TruthBadge(truth) }
+                    }
+                }
+                if diff.title == nil && diff.lifecycle == nil && diff.attributes.isEmpty {
+                    Text("No field changes").font(.caption).foregroundStyle(.secondary)
+                }
+            } else {
+                Text("First revision").font(.caption).foregroundStyle(.secondary)
+            }
+            if !isHead {
+                Button("Restore this revision") { restore() }
+            }
+            if let error { ClassifiedErrorView(error) }
+        } label: {
+            VStack(alignment: .leading) {
+                Text("#\(revision.sequence) \(revision.instruction ?? "Edit")")
+                Text("\(env.describe(revision.author)) · \(revision.at.formatted(date: .abbreviated, time: .shortened))")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func restore() {
+        do {
+            try env.store.restore(record.id, toRevision: revision.id, by: env.user, instruction: "Restored revision #\(revision.sequence)")
+            error = nil
+        } catch {
+            self.error = classify(error).preserving("The current revision is unchanged.")
         }
     }
 }
