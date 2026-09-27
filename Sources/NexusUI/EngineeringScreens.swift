@@ -37,106 +37,115 @@ struct InvestigationScreen: View {
         }
     }
 
-    private func content(_ id: ObjectID, _ record: ObjectRecord) -> some View {
+    /// What the screen shows for one investigation, computed once per render.
+    private struct Model {
+        var id: ObjectID
+        var record: ObjectRecord
+        var hypotheses: [Hypothesis]
+        var evidence: [MeasurementRecord]
+        var tests: [TestOption]
+        var ranked: [TestRecommendation]
+        var closed: Bool
+        var confirmed: Hypothesis?
+    }
+
+    private func model(_ id: ObjectID, _ record: ObjectRecord) -> Model {
         let hypotheses = (try? env.investigations.hypotheses(of: id)) ?? []
-        let evidence = (try? env.store.relationships(from: id, kind: .contains).map(\.to).compactMap { try env.store.measurement($0) }) ?? []
+        let members = (try? env.store.relationships(from: id, kind: .contains).map(\.to)) ?? []
+        let evidence = members.compactMap { (try? env.store.measurement($0)) ?? nil }
         let tests = options(for: hypotheses, in: id)
         let ranked = (try? env.investigations.rankTests(tests, for: id)) ?? []
-        let status = record.attributes["status"]?.value
-        let closed = status == .string("closed")
+        let closed = record.attributes["status"]?.value == Value.string("closed")
         let confirmed = hypotheses.first { $0.state == .confirmed }
+        return Model(
+            id: id, record: record, hypotheses: hypotheses, evidence: evidence, tests: tests, ranked: ranked, closed: closed, confirmed: confirmed
+        )
+    }
+
+    private func content(_ id: ObjectID, _ record: ObjectRecord) -> some View {
+        let model = model(id, record)
         return Form {
-            Section("Symptom") {
-                Text(record.title).font(.headline)
-                if case .map(let divergence)? = record.attributes["firstDivergence"]?.value, case .string(let summary)? = divergence["summary"] {
-                    Label(summary, systemImage: "arrow.triangle.branch").foregroundStyle(.orange)
-                }
-                if closed { Label("Closed", systemImage: "checkmark.seal.fill") }
+            symptomSection(model)
+            if !model.closed { nextTestSection(model) }
+            hypothesesSection(model)
+            evidenceSection(model)
+            resolveSection(model)
+        }
+        .formStyle(.grouped)
+    }
+
+    private func symptomSection(_ model: Model) -> some View {
+        Section("Symptom") {
+            Text(model.record.title).font(.headline)
+            if let summary = divergenceSummary(model.record) {
+                Label(summary, systemImage: "arrow.triangle.branch").foregroundStyle(.orange)
             }
-            if !closed {
-                // The next action comes first: on iPhone, hypotheses fill the screen.
-                Section("Next test") {
-                    ForEach(Array(ranked.enumerated()), id: \.offset) { index, recommendation in
-                        HStack {
-                            Text(index == 0 ? "Best" : "#\(index + 1)").font(.caption.bold()).frame(minWidth: 40, alignment: .leading)
-                            Text(recommendation.option.title)
-                            Spacer()
-                            Text("\(recommendation.informationGain.formatted(.number.precision(.fractionLength(2)))) bits")
-                                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                        }
-                        .accessibilityElement(children: .combine)
-                    }
-                    Button {
-                        record(in: id, tests: tests, suggested: ranked.first?.option)
-                    } label: {
-                        Label("Record measurement", systemImage: "gauge.with.dots.needle.bottom.50percent")
-                    }
-                    .accessibilityIdentifier("investigation.record")
-                }
+            if model.closed { Label("Closed", systemImage: "checkmark.seal.fill") }
+        }
+    }
+
+    private func divergenceSummary(_ record: ObjectRecord) -> String? {
+        guard case .map(let divergence)? = record.attributes["firstDivergence"]?.value, case .string(let summary)? = divergence["summary"] else {
+            return nil
+        }
+        return summary
+    }
+
+    /// The next action comes first: on iPhone, hypotheses fill the screen.
+    private func nextTestSection(_ model: Model) -> some View {
+        Section("Next test") {
+            ForEach(Array(model.ranked.enumerated()), id: \.offset) { index, recommendation in
+                RankedTestRow(index: index, recommendation: recommendation)
             }
-            Section("Hypotheses") {
-                ForEach(hypotheses) { hypothesis in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(hypothesis.statement)
-                            Spacer()
-                            HypothesisStateBadge(hypothesis.state)
-                        }
-                        ForEach(hypothesis.predictions, id: \.self) { prediction in
-                            Text("predicts \(prediction.quantity) \(prediction.low.formatted())–\(prediction.high.formatted()) \(prediction.unit) at \(env.title(prediction.testPoint))")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
-                    .accessibilityElement(children: .combine)
-                    if hypothesis.state.isLive && !closed {
-                        HStack {
-                            Button("Confirm as cause") {
-                                env.commands.run(.confirmHypothesis, title: "Confirm", selection: [hypothesis.id], parameters: .with { $0.investigation = id })
-                            }
-                            .accessibilityIdentifier("confirm.\(hypothesis.id)")
-                            Button("Reject", role: .destructive) {
-                                env.commands.run(.rejectHypothesis, title: "Reject", selection: [hypothesis.id], parameters: .with { $0.investigation = id })
-                            }
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.regular)
-                    }
-                }
-                if !closed {
-                    Button("Add hypothesis") { env.commands.run(.proposeHypothesis, title: "Add hypothesis", selection: [id]) }
+            Button {
+                record(in: model.id, tests: model.tests, suggested: model.ranked.first?.option)
+            } label: {
+                Label("Record measurement", systemImage: "gauge.with.dots.needle.bottom.50percent")
+            }
+            .accessibilityIdentifier("investigation.record")
+        }
+    }
+
+    private func hypothesesSection(_ model: Model) -> some View {
+        Section("Hypotheses") {
+            ForEach(model.hypotheses) { hypothesis in
+                HypothesisRow(hypothesis: hypothesis)
+                if hypothesis.state.isLive && !model.closed {
+                    HypothesisActions(hypothesis: hypothesis.id, investigation: model.id)
                 }
             }
-            Section("Evidence") {
-                // System truth (observed, recorded) and display truth side by side, never merged.
-                let system = evidence.filter { $0.truth == .observed || $0.truth == .recorded }
-                let display = evidence.filter { $0.truth == .display }
-                let modeled = evidence.filter { $0.truth == .modeled || $0.truth == .derived }
-                if evidence.isEmpty {
-                    NextActionEmptyState("No readings yet", message: "Take the best next test above and record it.", systemImage: "gauge")
-                }
-                evidenceGroup("System truth", system)
-                evidenceGroup("Display truth", display)
-                evidenceGroup("Modeled", modeled)
+            if !model.closed {
+                Button("Add hypothesis") { env.commands.run(.proposeHypothesis, title: "Add hypothesis", selection: [model.id]) }
             }
-            Section("Resolve") {
-                if let confirmed, !closed {
-                    Label("Cause: \(confirmed.statement)", systemImage: "checkmark.seal")
-                    Button("Create repair task") {
-                        env.commands.run(.createRepairTask, title: "Create repair task", selection: [id])
-                    }
-                    Button("Close investigation") {
-                        env.commands.run(.closeInvestigation, title: "Close investigation", selection: [id])
-                    }
-                }
-                Button("Generate report") { env.commands.run(.generateReport, title: "Report", selection: [id]) }
-                if confirmed != nil {
-                    Button("Make a training scenario") {
-                        env.commands.run(.generateTrainingScenario, title: "Training scenario", selection: [id])
-                    }
+        }
+    }
+
+    /// System truth (observed, recorded) and display truth side by side, never merged.
+    private func evidenceSection(_ model: Model) -> some View {
+        Section("Evidence") {
+            if model.evidence.isEmpty {
+                NextActionEmptyState("No readings yet", message: "Take the best next test above and record it.", systemImage: "gauge")
+            }
+            evidenceGroup("System truth", model.evidence.filter { $0.truth == .observed || $0.truth == .recorded })
+            evidenceGroup("Display truth", model.evidence.filter { $0.truth == .display })
+            evidenceGroup("Modeled", model.evidence.filter { $0.truth == .modeled || $0.truth == .derived })
+        }
+    }
+
+    private func resolveSection(_ model: Model) -> some View {
+        Section("Resolve") {
+            if let confirmed = model.confirmed, !model.closed {
+                Label("Cause: \(confirmed.statement)", systemImage: "checkmark.seal")
+                Button("Create repair task") { env.commands.run(.createRepairTask, title: "Create repair task", selection: [model.id]) }
+                Button("Close investigation") { env.commands.run(.closeInvestigation, title: "Close investigation", selection: [model.id]) }
+            }
+            Button("Generate report") { env.commands.run(.generateReport, title: "Report", selection: [model.id]) }
+            if model.confirmed != nil {
+                Button("Make a training scenario") {
+                    env.commands.run(.generateTrainingScenario, title: "Training scenario", selection: [model.id])
                 }
             }
         }
-        .formStyle(.grouped)
     }
 
     @ViewBuilder
@@ -178,6 +187,70 @@ struct InvestigationScreen: View {
                 quantity: prediction.quantity, condition: prediction.condition, cost: 5
             )
         }
+    }
+}
+
+struct RankedTestRow: View {
+    let index: Int
+    let recommendation: TestRecommendation
+
+    var body: some View {
+        HStack {
+            Text(index == 0 ? "Best" : "#\(index + 1)").font(.caption.bold()).frame(minWidth: 40, alignment: .leading)
+            Text(recommendation.option.title)
+            Spacer()
+            Text("\(recommendation.informationGain.formatted(.number.precision(.fractionLength(2)))) bits")
+                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct HypothesisRow: View {
+    @Environment(NexusEnvironment.self) private var env
+    let hypothesis: Hypothesis
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(hypothesis.statement)
+                Spacer()
+                HypothesisStateBadge(hypothesis.state)
+            }
+            ForEach(hypothesis.predictions, id: \.self) { prediction in
+                Text(describe(prediction)).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func describe(_ prediction: Prediction) -> String {
+        "predicts \(prediction.quantity) \(prediction.low.formatted())–\(prediction.high.formatted()) \(prediction.unit) at \(env.title(prediction.testPoint))"
+    }
+}
+
+/// Confirm or reject: people only, through commands.
+struct HypothesisActions: View {
+    @Environment(NexusEnvironment.self) private var env
+    let hypothesis: ObjectID
+    let investigation: ObjectID
+
+    var body: some View {
+        HStack {
+            Button("Confirm as cause") {
+                env.commands.run(.confirmHypothesis, title: "Confirm", selection: [hypothesis], parameters: parameters)
+            }
+            Button("Reject", role: .destructive) {
+                env.commands.run(.rejectHypothesis, title: "Reject", selection: [hypothesis], parameters: parameters)
+            }
+        }
+        .buttonStyle(.bordered)
+    }
+
+    private var parameters: ActionParameters {
+        var parameters = ActionParameters()
+        parameters.investigation = investigation
+        return parameters
     }
 }
 
