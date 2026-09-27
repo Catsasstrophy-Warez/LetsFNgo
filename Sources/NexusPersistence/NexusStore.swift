@@ -168,6 +168,7 @@ public final class NexusStore: @unchecked Sendable {
                 }
                 var new = old
                 try mutate(&new)
+                stampChangedAttributes(from: old, to: &new, by: author)
                 try checkUpdate(from: old, to: new, by: author)
                 try new.validate()
                 new.updatedAt = clock.now()
@@ -305,6 +306,16 @@ public final class NexusStore: @unchecked Sendable {
                 .real(revision.at.timeIntervalSinceReferenceDate), .text(try encode(revision)),
             ]
         )
+    }
+
+    /// A changed attribute with no provenance of its own would otherwise inherit
+    /// the object's, letting an agent write "recorded" values. Stamp it with
+    /// its actual author instead.
+    private func stampChangedAttributes(from old: ObjectRecord, to new: inout ObjectRecord, by author: Origin) {
+        let now = clock.now()
+        for (key, attribute) in new.attributes where attribute.provenance == nil && attribute != old.attributes[key] {
+            new.attributes[key]?.provenance = Provenance(origin: author, truth: author.defaultTruth, timestamp: now)
+        }
     }
 
     private func checkUpdate(from old: ObjectRecord, to new: ObjectRecord, by author: Origin) throws {

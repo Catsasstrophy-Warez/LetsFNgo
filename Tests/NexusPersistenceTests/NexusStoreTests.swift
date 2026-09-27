@@ -184,6 +184,30 @@ private struct LoopFixture {
         #expect(updated.truth(of: "supply.modeled") == .modeled)
     }
 
+    /// An attribute without its own provenance must not inherit the object's
+    /// recorded truth when someone else writes it.
+    @Test func changedAttributesAreStampedWithTheirRealAuthor() throws {
+        let store = try NexusStore(.inMemory)
+        let fixture = LoopFixture()
+        try fixture.write(to: store)
+        let agent = Origin.agent(id: "diag", run: nil)
+
+        #expect(throws: StoreError.truthConflict(
+            object: fixture.transmitter.id, attribute: "tag", existing: .recorded, incoming: .agentInterpretation
+        )) {
+            try store.update(fixture.transmitter.id, by: agent) { $0.attributes["tag"] = Attribute(.string("LT-102")) }
+        }
+
+        let updated = try store.update(fixture.transmitter.id, by: agent) {
+            $0.attributes["suspect"] = Attribute(.string("terminal corrosion"))
+        }
+        #expect(updated.truth(of: "suspect") == .agentInterpretation)
+        #expect(updated.attributes["suspect"]?.provenance?.origin == agent)
+        // Untouched attributes keep inheriting.
+        #expect(updated.attributes["tag"]?.provenance == nil)
+        #expect(updated.truth(of: "tag") == .recorded)
+    }
+
     @Test func measurementsAndClaimsAreNotEditableThroughUpdate() throws {
         let store = try NexusStore(.inMemory)
         let fixture = LoopFixture()

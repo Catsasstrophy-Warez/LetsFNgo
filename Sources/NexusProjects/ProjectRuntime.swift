@@ -36,7 +36,7 @@ public struct ProjectRuntime: Sendable {
         if !objectives.isEmpty { attributes["objectives"] = Attribute(.list(objectives.map(Value.string))) }
         return try store.create(ObjectRecord(
             type: .project, title: title, attributes: attributes,
-            provenance: Provenance(origin: author, truth: Self.truth(for: author), timestamp: clock.now())
+            provenance: Provenance(origin: author, truth: author.defaultTruth, timestamp: clock.now())
         ))
     }
 
@@ -50,7 +50,7 @@ public struct ProjectRuntime: Sendable {
         let now = clock.now()
         return try store.relate(Relationship(
             kind: .contains, from: project, to: object, validFrom: now,
-            provenance: Provenance(origin: author, truth: Self.truth(for: author), timestamp: now)
+            provenance: Provenance(origin: author, truth: author.defaultTruth, timestamp: now)
         ))
     }
 
@@ -92,14 +92,5 @@ public struct ProjectRuntime: Sendable {
     private func requireProject(_ id: ObjectID) throws {
         guard let record = try store.object(id) else { throw StoreError.notFound(id) }
         guard record.type == .project else { throw ProjectError.notAProject(id) }
-    }
-
-    /// Organizing done by people or the system is recorded fact; organizing
-    /// proposed by an agent or model stays an interpretation until confirmed.
-    static func truth(for author: Origin) -> TruthClass {
-        switch author {
-        case .agent, .model: .agentInterpretation
-        default: .recorded
-        }
     }
 }

@@ -35,6 +35,20 @@ public enum Origin: Codable, Sendable, Hashable {
     case system
 }
 
+extension Origin {
+    /// The truth class a value carries when its author gives no explicit one.
+    /// People, the system and importers record; instruments observe;
+    /// simulations model; agents and models interpret.
+    public var defaultTruth: TruthClass {
+        switch self {
+        case .user, .system, .importer: .recorded
+        case .instrument: .observed
+        case .simulation: .modeled
+        case .agent, .model: .agentInterpretation
+        }
+    }
+}
+
 /// Provenance for any meaningful value: origin, time, method, confidence,
 /// inputs, transformation and revision.
 public struct Provenance: Codable, Sendable, Hashable {
