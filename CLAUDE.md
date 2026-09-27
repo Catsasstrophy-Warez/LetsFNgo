@@ -15,3 +15,4 @@ Read `docs/handoff/LOCKED_DECISIONS.md` and `docs/BUILD_PLAN.md` before changing
 - Every stored value keeps its `TruthClass` and `Provenance`. Recorded/observed values are protected by `TruthPolicy`.
 - Migrations are append-only (`Sources/NexusPersistence/Migrations.swift`); never edit a shipped one.
 - Tests use Swift Testing (`import Testing`).
+- Tests ported from the Controls Tech Trainer (`ControlsSimulationTests`, `ControlsTrainingTests`, parts of `ControlsReasoningTests`) keep their original framework, Swift Testing or XCTest.

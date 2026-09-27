@@ -18,6 +18,8 @@ let package = Package(
         .library(name: "NexusInvestigation", targets: ["NexusInvestigation"]),
         .library(name: "ControlsPLC", targets: ["ControlsPLC"]),
         .library(name: "ControlsReasoning", targets: ["ControlsReasoning"]),
+        .library(name: "ControlsSimulation", targets: ["ControlsSimulation"]),
+        .library(name: "ControlsTraining", targets: ["ControlsTraining"]),
     ],
     targets: [
         .target(name: "NexusCore"),
@@ -37,6 +39,10 @@ let package = Package(
         .target(name: "ControlsPLC"),
         // Headless diagnostic reasoning, extracted from the trainer's UI target.
         .target(name: "ControlsReasoning", dependencies: ["ControlsPLC"]),
+        // Plant, machine and electrical simulation, ported verbatim from the trainer.
+        .target(name: "ControlsSimulation", dependencies: ["ControlsPLC"]),
+        // Headless curriculum, scenario, campaign, certification and lab logic from the trainer's UI target.
+        .target(name: "ControlsTraining", dependencies: ["ControlsPLC", "ControlsSimulation"]),
         .testTarget(name: "NexusCoreTests", dependencies: ["NexusCore"]),
         .testTarget(name: "NexusModelTests", dependencies: ["NexusModel"]),
         .testTarget(name: "NexusPersistenceTests", dependencies: ["NexusPersistence"]),
@@ -52,5 +58,10 @@ let package = Package(
         ),
         .testTarget(name: "ControlsPLCTests", dependencies: ["ControlsPLC"]),
         .testTarget(name: "ControlsReasoningTests", dependencies: ["ControlsReasoning", "ControlsPLC"]),
+        .testTarget(name: "ControlsSimulationTests", dependencies: ["ControlsSimulation", "ControlsPLC"]),
+        .testTarget(
+            name: "ControlsTrainingTests",
+            dependencies: ["ControlsTraining", "ControlsReasoning", "ControlsSimulation", "ControlsPLC"]
+        ),
     ]
 )
