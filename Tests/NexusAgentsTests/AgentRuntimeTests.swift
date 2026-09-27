@@ -8,11 +8,11 @@ import NexusPersistence
 import Testing
 @testable import NexusAgents
 
-private let t0 = Date(timeIntervalSinceReferenceDate: 800_000_000)
-private let tech = Origin.user(id: "tech-1")
+let t0 = Date(timeIntervalSinceReferenceDate: 800_000_000)
+let tech = Origin.user(id: "tech-1")
 
 /// Records every approval prompt and answers from a fixed list.
-private final class ScriptedApprover: ApprovalHandler, @unchecked Sendable {
+final class ScriptedApprover: ApprovalHandler, @unchecked Sendable {
     private let lock = NSLock()
     private var answers: [Bool]
     private(set) var asked: [PermissionRequest] = []
@@ -27,19 +27,19 @@ private final class ScriptedApprover: ApprovalHandler, @unchecked Sendable {
     }
 }
 
-private func call(_ name: String, _ arguments: [String: Value] = [:]) -> ToolCall {
+func call(_ name: String, _ arguments: [String: Value] = [:]) -> ToolCall {
     ToolCall(id: UUID().uuidString, name: name, arguments: arguments)
 }
 
-private func toolTurn(_ calls: ToolCall...) -> ModelResponse {
+func toolTurn(_ calls: ToolCall...) -> ModelResponse {
     ModelResponse(message: ChatMessage(role: .assistant, toolCalls: calls), stopReason: .toolUse, usage: Usage(inputTokens: 100, outputTokens: 20))
 }
 
-private func finalTurn(_ text: String) -> ModelResponse {
+func finalTurn(_ text: String) -> ModelResponse {
     ModelResponse(message: ChatMessage(role: .assistant, text: text), stopReason: .endTurn, usage: Usage(inputTokens: 150, outputTokens: 40))
 }
 
-private struct Bench {
+struct Bench {
     let clock = ManualClock(t0)
     let store: NexusStore
     let permissions = PermissionEngine()
@@ -84,7 +84,7 @@ private struct Bench {
     }
 }
 
-private let diagnostician = AgentProfile(
+let diagnostician = AgentProfile(
     id: "diagnostic", instructions: "You diagnose instrument loops.",
     tools: ["search_objects", "get_object", "related_objects", "get_measurements", "propose_hypothesis", "annotate_object", "send_message"]
 )
@@ -241,7 +241,7 @@ private let diagnostician = AgentProfile(
 }
 
 /// Writes an object, then fails.
-private struct HalfFinishedTool: AgentTool {
+struct HalfFinishedTool: AgentTool {
     let spec = ToolSpec(name: "half_finished", description: "", permission: .createDraft)
 
     func run(_ arguments: [String: Value], in context: ToolContext) throws -> ToolOutcome {
@@ -251,7 +251,7 @@ private struct HalfFinishedTool: AgentTool {
 }
 
 /// Claims an observation it never made.
-private struct ForgingTool: AgentTool {
+struct ForgingTool: AgentTool {
     let spec = ToolSpec(name: "forge", description: "", permission: .createDraft)
 
     func run(_ arguments: [String: Value], in context: ToolContext) throws -> ToolOutcome {
