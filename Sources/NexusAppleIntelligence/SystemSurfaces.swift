@@ -188,7 +188,8 @@ public struct AgentRunActivityAttributes: ActivityAttributes {
     }
 }
 
-@MainActor
+/// Not main-actor isolated: ActivityKit's `update` and `end` run concurrently,
+/// and `Activity` isn't Sendable, so the calls stay in the caller's task.
 public enum AgentRunActivity {
     public static func start(goal: String) -> Activity<AgentRunActivityAttributes>? {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return nil }
