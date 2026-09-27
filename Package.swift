@@ -27,6 +27,9 @@ let package = Package(
         .library(name: "ControlsReasoning", targets: ["ControlsReasoning"]),
         .library(name: "ControlsSimulation", targets: ["ControlsSimulation"]),
         .library(name: "ControlsTraining", targets: ["ControlsTraining"]),
+        .library(name: "NexusModelRegistry", targets: ["NexusModelRegistry"]),
+        .library(name: "NexusTrainingData", targets: ["NexusTrainingData"]),
+        .executable(name: "NexusDatasetGen", targets: ["NexusDatasetGen"]),
     ],
     targets: [
         .target(name: "NexusCore"),
@@ -92,6 +95,22 @@ let package = Package(
         .testTarget(
             name: "ControlsTrainingTests",
             dependencies: ["ControlsTraining", "ControlsReasoning", "ControlsSimulation", "ControlsPLC"]
+        ),
+        // Versioned manifest of trained adapters/weights and the eval promotion gate (§F3).
+        .target(name: "NexusModelRegistry", dependencies: ["NexusCore", "NexusAI"]),
+        // Seeded training-data generation and evaluation for the local models (§F3).
+        .target(
+            name: "NexusTrainingData",
+            dependencies: [
+                "NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSearch", "NexusSimulation", "NexusInvestigation",
+                "NexusAgents", "NexusModelRegistry", "ControlsPLC", "ControlsReasoning",
+            ]
+        ),
+        .executableTarget(name: "NexusDatasetGen", dependencies: ["NexusTrainingData"]),
+        .testTarget(name: "NexusModelRegistryTests", dependencies: ["NexusModelRegistry"]),
+        .testTarget(
+            name: "NexusTrainingDataTests",
+            dependencies: ["NexusTrainingData", "NexusModelRegistry", "NexusAgents", "NexusAI", "NexusPermissions", "NexusSimulation"]
         ),
     ]
 )
