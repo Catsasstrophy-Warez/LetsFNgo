@@ -59,12 +59,17 @@ public struct ChatMessage: Sendable, Hashable {
     public var toolCalls: [ToolCall]
     /// A tool turn returns every result for the preceding calls together.
     public var toolResults: [ToolResult]
+    /// Opaque provider-specific JSON for an assistant turn (for example a
+    /// cloud API's raw content blocks, including thinking). The provider that
+    /// produced it replays it verbatim; everyone else ignores it.
+    public var providerContent: String?
 
-    public init(role: Role, text: String = "", toolCalls: [ToolCall] = [], toolResults: [ToolResult] = []) {
+    public init(role: Role, text: String = "", toolCalls: [ToolCall] = [], toolResults: [ToolResult] = [], providerContent: String? = nil) {
         self.role = role
         self.text = text
         self.toolCalls = toolCalls
         self.toolResults = toolResults
+        self.providerContent = providerContent
     }
 
     public static func system(_ text: String) -> ChatMessage { ChatMessage(role: .system, text: text) }
@@ -149,14 +154,66 @@ public struct ModelDescriptor: Sendable, Hashable {
     }
 }
 
+/// Runs one tool call on behalf of a provider that executes tools itself.
+public typealias ToolHandler = @Sendable (ToolCall) async -> ToolResult
+
+/// One piece of a streamed response.
+public enum ModelEvent: Sendable, Hashable {
+    /// Text as it is generated. The concatenated deltas equal the final text.
+    case textDelta(String)
+    /// The finished response. Always the last event of a successful stream.
+    case completed(ModelResponse)
+}
+
 /// Any language model Nexus can talk to. Implementations live in
 /// platform targets (Foundation Models, MLX, cloud); tests use `ScriptedModel`.
+///
+/// Some providers (Apple's Foundation Models) execute tools inside their own
+/// session. They receive a `ToolHandler` and call it for every tool call, so
+/// the caller's permission checks and ledger apply exactly as when the model
+/// returns `.toolUse` and the caller runs the tools.
 public protocol LanguageModelProvider: Sendable {
     var descriptor: ModelDescriptor { get }
     func respond(to request: GenerationRequest) async throws -> ModelResponse
+    /// Providers that run their own tool loop call `toolHandler` for every
+    /// tool call and return a final (non-toolUse) response. The default
+    /// ignores the handler and calls `respond(to:)`.
+    func respond(to request: GenerationRequest, toolHandler: @escaping ToolHandler) async throws -> ModelResponse
+    /// Streams output. Default: one `.completed` event from `respond(to:toolHandler:)`.
+    func stream(to request: GenerationRequest, toolHandler: @escaping ToolHandler) -> AsyncThrowingStream<ModelEvent, Error>
+    /// The provider's own token count for `messages`, or nil to use the
+    /// `ContextBudget` heuristic. Default: nil.
+    func countTokens(_ messages: [ChatMessage]) async throws -> Int?
+}
+
+extension LanguageModelProvider {
+    public func respond(to request: GenerationRequest, toolHandler: @escaping ToolHandler) async throws -> ModelResponse {
+        try await respond(to: request)
+    }
+
+    public func stream(to request: GenerationRequest, toolHandler: @escaping ToolHandler) -> AsyncThrowingStream<ModelEvent, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    let response = try await respond(to: request, toolHandler: toolHandler)
+                    continuation.yield(.completed(response))
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    public func countTokens(_ messages: [ChatMessage]) async throws -> Int? { nil }
 }
 
 public enum AIError: Error, Equatable, Sendable {
     case noEligibleModel
     case scriptExhausted
+    /// The request does not fit the model's context window even after trimming.
+    case contextTooLarge
+    /// A stream ended without a `.completed` event.
+    case incompleteResponse
 }

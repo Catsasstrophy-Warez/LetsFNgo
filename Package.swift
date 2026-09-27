@@ -19,6 +19,7 @@ let package = Package(
         .library(name: "NexusPermissions", targets: ["NexusPermissions"]),
         .library(name: "NexusAI", targets: ["NexusAI"]),
         .library(name: "NexusAgents", targets: ["NexusAgents"]),
+        .library(name: "NexusCloudProviders", targets: ["NexusCloudProviders"]),
         .library(name: "NexusEngineering", targets: ["NexusEngineering"]),
         .library(name: "NexusLearning", targets: ["NexusLearning"]),
         .library(name: "NexusReality", targets: ["NexusReality"]),
@@ -46,6 +47,8 @@ let package = Package(
             name: "NexusAgents",
             dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSearch", "NexusPermissions", "NexusAI", "NexusInvestigation"]
         ),
+        // Optional cloud models (L4). Plain HTTP, so it builds and tests on Linux.
+        .target(name: "NexusCloudProviders", dependencies: ["NexusAI", "NexusCore", "NexusModel"]),
         .target(name: "NexusSimulation", dependencies: ["NexusCore", "NexusModel"]),
         .target(name: "NexusInvestigation", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
         .target(
@@ -77,6 +80,7 @@ let package = Package(
         .testTarget(name: "NexusPermissionsTests", dependencies: ["NexusPermissions", "NexusPersistence"]),
         .testTarget(name: "NexusAITests", dependencies: ["NexusAI"]),
         .testTarget(name: "NexusAgentsTests", dependencies: ["NexusAgents", "NexusInvestigation"]),
+        .testTarget(name: "NexusCloudProvidersTests", dependencies: ["NexusCloudProviders", "NexusAI"]),
         .testTarget(name: "NexusEngineeringTests", dependencies: ["NexusEngineering", "ControlsReasoning", "ControlsPLC"]),
         .testTarget(name: "NexusLearningTests", dependencies: ["NexusLearning"]),
         .testTarget(name: "NexusRealityTests", dependencies: ["NexusReality", "NexusProjects"]),
