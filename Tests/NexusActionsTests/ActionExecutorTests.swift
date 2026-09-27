@@ -111,9 +111,10 @@ private struct Bench {
         // Stored, linked to its test point, and on the timeline.
         #expect(try bench.store.measurement(reading.id) == reading)
         #expect(try bench.store.relationships(from: reading.id, kind: .measuredAt).map(\.to) == [bench.terminal])
-        let measured = try bench.store.events(about: reading.id).filter { $0.kind == .measured }
-        #expect(measured.count == 1 && measured.first?.subjects.contains(investigation) == true)
-        #expect(measured.first?.payload["value"] == .quantity(Quantity(12, "V")))
+        #expect(try bench.store.events(about: reading.id).filter { $0.kind == .measured }.count == 1)
+        let entered = try bench.store.events(about: reading.id).filter { $0.kind == .readingEntered }
+        #expect(entered.count == 1 && entered.first?.subjects.contains(investigation) == true)
+        #expect(entered.first?.payload["value"] == .quantity(Quantity(12, "V")))
     }
 
     @Test func recordMeasurementValidatesUnitsTruthAndRange() throws {
@@ -324,7 +325,8 @@ private struct Bench {
         #expect(abs(try #require(run.modeled.first).value.value - 19.03) < 0.1, "The healthy twin's terminal voltage")
         #expect(run.values["level"] != nil)
         #expect(result.screen == .simulation && result.produced == run.modeled.map(\.id))
-        #expect(try bench.store.events(about: bench.tank).map(\.kind) == [.simulated])
+        // The store adds its own `measured` event for each modeled reading.
+        #expect(try bench.store.events(about: bench.tank).map(\.kind).filter { $0 != .measured } == [.simulated])
     }
 
     @Test func faultsAreInjectedOnlyWhenAsked() throws {
@@ -335,7 +337,7 @@ private struct Bench {
             return
         }
         #expect(abs(run.values["terminalVoltage"]! - 12) < 0.1)
-        #expect(try bench.store.events(about: bench.terminal).map(\.kind) == [.faultInjected, .simulated])
+        #expect(try bench.store.events(about: bench.terminal).map(\.kind).filter { $0 != .measured } == [.faultInjected, .simulated])
     }
 
     @Test func unsupportedObjectsSaySo() throws {

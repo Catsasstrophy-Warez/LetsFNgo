@@ -15,6 +15,11 @@ import NexusTasks
 extension EventKind {
     /// Someone started an investigation. Payload: `symptom`.
     public static let investigationOpened: EventKind = "investigationOpened"
+    /// Someone entered a reading through a command. The store's own
+    /// `measured` event covers the measurement itself; this one records the
+    /// entry and the investigation it was taken for. Payload: `quantity`,
+    /// `value`, `truth`, optional `uncertainty` and `instrument`.
+    public static let readingEntered: EventKind = "readingEntered"
 }
 
 /// Carries out the commands in `NexusProjects/Commands.swift` against the

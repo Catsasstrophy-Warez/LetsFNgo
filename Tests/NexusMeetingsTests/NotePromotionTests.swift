@@ -52,7 +52,7 @@ Dana: ok
         #expect(tasks[1].record.attributes["line"]?.value == .int(4))
         // The runtime's rules apply: done is a status transition with an event.
         try runtime.setStatus(.done, of: tasks[1].id, by: author)
-        #expect(try store.events(about: tasks[1].id).map(\.kind) == [.taskStatusChanged])
+        #expect(try store.events(about: tasks[1].id).map(\.kind).filter { $0 != .objectEdited } == [.taskStatusChanged])
     }
 
     @Test func participantsAttendAndCommitmentsHaveOwners() throws {

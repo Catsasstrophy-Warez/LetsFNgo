@@ -598,7 +598,8 @@ import Testing
         #expect(try actions.tasks.task(task.id).status == .done)
         #expect(try actions.learning.scenario(scenario.id) == scenario)
         let kinds = timeline.map(\.kind)
-        #expect(kinds.filter { $0 == .measured }.count == 5)
+        #expect(kinds.filter { $0 == .readingEntered }.count == 5)
+        #expect(kinds.filter { $0 == .measured }.count >= 5, "The store logs every measurement, modeled ones included")
         for kind in [
             EventKind.userEdit, .investigationOpened, .faultInjected, .simulated, .hypothesisRejected, .firstDivergence,
             .hypothesisConfirmed, .repair, .taskStatusChanged, .repairVerified, .investigationClosed,

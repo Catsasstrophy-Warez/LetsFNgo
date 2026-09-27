@@ -205,7 +205,7 @@ private struct Bench {
         }
         let rejected = try bench.runtime.reject(open.id, in: bench.investigation, reason: "Continuity checked good", by: tech)
         #expect(rejected.state == .rejected)
-        #expect(try bench.store.events(about: open.id).map(\.kind) == [.hypothesisRejected])
+        #expect(try bench.store.events(about: open.id).map(\.kind).filter { $0 != .objectEdited } == [.hypothesisRejected])
         #expect(throws: InvestigationError.notLive(open.id, .rejected)) {
             try bench.runtime.reject(open.id, in: bench.investigation, reason: "again", by: tech)
         }

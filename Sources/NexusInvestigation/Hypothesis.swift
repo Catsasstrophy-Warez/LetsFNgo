@@ -8,7 +8,6 @@ extension RelationKind {
 }
 
 extension EventKind {
-    public static let firstDivergence: EventKind = "firstDivergence"
     /// A person confirmed a hypothesis as the cause. Payload: `hypothesis`, `statement`.
     public static let hypothesisConfirmed: EventKind = "hypothesisConfirmed"
     /// A hypothesis was rejected, by a person or by contradicting evidence.

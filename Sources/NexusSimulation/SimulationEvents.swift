@@ -70,7 +70,6 @@ extension SimulationEvent.Kind {
 extension EventKind {
     public static let faultCleared: EventKind = "faultCleared"
     public static let thresholdCrossed: EventKind = "thresholdCrossed"
-    public static let firstDivergence: EventKind = "firstDivergence"
 }
 
 /// A level to watch on one value. Crossing it emits a `thresholdCrossed` event.

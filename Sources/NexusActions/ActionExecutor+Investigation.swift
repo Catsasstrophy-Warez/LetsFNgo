@@ -184,7 +184,7 @@ extension ActionExecutor {
             if let instrumentID { payload["instrument"] = .reference(instrumentID) }
             let valueText = String(format: "%.6g", value)
             try note(
-                .measured, "\(quantity) = \(valueText) \(unit) at \(point.title) (\(truth.rawValue))",
+                .readingEntered, "\(quantity) = \(valueText) \(unit) at \(point.title) (\(truth.rawValue))",
                 about: [measurement.id, testPoint] + (investigation.map { [$0] } ?? []) + (instrumentID.map { [$0] } ?? []),
                 payload: payload
             )

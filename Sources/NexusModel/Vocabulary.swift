@@ -97,6 +97,8 @@ public struct EventKind: RawRepresentable, Hashable, Codable, Sendable, Expressi
     public static let stateChanged: EventKind = "stateChanged"
     public static let measured: EventKind = "measured"
     public static let simulated: EventKind = "simulated"
+    /// The first point where observed behaviour leaves the modeled behaviour.
+    public static let firstDivergence: EventKind = "firstDivergence"
     public static let faultInjected: EventKind = "faultInjected"
     public static let agentAction: EventKind = "agentAction"
     public static let userEdit: EventKind = "userEdit"
