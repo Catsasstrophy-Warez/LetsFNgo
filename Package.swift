@@ -35,6 +35,9 @@ let package = Package(
         .library(name: "NexusModelRegistry", targets: ["NexusModelRegistry"]),
         .library(name: "NexusTrainingData", targets: ["NexusTrainingData"]),
         .executable(name: "NexusDatasetGen", targets: ["NexusDatasetGen"]),
+        .library(name: "NexusTasks", targets: ["NexusTasks"]),
+        .library(name: "NexusDocuments", targets: ["NexusDocuments"]),
+        .library(name: "NexusMeasurement", targets: ["NexusMeasurement"]),
     ],
     targets: [
         .target(name: "NexusCore"),
@@ -97,6 +100,12 @@ let package = Package(
         .target(name: "ControlsSimulation", dependencies: ["ControlsPLC"]),
         // Headless curriculum, scenario, campaign, certification and lab logic from the trainer's UI target.
         .target(name: "ControlsTraining", dependencies: ["ControlsPLC", "ControlsSimulation"]),
+        .target(name: "NexusTasks", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph"]),
+        .target(name: "NexusDocuments", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
+        // Units, uncertainty and instruments, with adapters for the trainer's evidence types.
+        .target(name: "NexusMeasurement", dependencies: ["NexusCore", "NexusModel", "ControlsPLC", "ControlsReasoning"]),
+        // Large-graph timings (docs/PERFORMANCE.md). Not part of `swift test`: `swift run -c release NexusBenchmarks`.
+        .executableTarget(name: "NexusBenchmarks", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph"]),
         .testTarget(name: "NexusCoreTests", dependencies: ["NexusCore"]),
         .testTarget(name: "NexusModelTests", dependencies: ["NexusModel"]),
         .testTarget(name: "NexusPersistenceTests", dependencies: ["NexusPersistence"]),
@@ -142,5 +151,8 @@ let package = Package(
             name: "NexusTrainingDataTests",
             dependencies: ["NexusTrainingData", "NexusModelRegistry", "NexusAgents", "NexusAI", "NexusPermissions", "NexusSimulation"]
         ),
+        .testTarget(name: "NexusTasksTests", dependencies: ["NexusTasks"]),
+        .testTarget(name: "NexusDocumentsTests", dependencies: ["NexusDocuments"]),
+        .testTarget(name: "NexusMeasurementTests", dependencies: ["NexusMeasurement", "ControlsReasoning", "ControlsPLC"]),
     ]
 )
