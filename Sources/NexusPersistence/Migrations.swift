@@ -133,6 +133,36 @@ enum Migrations {
                 created_at REAL NOT NULL
             );
             """),
+        // Version 5 depends on no earlier table. See NexusStore+Telemetry.swift.
+        Migration(version: 5, name: "telemetry channels and sample chunks", sql: """
+            -- One quantity at one object, in one truth class. The object isn't
+            -- a foreign key: acquisition can start before the object is modeled.
+            CREATE TABLE IF NOT EXISTS telemetry_channels (
+                id TEXT PRIMARY KEY,
+                object_id TEXT NOT NULL,
+                quantity TEXT NOT NULL,
+                unit TEXT NOT NULL,
+                truth TEXT NOT NULL,
+                sample_rate REAL,
+                created_at REAL NOT NULL,
+                record TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS telemetry_channels_object ON telemetry_channels(object_id, quantity);
+
+            -- Samples in time-ordered chunks of up to a few thousand
+            -- (time, value) pairs. `encoding` names the payload format so it
+            -- can change without a migration.
+            CREATE TABLE IF NOT EXISTS telemetry_chunks (
+                row_id INTEGER PRIMARY KEY,
+                channel_id TEXT NOT NULL REFERENCES telemetry_channels(id),
+                start_at REAL NOT NULL,
+                end_at REAL NOT NULL,
+                sample_count INTEGER NOT NULL,
+                encoding TEXT NOT NULL,
+                payload TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS telemetry_chunks_range ON telemetry_chunks(channel_id, end_at);
+            """),
     ]
 
     static var latestVersion: Int { all.last?.version ?? 0 }
