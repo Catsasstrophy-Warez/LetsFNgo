@@ -11,7 +11,7 @@ import NexusUI
 /// Chooses and installs the language models available on this device.
 @MainActor
 enum ModelProviders {
-    static func install(into env: NexusEnvironment) {
+    static func install(into env: NexusEnvironment) async {
         guard #available(iOS 27.0, macOS 27.0, *) else { return }
         var providers: [any LanguageModelProvider] = []
         let system = SystemLanguageModel.default
@@ -26,11 +26,13 @@ enum ModelProviders {
         }
         let cloud = PrivateCloudComputeLanguageModel()
         if cloud.isAvailable {
+            // Asked of the service, so it can fail; 32K is the documented size.
+            let contextSize = (try? await cloud.contextSize) ?? 32_768
             providers.append(FoundationModelsProvider(
                 model: cloud,
                 descriptor: ModelDescriptor(
                     ref: ModelRef(provider: "apple.private-cloud-compute", modelID: "pcc"),
-                    tier: .privateCloud, contextTokens: cloud.contextSize, supportsTools: true, supportsImages: true
+                    tier: .privateCloud, contextTokens: contextSize, supportsTools: true, supportsImages: true
                 )
             ))
         }

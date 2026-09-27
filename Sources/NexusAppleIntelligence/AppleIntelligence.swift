@@ -19,7 +19,7 @@ public enum AppleIntelligence {
         spotlight = indexer
         #endif
         #if canImport(FoundationModels)
-        ModelProviders.install(into: env)
+        Task { await ModelProviders.install(into: env) }
         #endif
     }
 
