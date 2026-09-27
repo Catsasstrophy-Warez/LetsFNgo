@@ -81,6 +81,12 @@ extension Dictionary where Key == String, Value == NexusModel.Value {
         switch self[key] {
         case .double(let value)?: return value
         case .int(let value)?: return Double(value)
+        case .string(let text)?:
+            // Models often send numbers as text; accept them, reject anything else.
+            guard let value = Double(text.trimmingCharacters(in: .whitespaces)), value.isFinite else {
+                throw ToolError.invalidArgument(key)
+            }
+            return value
         default: throw ToolError.missingArgument(key)
         }
     }

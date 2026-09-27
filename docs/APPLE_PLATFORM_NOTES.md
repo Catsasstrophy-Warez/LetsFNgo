@@ -40,3 +40,13 @@ as developer.apple.com/documentation.
 - **RealityKit:** `RealityView` with a `CanonicalObjectComponent` on each entity.
 
 None of this can be compiled in the Linux cloud session. The `apple` job in `.github/workflows/ci.yml` (Xcode 27 runner) is the compile and UI-test gate.
+
+## Core AI package status (checked 2026-09-27)
+
+`apple/coreai-models` currently has two problems:
+- It fails to compile for the iOS Simulator (issue #49, "no such module 'CoreAI'").
+- It has no release tagged for Xcode 27 (issue #293).
+
+Its stock `CoreAILanguageModel` adapter also doesn't support tool calling; the community `coreai-kit` adds it.
+
+So Nexus does not depend on the package yet. `FoundationModelsProvider` is generic over any `FoundationModels.LanguageModel`, so a Core AI model becomes one more provider in `ModelProviders.install` once the package builds for the simulator. Only a model with tool calling can run agent tools.

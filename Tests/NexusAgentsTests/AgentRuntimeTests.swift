@@ -261,3 +261,14 @@ struct ForgingTool: AgentTool {
         return ToolOutcome(content: "ok", produced: [record.id])
     }
 }
+
+@Suite struct ToolArgumentTests {
+    @Test func numericArgumentsMayArriveAsText() throws {
+        let arguments: [String: Value] = ["a": .string(" 10.5 "), "b": .int(3), "c": .string("ten"), "d": .string("inf")]
+        #expect(try arguments.double("a") == 10.5)
+        #expect(try arguments.double("b") == 3)
+        #expect(throws: ToolError.invalidArgument("c")) { try arguments.double("c") }
+        #expect(throws: ToolError.invalidArgument("d")) { try arguments.double("d") }
+        #expect(throws: ToolError.missingArgument("e")) { try arguments.double("e") }
+    }
+}
