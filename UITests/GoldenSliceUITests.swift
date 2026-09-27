@@ -56,12 +56,14 @@ final class GoldenSliceUITests: XCTestCase {
         try expect("Cause: Excess loop resistance", in: app)
 
         try tap(app.buttons["Create repair task"].firstMatch, "Create repair task", in: app)
+        try expectForm("the repair task form", in: app)
         try fill("field.steps", with: "Clean and re-terminate TB-4", in: app)
         try tap(app.buttons["command.run"].firstMatch, "Run", in: app)
 
         try tap(app.buttons["more"].firstMatch, "the More button in the bottom bar", in: app)
         try tap(app.buttons["screen.investigation"].firstMatch, "Investigation in the More menu", in: app)
         try tap(app.buttons["Close investigation"].firstMatch, "Close investigation", in: app)
+        try expectForm("the close form", in: app)
         try fill("field.resolution", with: "Corroded terminal cleaned; loop reads true", in: app)
         try tap(app.buttons["command.run"].firstMatch, "Run", in: app)
         try expect("Closed", in: app)
@@ -71,9 +73,19 @@ final class GoldenSliceUITests: XCTestCase {
     private func record(value: String, unit: String, in app: XCUIApplication) throws {
         print("Recording \(value) \(unit)")
         try tap(app.buttons["investigation.record"].firstMatch, "Record measurement", in: app)
+        try expectForm("the measurement form", in: app)
         try fill("field.value", with: value, in: app)
         try fill("field.unit", with: unit, in: app)
         try tap(app.buttons["command.run"].firstMatch, "Run", in: app)
+    }
+
+    /// A command form is up (its Run button exists), checked straight after
+    /// the tap so a failure shows the banner that replaced it.
+    @MainActor
+    private func expectForm(_ what: String, in app: XCUIApplication) throws {
+        guard app.buttons["command.run"].firstMatch.waitForExistence(timeout: 10) else {
+            throw failure("\(what) didn't open", in: app)
+        }
     }
 
     @MainActor

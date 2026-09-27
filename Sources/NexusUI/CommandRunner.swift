@@ -202,7 +202,9 @@ struct CommandInputForm: View {
             return
         }
         var parameters = request.parameters
-        for field in request.fields {
+        // Only what the person entered replaces a value: an untouched
+        // optional field keeps whatever the screen prefilled.
+        for field in request.fields where !isEmpty(field) {
             let value = text[field.field]?.trimmingCharacters(in: .whitespaces)
             switch field.field {
             case .title: parameters.title = value
@@ -227,9 +229,9 @@ struct CommandInputForm: View {
             case .prior: parameters.prior = number(value)
             case .confidence: parameters.confidence = number(value)
             case .seconds: parameters.seconds = number(value)
-            case .sampledAt: parameters.sampledAt = dates[field.field]
-            case .dueAt: parameters.dueAt = dates[field.field]
-            case .truth: parameters.truth = truth ?? .observed
+            case .sampledAt: parameters.sampledAt = dates[field.field] ?? parameters.sampledAt
+            case .dueAt: parameters.dueAt = dates[field.field] ?? parameters.dueAt
+            case .truth: parameters.truth = truth ?? parameters.truth ?? .observed
             case .project: parameters.project = objects[field.field]
             case .target: parameters.target = objects[field.field]
             case .testPoint: parameters.testPoint = objects[field.field]
