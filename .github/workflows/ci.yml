@@ -24,6 +24,17 @@ jobs:
         run: swift build --build-tests
       - name: Test
         run: swift test --skip-build
+      # Own-model pipeline without a model (Training/README.md): generate a small
+      # dataset, run the prepare/evaluate unit tests over it, score reference
+      # answers with the Swift evaluator, and prove the promotion gate refuses
+      # a worse candidate. The swift image may lack python3, so install it.
+      - name: Training pipeline and promotion gate
+        run: |
+          if ! command -v python3 >/dev/null 2>&1; then
+            apt-get update && apt-get install -y --no-install-recommends python3
+          fi
+          python3 --version
+          Training/smoke.sh
 
   # Compiles every Apple-only target and runs the app's UI tests. Mac runner
   # minutes cost more, so this runs on pull requests and on demand only.

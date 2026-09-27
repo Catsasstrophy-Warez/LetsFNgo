@@ -38,6 +38,7 @@ let package = Package(
         .library(name: "NexusTasks", targets: ["NexusTasks"]),
         .library(name: "NexusDocuments", targets: ["NexusDocuments"]),
         .library(name: "NexusMeasurement", targets: ["NexusMeasurement"]),
+        .library(name: "NexusAutomotive", targets: ["NexusAutomotive"]),
     ],
     targets: [
         .target(name: "NexusCore"),
@@ -142,7 +143,7 @@ let package = Package(
             name: "NexusTrainingData",
             dependencies: [
                 "NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSearch", "NexusSimulation", "NexusInvestigation",
-                "NexusAgents", "NexusModelRegistry", "ControlsPLC", "ControlsReasoning",
+                "NexusAgents", "NexusModelRegistry", "NexusAutomotive", "ControlsPLC", "ControlsReasoning",
             ]
         ),
         .executableTarget(name: "NexusDatasetGen", dependencies: ["NexusTrainingData"]),
@@ -154,5 +155,14 @@ let package = Package(
         .testTarget(name: "NexusTasksTests", dependencies: ["NexusTasks"]),
         .testTarget(name: "NexusDocumentsTests", dependencies: ["NexusDocuments"]),
         .testTarget(name: "NexusMeasurementTests", dependencies: ["NexusMeasurement", "ControlsReasoning", "ControlsPLC"]),
+        // Second domain (docs/decisions/0002-second-domain.md): garage, OBD-II/CAN, DTCs and the charging-system solver.
+        .target(
+            name: "NexusAutomotive",
+            dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusSimulation", "NexusInvestigation"]
+        ),
+        .testTarget(
+            name: "NexusAutomotiveTests",
+            dependencies: ["NexusAutomotive", "NexusInvestigation", "NexusSimulation", "NexusPersistence", "NexusGraph"]
+        ),
     ]
 )

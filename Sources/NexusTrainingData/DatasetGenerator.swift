@@ -20,9 +20,19 @@ public final class DatasetGenerator {
         }
     }
 
-    public func example(split: DatasetSplit, runSeed: UInt64, index: Int) throws -> TrainingExample {
+    /// The kind of example `index` for a domain. `mixed` rotates over five:
+    /// two loop diagnoses, a transcript, a ladder question, a charging case.
+    public static func kind(forIndex index: Int, domain: DatasetDomain) -> ExampleKind {
+        switch domain {
+        case .loop: kind(forIndex: index)
+        case .automotive: .chargingDiagnosis
+        case .mixed: index % 5 == 4 ? .chargingDiagnosis : kind(forIndex: index % 5)
+        }
+    }
+
+    public func example(split: DatasetSplit, runSeed: UInt64, index: Int, domain: DatasetDomain = .loop) throws -> TrainingExample {
         let seed = split.scenarioSeed(runSeed: runSeed, index: index)
-        let kind = Self.kind(forIndex: index)
+        let kind = Self.kind(forIndex: index, domain: domain)
         let id = "\(split.rawValue)-\(seed)-\(kind.rawValue)"
         switch kind {
         case .diagnosis:
@@ -31,14 +41,18 @@ public final class DatasetGenerator {
             return try factory.makeCase(seed: seed).transcriptExample(id: id, split: split)
         case .ladderWhy:
             return try LadderExamples.example(seed: seed, id: id, split: split)
+        case .chargingDiagnosis:
+            return try ChargingExamples.example(seed: seed, id: id, split: split)
         }
     }
 
     /// Generates `count` examples in order, handing each to `emit`.
-    public func generate(count: Int, seed: UInt64, split: DatasetSplit, emit: (TrainingExample) throws -> Void) throws {
+    public func generate(
+        count: Int, seed: UInt64, split: DatasetSplit, domain: DatasetDomain = .loop, emit: (TrainingExample) throws -> Void
+    ) throws {
         precondition(count <= DatasetSplit.maximumCount, "count exceeds the per-seed range")
         for index in 0..<count {
-            try emit(try example(split: split, runSeed: seed, index: index))
+            try emit(try example(split: split, runSeed: seed, index: index, domain: domain))
         }
     }
 
