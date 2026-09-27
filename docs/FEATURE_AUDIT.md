@@ -1,5 +1,47 @@
 # Feature audit: spec vs. code (2026-09-27)
 
+## Update: after the build-out (same day)
+
+Everything below this section is the original audit. This section records what the recommended order (1–9) changed. Linux items are tested in CI. Apple UI items compile in the macOS CI job and are covered by the iPhone UI tests. None has run on a device.
+
+| Area | Now |
+|---|---|
+| Commands | **Built.** `NexusActions.ActionExecutor` performs every command. The UI runs them through `CommandRunner`, which gives a form for missing input, navigation to the result, classified errors and exports. |
+| Measurement entry | **Built.** Unit validation, instrument accuracy turned into uncertainty, observed or display truth, and assessment against the investigation. |
+| Investigation in the app | **Built.** Record reading, confirm or reject, system vs display truth, repair task, close, report and training scenario. |
+| Event timeline | **Built.** The store logs edits, measurements, lifecycle changes and restores; investigations log confirm, reject, close, repair and verification; the simulation logs faults, thresholds and divergence. |
+| Diff and restore | **Built.** Attribute-level diffs keep the truth class of each value. Restore writes a new revision and respects `TruthPolicy`. The Object Detail screen shows both. |
+| Backup restore | **Built.** Validated, and blobs are included. |
+| Store performance | **Built.** Statement cache, encoding once and pragmas give object inserts −39 % and lookups −18 %. FTS rank-before-join was measured slower and not applied. Background `perform` exists. |
+| Screens | **Built.** All 18 families route to a real screen. Task, Calendar, Project, Document, Meeting, Research, Conversation and Creative are new; Command Center gained Now, Today and Watching. |
+| Twin | **Built.** Components registered, input targets, links and truth-labelled overlays in 3D, follows the focus, simulation off the main thread. |
+| Ask | **Built.** Streams text and steps, can be stopped, bounded by a privacy tier. Opt-in Claude with a Keychain key works on OS 26; Apple models on 27. |
+| Agents | **Partial.** Seven specialists plus an orchestrator and `delegate` sub-runs. Also tools for tasks, documents, meetings and research; all permission scopes filled; grounding check (`unverified` status); structured output (`HypothesisDraft`); latency and cost. The spec's other 15 specialists (finance, travel, …) wait for their domains. |
+| Research | **Built (local).** `NexusResearch` covers plan, discovery, classification, cited claims, contradictions, applicability and synthesis. Web sources are only a `SourceFetcher` protocol. |
+| Documents | **Built.** PDF text via PDFKit, stored as its own blob so claims quote exact bytes; import and cite from the UI. |
+| Meetings | **Built.** Participants as people, commitments with owners, tasks through `TaskRuntime`; recording and on-device transcription in the Meeting screen. Extraction is still keyword-based. |
+| Visualization | **Built (model), partial (UI).** `NexusVisualization` models all 17 kinds, each with a table equivalent, plus LTTB, histogram, FFT spectrum, heatmap, scope trigger, Sankey, network layout, state graph and density modes. The UI draws line, gauge, histogram, spectrum and table. |
+| Telemetry | **Built.** `NexusTelemetry` (migration 5) stores chunked time series, 1M samples in under 1 s. Modeled samples can't enter observed channels. |
+| Errors and progress | **Built.** `ClassifiedError` (5 categories: what happened, what survived, next actions) is used across the UI. `WorkProgress` exists, and agent steps show live. |
+| Simulation | **Partial.** Thermal and mechanical solvers, induction motor and contactor coil adapted from the trainer, events and async runs added. Economic, environment and vehicle-dynamics solvers are missing. |
+| Second domain | **Built (core).** `NexusAutomotive` covers VIN, OBD-II Mode 01/03/07/09, ELM327, CAN/DBC, 48 DTCs, a charging-system solver and an end-to-end diagnosis. It has no UI yet. |
+| Own model | **Partial.** MLX LoRA pipeline (`Training/`), the evaluator, a registry `register` step behind the gate, and the gate proven in CI (`Training/smoke.sh`). No model has been trained; that needs an Apple silicon Mac. |
+| Apple surfaces | **Built.** The Live Activity follows agent runs, speech transcribes in Meetings, nameplate photos search, Writing Tools are on in notes, meetings and artifacts. |
+
+### Still unbuilt
+
+- **Semantic search:** there are no embeddings; semantic search is only a protocol.
+- **Automation runtime** (`NexusAutomation`: triggers, conditional tasks tied to system states). Calendar "conditional" means task dependencies for now.
+- **Communications:** no EventKit, email or messages.
+- **Rendering:** no Metal renderer, and no large-scale LOD or instancing in 3D.
+- **Input methods:** no iPad Pencil markup and no iPhone swipe gestures. There's no high-contrast or reduced-motion work and no device accessibility audit.
+- **Data safety:** no sync, no encryption at rest on macOS, and no revision history for relationships.
+- **Domains:** no finance, travel, career, CRM, social or architecture domains. Creative has one text workflow, not media.
+- **Automotive:** no UI, and no hardware OBD/CAN acquisition.
+- **Own model:** a model trained on a Mac, and Core AI once `coreai-models` builds for the simulator.
+
+---
+
 This compares every feature in `docs/handoff/` with what the code actually does. Each item was checked in `Sources/` and `Tests/`, not taken from the roadmap. Status key:
 
 - **Built:** works and is tested.
