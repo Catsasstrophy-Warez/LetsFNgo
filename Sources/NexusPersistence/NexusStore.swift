@@ -87,6 +87,9 @@ public final class NexusStore: @unchecked Sendable {
 
     let db: SQLiteConnection
     let clock: NexusClock
+    /// Runs `perform` work off the caller's thread. Serial, so async work is
+    /// applied in submission order; see `perform(_:)`.
+    let workQueue = DispatchQueue(label: "nexus.store.perform", qos: .userInitiated)
     private let lock = NSRecursiveLock()
     private var savepointDepth = 0
     private var lockDepth = 0
@@ -103,16 +106,26 @@ public final class NexusStore: @unchecked Sendable {
     }()
     private let decoder = JSONDecoder()
 
+    /// Page cache per connection in KiB: 64 MB.
+    static let cacheSizeKiB = 65_536
+    /// Memory-mapped I/O window for file stores: 256 MB.
+    static let mmapBytes = 268_435_456
+
     public init(_ location: Location, clock: NexusClock = SystemClock()) throws {
         switch location {
         case .inMemory:
             db = try SQLiteConnection(path: ":memory:")
         case .file(let url):
             db = try SQLiteConnection(path: url.path)
-            try db.execute("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;")
+            try db.execute(
+                "PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA mmap_size = \(Self.mmapBytes);"
+            )
         }
         self.clock = clock
-        try db.execute("PRAGMA foreign_keys = ON;")
+        // A negative cache_size is in KiB rather than pages.
+        try db.execute(
+            "PRAGMA foreign_keys = ON; PRAGMA temp_store = MEMORY; PRAGMA cache_size = -\(Self.cacheSizeKiB);"
+        )
         try migrate()
     }
 
@@ -122,7 +135,7 @@ public final class NexusStore: @unchecked Sendable {
         locked { (try? currentSchemaVersion()) ?? 0 }
     }
 
-    private func currentSchemaVersion() throws -> Int {
+    func currentSchemaVersion() throws -> Int {
         try db.query("SELECT COALESCE(MAX(version), 0) FROM schema_migrations") { Int($0.int(0)) }.first ?? 0
     }
 
@@ -178,13 +191,13 @@ public final class NexusStore: @unchecked Sendable {
 
     func transaction<T>(_ body: () throws -> T) throws -> T {
         let name = "nexus_sp_\(savepointDepth)"
-        try db.execute("SAVEPOINT \(name)")
+        try db.run("SAVEPOINT \(name)")
         savepointDepth += 1
         pendingChanges.append([])
         do {
             let result = try body()
             savepointDepth -= 1
-            try db.execute("RELEASE \(name)")
+            try db.run("RELEASE \(name)")
             let committed = pendingChanges.removeLast()
             if pendingChanges.isEmpty {
                 outbox += committed
@@ -195,8 +208,8 @@ public final class NexusStore: @unchecked Sendable {
         } catch {
             savepointDepth -= 1
             pendingChanges.removeLast()
-            try? db.execute("ROLLBACK TO \(name)")
-            try? db.execute("RELEASE \(name)")
+            try? db.run("ROLLBACK TO \(name)")
+            try? db.run("RELEASE \(name)")
             throw error
         }
     }
@@ -219,6 +232,10 @@ public final class NexusStore: @unchecked Sendable {
     ///
     /// Throws `truthConflict` if the change would replace a recorded or
     /// observed value with a weaker truth class.
+    ///
+    /// In the same transaction the store appends an `objectEdited` event about
+    /// the object, authored by `author`, whose payload lists the changed
+    /// attribute keys (`changedAttributes`) and fields (`changedFields`).
     @discardableResult
     public func update(
         _ id: ObjectID,
@@ -228,17 +245,22 @@ public final class NexusStore: @unchecked Sendable {
     ) throws -> ObjectRecord {
         try locked {
             try transaction {
-                guard let old = try fetchObject(id) else { throw StoreError.notFound(id) }
-                if old.type == .measurement || old.type == .claim {
-                    throw StoreError.immutableRecord(id, old.type)
-                }
+                let (rowid, old) = try fetchMutable(id)
                 var new = old
                 try mutate(&new)
                 stampChangedAttributes(from: old, to: &new, by: author)
                 try checkUpdate(from: old, to: new, by: author)
                 try new.validate()
                 new.updatedAt = clock.now()
-                return try writeRevision(of: new, parent: old.revision, author: author, instruction: instruction)
+                let written = try writeRevision(
+                    of: new, rowid: rowid, parent: old.revision, author: author, instruction: instruction
+                )
+                let changes = ObjectChanges(from: old, to: written)
+                try recordStoreEvent(
+                    kind: .objectEdited, subjects: [id], summary: "Edited \(written.title)\(changes.summarySuffix)",
+                    payload: changes.payload, author: author, revision: written.revision
+                )
+                return written
             }
         }
     }
@@ -301,16 +323,30 @@ public final class NexusStore: @unchecked Sendable {
         guard try exists(id) else { throw StoreError.notFound(id) }
     }
 
-    private func fetchObject(_ id: ObjectID) throws -> ObjectRecord? {
+    func fetchObject(_ id: ObjectID) throws -> ObjectRecord? {
         try db.query("SELECT record FROM objects WHERE id = ?", [.text(id.description)]) {
             try decode(ObjectRecord.self, $0, table: "objects")
         }.first
+    }
+
+    /// An object that may take a new revision (it exists and is neither a
+    /// measurement nor a claim), with the rowid its FTS row shares.
+    func fetchMutable(_ id: ObjectID) throws -> (rowid: Int64, record: ObjectRecord) {
+        let row = try db.query("SELECT row_id, record FROM objects WHERE id = ?", [.text(id.description)]) {
+            ($0.int(0), try decode(ObjectRecord.self, $0, column: 1, table: "objects"))
+        }.first
+        guard let row else { throw StoreError.notFound(id) }
+        if row.1.type == .measurement || row.1.type == .claim {
+            throw StoreError.immutableRecord(id, row.1.type)
+        }
+        return (row.0, row.1)
     }
 
     private func insertObject(_ record: ObjectRecord, instruction: String?) throws -> ObjectRecord {
         var record = record
         let revision = RevisionID.make()
         record.revision = revision
+        let json = try encode(record)
         try db.run(
             """
             INSERT INTO objects (id, type, title, lifecycle, truth, created_at, updated_at, head_revision, record)
@@ -321,25 +357,34 @@ public final class NexusStore: @unchecked Sendable {
                 .text(record.lifecycle.rawValue), .text(record.provenance.truth.rawValue),
                 .real(record.createdAt.timeIntervalSinceReferenceDate),
                 .real(record.updatedAt.timeIntervalSinceReferenceDate),
-                .text(revision.description), .text(try encode(record)),
+                .text(revision.description), .text(json),
             ]
         )
+        // Read before the revision insert, which moves last_insert_rowid.
+        let rowid = db.lastInsertRowID
         try insertRevision(
-            Revision(
+            RevisionHeader(
                 id: revision, objectID: record.id, parent: nil, sequence: 1,
-                author: record.provenance.origin, instruction: instruction,
-                at: record.createdAt, snapshot: record
-            )
+                author: record.provenance.origin, instruction: instruction, at: record.createdAt
+            ),
+            snapshotJSON: json
         )
-        try reindex(record.id, title: record.title, body: record.searchableText)
+        // A fresh rowid has no FTS row yet, so there is nothing to delete.
+        try db.run(
+            "INSERT INTO search_index (rowid, object_id, title, body) VALUES (?, ?, ?, ?)",
+            [.int(rowid), .text(record.id.description), .text(record.title), .text(record.searchableText)]
+        )
         try logChange(record.id, .created)
         return record
     }
 
-    private func writeRevision(of record: ObjectRecord, parent: RevisionID?, author: Origin, instruction: String?) throws -> ObjectRecord {
+    func writeRevision(
+        of record: ObjectRecord, rowid: Int64, parent: RevisionID?, author: Origin, instruction: String?
+    ) throws -> ObjectRecord {
         var record = record
         let revision = RevisionID.make()
         record.revision = revision
+        let json = try encode(record)
         let sequence = try db.query(
             "SELECT COALESCE(MAX(seq), 0) + 1 FROM revisions WHERE object_id = ?", [.text(record.id.description)]
         ) { Int($0.int(0)) }.first ?? 1
@@ -351,29 +396,43 @@ public final class NexusStore: @unchecked Sendable {
             [
                 .text(record.title), .text(record.lifecycle.rawValue), .text(record.provenance.truth.rawValue),
                 .real(record.updatedAt.timeIntervalSinceReferenceDate), .text(revision.description),
-                .text(try encode(record)), .text(record.id.description),
+                .text(json), .text(record.id.description),
             ]
         )
         try insertRevision(
-            Revision(
+            RevisionHeader(
                 id: revision, objectID: record.id, parent: parent, sequence: sequence,
-                author: author, instruction: instruction, at: record.updatedAt, snapshot: record
-            )
+                author: author, instruction: instruction, at: record.updatedAt
+            ),
+            snapshotJSON: json
         )
-        try reindex(record.id, title: record.title, body: record.searchableText)
+        try reindex(rowid: rowid, record.id, title: record.title, body: record.searchableText)
         try logChange(record.id, .updated)
         return record
     }
 
-    private func insertRevision(_ revision: Revision) throws {
+    /// Stores a revision without encoding its snapshot a second time: the
+    /// record's JSON, already written to `objects`, is spliced in.
+    private func insertRevision(_ header: RevisionHeader, snapshotJSON: String) throws {
         try db.run(
             "INSERT INTO revisions (id, object_id, parent_id, seq, at, record) VALUES (?, ?, ?, ?, ?, ?)",
             [
-                .text(revision.id.description), .text(revision.objectID.description),
-                (revision.parent?.description).sql, .int(Int64(revision.sequence)),
-                .real(revision.at.timeIntervalSinceReferenceDate), .text(try encode(revision)),
+                .text(header.id.description), .text(header.objectID.description),
+                (header.parent?.description).sql, .int(Int64(header.sequence)),
+                .real(header.at.timeIntervalSinceReferenceDate),
+                .text(try revisionJSON(header, snapshotJSON: snapshotJSON)),
             ]
         )
+    }
+
+    /// The JSON of a whole `Revision`, byte for byte what encoding it would
+    /// produce: with sorted keys, "snapshot" is a revision's last key, so it
+    /// goes just before the header's closing brace.
+    func revisionJSON(_ header: RevisionHeader, snapshotJSON: String) throws -> String {
+        var json = try encode(header)
+        precondition(json.hasSuffix("}") && json.count > 2, "a revision header always has fields")
+        json.removeLast()
+        return json + ",\"snapshot\":" + snapshotJSON + "}"
     }
 
     /// A changed attribute with no provenance of its own would otherwise inherit
@@ -386,7 +445,7 @@ public final class NexusStore: @unchecked Sendable {
         }
     }
 
-    private func checkUpdate(from old: ObjectRecord, to new: ObjectRecord, by author: Origin) throws {
+    func checkUpdate(from old: ObjectRecord, to new: ObjectRecord, by author: Origin) throws {
         if new.id != old.id { throw StoreError.immutableField(object: old.id, field: "id") }
         if new.type != old.type { throw StoreError.immutableField(object: old.id, field: "type") }
         if new.createdAt != old.createdAt { throw StoreError.immutableField(object: old.id, field: "createdAt") }
@@ -509,27 +568,52 @@ public final class NexusStore: @unchecked Sendable {
 
     public func record(_ event: Event) throws {
         try locked {
-            try transaction {
-                try event.validate()
-                for subject in event.subjects {
-                    try requireExists(subject)
-                }
-                try db.run(
-                    "INSERT INTO events (id, at, kind, truth, record) VALUES (?, ?, ?, ?, ?)",
-                    [
-                        .text(event.id.description), .real(event.at.timeIntervalSinceReferenceDate),
-                        .text(event.kind.rawValue), .text(event.provenance.truth.rawValue), .text(try encode(event)),
-                    ]
-                )
-                for subject in Set(event.subjects).sorted() {
-                    try db.run(
-                        "INSERT INTO event_subjects (event_id, object_id) VALUES (?, ?)",
-                        [.text(event.id.description), .text(subject.description)]
-                    )
-                    try logChange(subject, .event)
-                }
-            }
+            try transaction { try insertEvent(event) }
         }
+    }
+
+    private func insertEvent(_ event: Event) throws {
+        try event.validate()
+        for subject in event.subjects {
+            try requireExists(subject)
+        }
+        try db.run(
+            "INSERT INTO events (id, at, kind, truth, record) VALUES (?, ?, ?, ?, ?)",
+            [
+                .text(event.id.description), .real(event.at.timeIntervalSinceReferenceDate),
+                .text(event.kind.rawValue), .text(event.provenance.truth.rawValue), .text(try encode(event)),
+            ]
+        )
+        for subject in Set(event.subjects).sorted() {
+            try db.run(
+                "INSERT INTO event_subjects (event_id, object_id) VALUES (?, ?)",
+                [.text(event.id.description), .text(subject.description)]
+            )
+            try logChange(subject, .event)
+        }
+    }
+
+    /// Appends the event the store itself writes for a change (an edit, a
+    /// lifecycle transition, a restore), inside the caller's transaction.
+    ///
+    /// The event is a recorded fact about the store ("this author changed
+    /// this object"), so it is `recorded` whoever the author is. The author
+    /// stays its origin, and the revision the change produced is linked.
+    func recordStoreEvent(
+        kind: EventKind, subjects: [ObjectID], summary: String, payload: [String: Value], author: Origin,
+        revision: RevisionID?
+    ) throws {
+        let now = clock.now()
+        var payload = payload
+        payload["author"] = .string(author.label)
+        try insertEvent(
+            Event(
+                at: now, kind: kind, subjects: subjects, summary: summary, payload: payload,
+                provenance: Provenance(
+                    origin: author, truth: .recorded, timestamp: now, method: "store ledger", revision: revision
+                )
+            )
+        )
     }
 
     /// Events involving an object, in time order.
@@ -648,6 +732,24 @@ public final class NexusStore: @unchecked Sendable {
                         .text(try encode(measurement)),
                     ]
                 )
+                // The measurement event keeps the measurement's own provenance,
+                // so a modeled reading never shows up as an observed event.
+                var subjects = [measurement.id, measurement.testPoint]
+                if let instrument = measurement.instrument { subjects.append(instrument) }
+                var payload: [String: Value] = [
+                    "measurement": .reference(measurement.id),
+                    "testPoint": .reference(measurement.testPoint),
+                    "quantity": .string(measurement.quantityName),
+                    "value": .quantity(measurement.value),
+                    "truth": .string(measurement.truth.rawValue),
+                ]
+                if let uncertainty = measurement.uncertainty { payload["uncertainty"] = .double(uncertainty) }
+                try insertEvent(
+                    Event(
+                        at: measurement.sampledAt, kind: .measured, subjects: subjects, summary: title,
+                        payload: payload, provenance: measurement.provenance
+                    )
+                )
             }
         }
     }
@@ -691,54 +793,73 @@ public final class NexusStore: @unchecked Sendable {
             .map { "\"\($0)\"*" }
         guard !tokens.isEmpty, limit > 0 else { return [] }
         if let scope = filter.scope, scope.isEmpty { return [] }
+        let match = tokens.joined(separator: " ")
 
         return try locked {
-            try transaction {
-                var sql = """
-                    SELECT o.id, o.type, o.title, bm25(search_index) AS score
-                    FROM search_index JOIN objects o ON o.rowid = search_index.rowid
-                    WHERE search_index MATCH ? AND o.lifecycle != 'deleted'
-                    """
-                var values: [SQLValue] = [.text(tokens.joined(separator: " "))]
-                if let types = filter.types, !types.isEmpty {
-                    sql += " AND o.type IN (\(placeholders(types.count)))"
-                    values += types.map(\.rawValue).sorted().map(SQLValue.text)
-                }
-                if let truth = filter.truth, !truth.isEmpty {
-                    sql += " AND o.truth IN (\(placeholders(truth.count)))"
-                    values += truth.map(\.rawValue).sorted().map(SQLValue.text)
-                }
-                if let from = filter.updatedFrom {
-                    sql += " AND o.updated_at >= ?"
-                    values.append(.real(from.timeIntervalSinceReferenceDate))
-                }
-                if let to = filter.updatedTo {
-                    sql += " AND o.updated_at <= ?"
-                    values.append(.real(to.timeIntervalSinceReferenceDate))
-                }
-                if let scope = filter.scope {
-                    try db.execute("CREATE TEMP TABLE IF NOT EXISTS search_scope (id TEXT PRIMARY KEY); DELETE FROM search_scope;")
-                    for id in scope {
-                        try db.run("INSERT INTO search_scope (id) VALUES (?)", [.text(id.description)])
-                    }
-                    sql += " AND o.id IN (SELECT id FROM search_scope)"
-                }
-                sql += " ORDER BY score, o.id LIMIT ?"
-                values.append(.int(Int64(limit)))
-                let hits = try db.query(sql, values) { row in
-                    guard let idText = row.text(0), let id = ObjectID(idText) else {
-                        throw StoreError.corruptRecord(table: "objects", id: row.text(0) ?? "?")
-                    }
-                    return SearchHit(
-                        id: id, type: ObjectType(rawValue: row.text(1) ?? ""), title: row.text(2) ?? "", score: row.real(3)
-                    )
-                }
-                if filter.scope != nil {
-                    try db.execute("DELETE FROM search_scope;")
-                }
-                return hits
-            }
+            try transaction { try searchJoined(match, filter: filter, limit: limit) }
         }
+    }
+
+    /// `AND …` clauses and their values for the non-scope filters.
+    private func filterClauses(_ filter: SearchFilter, alias: String) -> (sql: String, values: [SQLValue]) {
+        var sql = " AND \(alias)lifecycle != 'deleted'"
+        var values: [SQLValue] = []
+        if let types = filter.types, !types.isEmpty {
+            sql += " AND \(alias)type IN (\(placeholders(types.count)))"
+            values += types.map(\.rawValue).sorted().map(SQLValue.text)
+        }
+        if let truth = filter.truth, !truth.isEmpty {
+            sql += " AND \(alias)truth IN (\(placeholders(truth.count)))"
+            values += truth.map(\.rawValue).sorted().map(SQLValue.text)
+        }
+        if let from = filter.updatedFrom {
+            sql += " AND \(alias)updated_at >= ?"
+            values.append(.real(from.timeIntervalSinceReferenceDate))
+        }
+        if let to = filter.updatedTo {
+            sql += " AND \(alias)updated_at <= ?"
+            values.append(.real(to.timeIntervalSinceReferenceDate))
+        }
+        return (sql, values)
+    }
+
+    /// Scores every match with bm25, joins it to `objects`, filters and sorts.
+    ///
+    /// Ranking inside FTS5 before the join (`ORDER BY rank LIMIT k`) was
+    /// measured and does not help: computing bm25 for every match is about
+    /// 95 % of the query, and FTS5 must score every match to find the top k
+    /// either way. Many matches also tie on score, so an exact `(score, id)`
+    /// order needs the join anyway. See docs/PERFORMANCE.md.
+    private func searchJoined(_ match: String, filter: SearchFilter, limit: Int) throws -> [SearchHit] {
+        let (clauses, filterValues) = filterClauses(filter, alias: "o.")
+        var sql =
+            """
+            SELECT o.id, o.type, o.title, bm25(search_index) AS score
+            FROM search_index JOIN objects o ON o.rowid = search_index.rowid
+            WHERE search_index MATCH ?
+            """ + clauses
+        var values: [SQLValue] = [.text(match)] + filterValues
+        if let scope = filter.scope {
+            try db.execute("CREATE TEMP TABLE IF NOT EXISTS search_scope (id TEXT PRIMARY KEY); DELETE FROM search_scope;")
+            for id in scope {
+                try db.run("INSERT INTO search_scope (id) VALUES (?)", [.text(id.description)])
+            }
+            sql += " AND o.id IN (SELECT id FROM search_scope)"
+        }
+        sql += " ORDER BY score, o.id LIMIT ?"
+        values.append(.int(Int64(limit)))
+        let hits = try db.query(sql, values) { row in
+            guard let idText = row.text(0), let id = ObjectID(idText) else {
+                throw StoreError.corruptRecord(table: "objects", id: row.text(0) ?? "?")
+            }
+            return SearchHit(
+                id: id, type: ObjectType(rawValue: row.text(1) ?? ""), title: row.text(2) ?? "", score: row.real(3)
+            )
+        }
+        if filter.scope != nil {
+            try db.execute("DELETE FROM search_scope;")
+        }
+        return hits
     }
 
     private func placeholders(_ count: Int) -> String {
@@ -746,9 +867,7 @@ public final class NexusStore: @unchecked Sendable {
     }
 
     /// The FTS row shares the object's rowid, so updates replace it directly.
-    private func reindex(_ id: ObjectID, title: String, body: String) throws {
-        let rowid = try db.query("SELECT rowid FROM objects WHERE id = ?", [.text(id.description)]) { $0.int(0) }.first
-        guard let rowid else { throw StoreError.notFound(id) }
+    private func reindex(rowid: Int64, _ id: ObjectID, title: String, body: String) throws {
         try db.run("DELETE FROM search_index WHERE rowid = ?", [.int(rowid)])
         try db.run(
             "INSERT INTO search_index (rowid, object_id, title, body) VALUES (?, ?, ?, ?)",
@@ -807,11 +926,14 @@ public final class NexusStore: @unchecked Sendable {
 
     /// Writes a consistent, compacted copy of the whole database to `url`
     /// (SQLite `VACUUM INTO`). Safe while the store is in use; the copy opens
-    /// as an ordinary store. Fails if `url` already exists.
+    /// as an ordinary store. Fails if `url` already exists. A file store's
+    /// blob bytes are copied to `<url>.blobs`. Restore with
+    /// `NexusStore.restore(from:to:)`.
     public func backup(to url: URL) throws {
         try locked {
             precondition(savepointDepth == 0, "backup cannot run inside a batch")
             try db.run("VACUUM INTO ?", [.text(url.path)])
+            try copyBlobs(toDatabaseAt: url)
         }
     }
 
@@ -853,12 +975,15 @@ public final class NexusStore: @unchecked Sendable {
 
     // MARK: Coding
 
-    private func encode<T: Encodable>(_ value: T) throws -> String {
+    func encode<T: Encodable>(_ value: T) throws -> String {
         String(decoding: try encoder.encode(value), as: UTF8.self)
     }
 
-    private func decode<T: Decodable>(_ type: T.Type, _ row: SQLiteConnection.Statement, table: String) throws -> T {
-        guard let text = row.text(0) else { throw StoreError.corruptRecord(table: table, id: "?") }
-        return try decoder.decode(type, from: Data(text.utf8))
+    /// Decodes JSON straight from the column's bytes, with no intermediate `String`.
+    func decode<T: Decodable>(
+        _ type: T.Type, _ row: SQLiteConnection.Statement, column: Int32 = 0, table: String
+    ) throws -> T {
+        guard let data = row.data(column) else { throw StoreError.corruptRecord(table: table, id: "?") }
+        return try decoder.decode(type, from: data)
     }
 }

@@ -104,6 +104,13 @@ public struct EventKind: RawRepresentable, Hashable, Codable, Sendable, Expressi
     public static let approval: EventKind = "approval"
     public static let message: EventKind = "message"
     public static let note: EventKind = "note"
+    /// Written by the store for every `update` of an object, by any author.
+    /// Measurements use `measured`.
+    public static let objectEdited: EventKind = "objectEdited"
+    /// Written by the store when an object's lifecycle moves.
+    public static let lifecycleChanged: EventKind = "lifecycleChanged"
+    /// Written by the store when an object is restored to an earlier revision.
+    public static let revisionRestored: EventKind = "revisionRestored"
 }
 
 public enum Lifecycle: String, Codable, Sendable, CaseIterable {

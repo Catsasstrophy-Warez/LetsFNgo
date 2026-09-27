@@ -27,7 +27,7 @@ not make it flaky.
 - **Batching:** writes go through `NexusStore.batch` in groups of 5,000, in a
   temporary file store (WAL mode, `synchronous = NORMAL`).
 
-## Results
+## Results (first run, before the store changes)
 
 Measured on 2026-09-27, Linux x86_64 (4 vCPU Xeon @ 2.8 GHz, container),
 Swift 6.2 release build, SQLite 3.45.1. The component-cost rows were measured
@@ -72,15 +72,89 @@ The database file is 454.5 MB (average record JSON is 408 bytes).
 - **FTS cost grows with matches, not with `limit`.** A common word matches
   thousands of rows. The query joins `objects` to filter lifecycle and type and
   then sorts every match by `bm25` before applying `LIMIT`, so it takes 20 ms
-  at 150,000 objects against 2 ms at 15,000.
+  at 150,000 objects against 2 ms at 15,000. Later measurement showed the
+  cost is bm25 scoring of every match, not the join or the sort (see item 4
+  below).
 - **Size.** Every object is stored as JSON in `objects.record` and again in
   each `revisions.record` snapshot. Measurements and claims add a third copy
   in their own table.
 
-## Proposed store changes
+## Store changes applied
 
-These all touch `NexusStore.swift` and `SQLite.swift`, so they are proposals.
-None of them changes the schema.
+The six store changes proposed after the first run have been applied or
+evaluated. None of them changes the schema or the stored JSON.
+
+1. **Statement cache (applied).** `SQLiteConnection` keeps compiled
+   statements keyed by SQL text and resets them after each use. A statement
+   that is already in use further up the stack (a re-entrant query) gets a
+   private copy. The cache holds at most 128 statements, and generated
+   `IN (?, …)` lists are what fill it. Savepoints go through the cache too.
+2. **No rowid round-trip (applied).** A create takes the new FTS rowid from
+   `sqlite3_last_insert_rowid` and inserts the FTS row without a `DELETE`.
+   An update reads `row_id` along with the old record, which it already
+   fetched. That is two fewer statements per create and one fewer per update.
+3. **Encode once per write (applied).** A write encodes the record once. The
+   revision JSON is the revision header's JSON with that string spliced in
+   as `"snapshot"`, which is the last key when keys are sorted. The result is
+   byte-for-byte what encoding the whole `Revision` gives, so there is no
+   format change and no size change. A test checks the bytes are equal.
+4. **Rank before join (measured, not applied).** On this workload, bm25
+   scoring is about 95 % of a search: scoring every match takes 11.6 ms of a
+   12.0 ms query, and joining `objects` and sorting add under 0.5 ms (SQLite
+   3.45.1, 150,000 rows). FTS5 has to score every match to find the top `k`
+   anyway, so `ORDER BY rank LIMIT k` takes as long as the full query or
+   longer (15.4 ms against 12.0 ms). Scores also tie in bulk: the benchmark
+   queries have 1 to 3 distinct scores across 300 to 14,500 matches. An exact
+   `(score, id)` order therefore has to join the tied rows anyway. Two exact
+   versions were built and benchmarked: widen `k` and retry, and one extra
+   query for the tied rows. They took 37 ms and 33 ms per query, against
+   18–20 ms for the original. Search keeps the single joined query, and a
+   test fixes the tie order. A real gain needs different results, for
+   example ranking only the first N matches, or an `UNINDEXED` `type` column
+   in FTS so type filters skip the join. The second option needs a
+   migration.
+5. **Lighter reads (applied).** Row decoding reads the column's bytes straight
+   into `Data` (no intermediate `String`). There are two new column-only
+   reads: `summaries(ofType:)` returns an `ObjectSummary` (id, type, title,
+   lifecycle, truth, updatedAt, revision) for lists and pickers, and
+   `measurementSamples(at:truth:)` returns a `MeasurementSample` (id,
+   quantity, value, truth, sampledAt) for plots. Neither decodes JSON.
+6. **Connection pragmas (applied).** `temp_store = MEMORY` and
+   `cache_size = -65536` (64 MB) on every connection, and `mmap_size` of
+   256 MB on file stores.
+
+### Before and after
+
+Measured on 2026-09-27 at full scale on the machine described above. Other
+jobs were running on the same host. Code that did not change (the JSON
+component rows) varied by up to 30 % between runs, so each figure is the
+median of three runs per side, run as before/after pairs. The search rows
+come from one run of the final code, because the rank-first versions were
+removed.
+
+| Operation | Before | After | Per op | Change |
+|---|---|---|---|---|
+| Insert 100,000 objects | 28.3 s | 17.2 s | 283 → 172 µs | −39 % |
+| Insert 300,000 relationships | 31.9 s | 21.7 s | 106 → 72 µs | −32 % |
+| Insert 50,000 measurements | 16.6 s | 18.7 s | 332 → 374 µs | +12 % (now also writes a `measured` event) |
+| FTS search, limit 50 (200 queries) | 4.09 s | 3.12 s | 20.4 → 15.6 ms | within noise; see item 4 |
+| Traverse depth 6 | 36 ms | 33 ms | | |
+| Measurements at a test point (100 rows) | 2.7 ms | 2.8 ms per query | | unchanged (JSON-bound) |
+| Point lookup by ID | | | 50 → 41 µs | −18 % |
+| Batch fetch of 10,000 objects | 0.41 s | 0.37 s | 41 → 37 µs | −10 % |
+| Update (new revision) | | | 457 → 388 µs | −15 %, now including its `objectEdited` event |
+| Reload: 100,000 components by type | 3.58 s | 3.29 s | 36 → 33 µs | −8 % |
+
+After this change, every measurement and every update also writes an event
+(an `events` row, one `event_subjects` row per subject and one `changes` row
+per subject). That costs about 40 µs per measurement and grows the benchmark
+database from 538 MB to 618 MB, which is 50,000 measurement events and 1,000
+edit events. Without the events, measurement inserts would benefit about as
+much as object inserts.
+
+### Original proposals
+
+As written after the first run, before they were applied:
 
 1. **Statement cache.** Keep a `[String: Statement]` on `SQLiteConnection`,
    and have `run` and `query` reuse the statement with `sqlite3_reset` and

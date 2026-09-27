@@ -167,7 +167,7 @@ private struct Bench {
         )
         #expect(event.payload["deviation"] == .double(-7))
         #expect(event.provenance.truth == .derived)
-        #expect(try bench.store.events(about: bench.investigation) == [event])
+        #expect(try bench.store.events(about: bench.investigation).filter { $0.kind != .objectEdited } == [event])
         #expect(try bench.store.object(bench.investigation)?.truth(of: "firstDivergence") == .derived)
     }
 
