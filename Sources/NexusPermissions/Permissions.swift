@@ -265,21 +265,36 @@ public final class PermissionEngine: @unchecked Sendable {
         }
     }
 
+    /// What an approval covers. Scopes are part of the key, so approving an
+    /// action on one object type, data source or service does not approve it
+    /// on another. Keys saved before scopes existed decode with no scope and
+    /// still match unscoped requests.
     private struct ApprovalKey: Hashable, Codable {
         var agent: String
         var action: String
         var level: PermissionLevel
         var project: ObjectID?
+        /// Sorted raw values; nil when the request named no object types.
+        var objectTypes: [String]?
+        var dataSource: String?
+        var service: String?
 
         init(_ request: PermissionRequest, project: Bool) {
             agent = request.agent
             action = request.action
             level = request.level
             self.project = project ? request.project : nil
+            objectTypes = request.objectTypes.isEmpty ? nil : request.objectTypes.map(\.rawValue).sorted()
+            dataSource = request.dataSource
+            service = request.service
         }
 
         var storageKey: String {
-            "\(agent)|\(action)|\(level.rawValue)|\(project?.description ?? "-")"
+            var key = "\(agent)|\(action)|\(level.rawValue)|\(project?.description ?? "-")"
+            if objectTypes != nil || dataSource != nil || service != nil {
+                key += "|\(objectTypes?.joined(separator: ",") ?? "-")|\(dataSource ?? "-")|\(service ?? "-")"
+            }
+            return key
         }
     }
 }

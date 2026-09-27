@@ -102,11 +102,23 @@ public struct GenerationRequest: Sendable, Hashable {
     public var messages: [ChatMessage]
     public var tools: [ToolSpec]
     public var maxOutputTokens: Int
+    /// A JSON Schema the final answer must follow. Providers that support
+    /// structured output constrain generation to it and return the parsed
+    /// document in `ModelResponse.structured`; callers still validate it.
+    public var responseSchema: JSONValue?
 
-    public init(messages: [ChatMessage], tools: [ToolSpec] = [], maxOutputTokens: Int = 4_096) {
+    public init(messages: [ChatMessage], tools: [ToolSpec] = [], maxOutputTokens: Int = 4_096, responseSchema: JSONValue? = nil) {
         self.messages = messages
         self.tools = tools
         self.maxOutputTokens = maxOutputTokens
+        self.responseSchema = responseSchema
+    }
+
+    /// This request with other messages; everything else is kept.
+    public func with(messages: [ChatMessage]) -> GenerationRequest {
+        var copy = self
+        copy.messages = messages
+        return copy
     }
 }
 
@@ -114,11 +126,34 @@ public struct ModelResponse: Sendable, Hashable {
     public var message: ChatMessage
     public var stopReason: StopReason
     public var usage: Usage
+    /// The parsed answer when the request carried a `responseSchema` and the
+    /// model produced JSON. Nil otherwise. Not yet validated.
+    public var structured: JSONValue?
 
-    public init(message: ChatMessage, stopReason: StopReason, usage: Usage = Usage()) {
+    public init(message: ChatMessage, stopReason: StopReason, usage: Usage = Usage(), structured: JSONValue? = nil) {
         self.message = message
         self.stopReason = stopReason
         self.usage = usage
+        self.structured = structured
+    }
+}
+
+/// A provider's list price per token, for cost accounting.
+public struct ModelPrice: Sendable, Hashable {
+    public var inputPerMillionTokens: Double
+    public var outputPerMillionTokens: Double
+    /// ISO 4217 code.
+    public var currency: String
+
+    public init(inputPerMillionTokens: Double, outputPerMillionTokens: Double, currency: String = "USD") {
+        self.inputPerMillionTokens = inputPerMillionTokens
+        self.outputPerMillionTokens = outputPerMillionTokens
+        self.currency = currency
+    }
+
+    /// What `usage` costs at this price.
+    public func cost(of usage: Usage) -> Double {
+        (Double(usage.inputTokens) * inputPerMillionTokens + Double(usage.outputTokens) * outputPerMillionTokens) / 1_000_000
     }
 }
 
@@ -144,13 +179,24 @@ public struct ModelDescriptor: Sendable, Hashable {
     public var contextTokens: Int
     public var supportsTools: Bool
     public var supportsImages: Bool
+    /// Per-token price, when the provider charges for use. Nil for local
+    /// models and for providers whose price is unknown.
+    public var price: ModelPrice?
 
-    public init(ref: ModelRef, tier: ModelTier, contextTokens: Int, supportsTools: Bool = true, supportsImages: Bool = false) {
+    public init(
+        ref: ModelRef,
+        tier: ModelTier,
+        contextTokens: Int,
+        supportsTools: Bool = true,
+        supportsImages: Bool = false,
+        price: ModelPrice? = nil
+    ) {
         self.ref = ref
         self.tier = tier
         self.contextTokens = contextTokens
         self.supportsTools = supportsTools
         self.supportsImages = supportsImages
+        self.price = price
     }
 }
 
