@@ -171,6 +171,9 @@ struct InvestigationScreen: View {
             $0.tests = tests
             $0.testPoint = suggested?.testPoint
             $0.quantity = suggested?.quantity
+            // The test's condition ("high level") is the reading's loading;
+            // predictions made under a condition only count readings taken under it.
+            $0.loading = suggested?.condition
             $0.truth = .observed
         }
         env.commands.run(.recordMeasurement, title: "Record measurement", selection: [investigation], parameters: parameters)
