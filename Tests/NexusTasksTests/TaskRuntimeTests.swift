@@ -275,3 +275,38 @@ private struct Bench {
         }
     }
 }
+
+@Suite struct TaskStartConditionTests {
+    @Test func conditionBlocksTheTaskUntilActivated() throws {
+        let bench = try Bench()
+        let task = try bench.runtime.create("Calibrate", by: tech)
+        #expect(try bench.runtime.conditions(for: task.id).isEmpty)
+
+        try bench.runtime.setStartCondition(.string("opaque"), text: "TB-4 voltage > 20 V", startAs: .inProgress, on: task.id, by: tech)
+        #expect(try bench.runtime.task(task.id).status == .blocked)
+        #expect(try bench.runtime.waitingOnConditions().map(\.id) == [task.id])
+        let condition = try #require(try bench.runtime.conditions(for: task.id).first)
+        #expect(condition.label == "starts when TB-4 voltage > 20 V")
+        #expect(condition.condition == .string("opaque") && condition.startAs == .inProgress)
+
+        try bench.runtime.activate(task.id, reason: "TB-4 voltage 21 V", by: .system)
+        #expect(try bench.runtime.task(task.id).status == .inProgress)
+        #expect(try bench.runtime.waitingOnConditions().isEmpty)
+        #expect(try bench.runtime.conditions(for: task.id).first?.metReason == "TB-4 voltage 21 V")
+        #expect(throws: TaskError.corruptTask(task.id, field: "startsWhen")) {
+            try bench.runtime.activate(task.id, reason: "again", by: .system)
+        }
+    }
+
+    @Test func conditionsNeedAnOpenActiveTask() throws {
+        let bench = try Bench()
+        let draft = try bench.runtime.create("Proposed", by: agent)
+        #expect(throws: TaskError.draftNotApproved(draft.id)) {
+            try bench.runtime.setStartCondition(.null, text: "x", on: draft.id, by: tech)
+        }
+        let task = try bench.runtime.create("Task", by: tech)
+        #expect(throws: TaskError.invalidTransition(task.id, from: .blocked, to: .done)) {
+            try bench.runtime.setStartCondition(.null, text: "x", startAs: .done, on: task.id, by: tech)
+        }
+    }
+}

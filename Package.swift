@@ -43,6 +43,7 @@ let package = Package(
         .library(name: "NexusResearch", targets: ["NexusResearch"]),
         .library(name: "NexusActions", targets: ["NexusActions"]),
         .library(name: "NexusAutomotive", targets: ["NexusAutomotive"]),
+        .library(name: "NexusAutomation", targets: ["NexusAutomation"]),
     ],
     targets: [
         .target(name: "NexusCore"),
@@ -113,6 +114,11 @@ let package = Package(
         .target(name: "ControlsTraining", dependencies: ["ControlsPLC", "ControlsSimulation"]),
         .target(name: "NexusTasks", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph"]),
         .target(name: "NexusDocuments", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
+        // Automation runtime: rules as `automation` objects, change-feed triggers, schedules and conditional tasks.
+        .target(
+            name: "NexusAutomation",
+            dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusPermissions", "NexusProjects", "NexusTasks", "NexusActions"]
+        ),
         // Units, uncertainty and instruments, with adapters for the trainer's evidence types.
         .target(name: "NexusMeasurement", dependencies: ["NexusCore", "NexusModel", "ControlsPLC", "ControlsReasoning"]),
         // Executes every command in NexusProjects/Commands.swift against the store and runtimes.
@@ -185,6 +191,13 @@ let package = Package(
             dependencies: ["NexusTrainingData", "NexusModelRegistry", "NexusAgents", "NexusAI", "NexusPermissions", "NexusSimulation"]
         ),
         .testTarget(name: "NexusTasksTests", dependencies: ["NexusTasks"]),
+        .testTarget(
+            name: "NexusAutomationTests",
+            dependencies: [
+                "NexusAutomation", "NexusActions", "NexusCore", "NexusInvestigation", "NexusModel", "NexusPermissions", "NexusPersistence",
+                "NexusProjects", "NexusTasks",
+            ]
+        ),
         .testTarget(name: "NexusDocumentsTests", dependencies: ["NexusDocuments"]),
         // Research over local sources: plan, discovery, classification, claims, contradictions, applicability, synthesis.
         .target(
