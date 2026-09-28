@@ -384,13 +384,15 @@ public struct VehicleRuntime: Sendable {
 
     /// Stores decoded PIDs as measurements against the component each PID
     /// describes. See the type's documentation for the truth classes.
+    /// `service` is "01" for current values and "02" for a freeze frame.
     @discardableResult
     public func record(
         _ readings: [OBDReading],
         on vehicleID: ObjectID,
         scanTool: ObjectID? = nil,
         truth: TruthClass = .display,
-        at date: Date? = nil
+        at date: Date? = nil,
+        service: String = "01"
     ) throws -> [MeasurementRecord] {
         guard truth == .display || truth == .observed else { throw AutomotiveError.unsupportedTruth(truth) }
         return try store.batch { store in
@@ -405,7 +407,8 @@ public struct VehicleRuntime: Sendable {
                     testPoint: vehicle.component(reading.site) ?? ecu, instrument: scanTool, sampledAt: when,
                     provenance: Provenance(
                         origin: origin, truth: truth, timestamp: when,
-                        method: "OBD-II mode 01 PID \(pid)\(reading.ecu.map { " from \($0)" } ?? "")", dependencies: [ecu]
+                        method: "OBD-II mode \(service) PID \(pid)\(service == "02" ? " (freeze frame)" : "")\(reading.ecu.map { " from \($0)" } ?? "")",
+                        dependencies: [ecu]
                     )
                 )
                 try store.add(measurement)

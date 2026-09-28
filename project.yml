@@ -49,6 +49,8 @@ targets:
         INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Nexus transcribes your notes on device."
         INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: "Nexus shows your fixed events next to your work."
         INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: "Nexus adds tasks you choose to Reminders."
+        INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription: "Nexus connects to your OBD-II adapter to read live engine data and trouble codes."
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: "Nexus connects to Wi-Fi OBD-II adapters on your local network to read vehicle data."
         INFOPLIST_KEY_NSSupportsLiveActivities: YES
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
         SWIFT_VERSION: "6.0"
@@ -57,6 +59,9 @@ targets:
         CODE_SIGN_STYLE: Automatic
         ENABLE_APP_SANDBOX: YES
         ENABLE_USER_SELECTED_FILES: readwrite
+        # Mac App Sandbox: BLE and Wi-Fi (TCP) OBD-II adapters.
+        ENABLE_RESOURCE_ACCESS_BLUETOOTH: YES
+        ENABLE_OUTGOING_NETWORK_CONNECTIONS: YES
         TARGETED_DEVICE_FAMILY: "1,2"
         # iCloud sync (docs/DEVICE.md → "iCloud sync"). NO by default, because a
         # free Apple ID can't sign the iCloud entitlement. YES (here, or as
