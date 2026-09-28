@@ -86,7 +86,7 @@ struct ModelSettingsSection: View {
     var body: some View {
         Section("Models") {
             if env.installedModels.isEmpty {
-                Text("No language model is installed. Apple Intelligence needs iOS or macOS 27; Claude needs a key below.")
+                Text("No language model is installed. Apple Intelligence needs a device that supports it (iPhone 15 Pro or later) with Apple Intelligence turned on; Claude needs a key below.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             ForEach(env.installedModels, id: \.self) { Label($0, systemImage: "cpu") }

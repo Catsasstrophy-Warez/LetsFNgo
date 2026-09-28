@@ -93,7 +93,7 @@ let package = Package(
             dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusProjects", "NexusInvestigation", "NexusSimulation"]
         ),
         // Apple-only: empty on Linux, verify in Xcode.
-        .target(name: "NexusRealityKit", dependencies: ["NexusCore", "NexusReality"]),
+        .target(name: "NexusRealityKit", dependencies: ["NexusCore", "NexusModel", "NexusReality"]),
         .target(name: "NexusMeetings", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusTasks"]),
         // Apple-only SwiftUI app layer: empty on Linux, compiled by the macOS CI job.
         .target(
@@ -256,5 +256,7 @@ let package = Package(
             ]
         ),
         .testTarget(name: "NexusSyncTests", dependencies: ["NexusSync", "NexusPersistence", "NexusModel", "NexusCore"]),
-    ]
+    ],
+    // Swift 6 language mode everywhere: complete data-race checking.
+    swiftLanguageModes: [.v6]
 )

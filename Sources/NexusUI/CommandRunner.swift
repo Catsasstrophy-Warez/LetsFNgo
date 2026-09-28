@@ -350,7 +350,7 @@ struct CommandPresentation: ViewModifier {
             Button { dismiss() } label: { Label("Dismiss", systemImage: "xmark") }.labelStyle(.iconOnly)
         }
         .padding(10)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 14))
         .padding(.horizontal)
     }
 }

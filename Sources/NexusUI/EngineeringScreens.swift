@@ -13,6 +13,9 @@ import SwiftUI
 import NexusRealityKit
 import RealityKit
 #endif
+#if canImport(ARKit) && os(iOS)
+import ARKit
+#endif
 
 /// Observations, hypotheses, evidence, the discriminating next test, and the
 /// first divergence, for the focused investigation (or the demo's). Every
@@ -265,7 +268,11 @@ struct HypothesisActions: View {
 /// the main thread.
 struct DigitalTwinScreen: View {
     @Environment(NexusEnvironment.self) private var env
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
     @State private var overlays: [OverlayValue] = []
+    @State private var inRoom = false
 
     private func scene() -> SceneDescription? {
         let candidates = [env.context.focus, env.demo?.loop.tank].compactMap { $0 }
@@ -275,26 +282,36 @@ struct DigitalTwinScreen: View {
         return nil
     }
 
+    private var compact: Bool {
+        #if os(iOS)
+        sizeClass == .compact
+        #else
+        false
+        #endif
+    }
+
     var body: some View {
         _ = env.revision
         return Group {
             if let scene = scene(), let root = scene.object(for: scene.root) {
-                HStack(spacing: 0) {
+                let presentation = TwinPresentation(
+                    selected: env.context.focus, overlays: overlays, alerts: TwinPresentation.divergences(in: overlays)
+                )
+                let layout = compact ? AnyLayout(VStackLayout(spacing: 0)) : AnyLayout(HStackLayout(spacing: 0))
+                layout {
                     #if canImport(RealityKit)
-                    RealityView { content in
-                        content.add(RealityKitSceneBuilder.makeEntities(for: scene, selected: env.context.focus, overlays: overlays))
-                    } update: { content in
-                        content.entities.removeAll()
-                        content.add(RealityKitSceneBuilder.makeEntities(for: scene, selected: env.context.focus, overlays: overlays))
-                    }
-                    .realityViewCameraControls(.orbit)
-                    .gesture(
-                        SpatialTapGesture().targetedToAnyEntity().onEnded { value in
-                            if let object = RealityKitSceneBuilder.object(for: value.entity) {
-                                try? env.context.select(object, from: .spatial)
-                            }
+                    Group {
+                        #if os(iOS)
+                        if inRoom {
+                            RoomTwinView(scene: scene, presentation: presentation)
+                        } else {
+                            OrbitTwinView(scene: scene, presentation: presentation)
                         }
-                    )
+                        #else
+                        OrbitTwinView(scene: scene, presentation: presentation)
+                        #endif
+                    }
+                    .frame(minHeight: compact ? 360 : nil)
                     .accessibilityLabel("3D view of \(env.title(root)). Selection is also available in the list.")
                     #endif
                     List(scene.nodes) { node in
@@ -302,7 +319,12 @@ struct DigitalTwinScreen: View {
                             try? env.context.select(node.object, from: .spatial)
                         } label: {
                             VStack(alignment: .leading) {
-                                Text(node.title).fontWeight(env.context.focus == node.object ? .bold : .regular)
+                                HStack {
+                                    Text(node.title).fontWeight(env.context.focus == node.object ? .bold : .regular)
+                                    if presentation.alerts.contains(node.entity) {
+                                        Label("Diverges from the model", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange)
+                                    }
+                                }
                                 ForEach(overlays.filter { $0.entity == node.entity }, id: \.self) { overlay in
                                     HStack {
                                         Text("\(overlay.quantity) \(overlay.value.formatted(.number.precision(.significantDigits(1...4)))) \(overlay.unit)")
@@ -314,7 +336,18 @@ struct DigitalTwinScreen: View {
                         }
                         .accessibilityAddTraits(env.context.focus == node.object ? .isSelected : [])
                     }
-                    .frame(maxWidth: 360)
+                    .frame(maxWidth: compact ? .infinity : 360)
+                }
+                .toolbar {
+                    #if os(iOS)
+                    if RoomTwinView.isSupported {
+                        ToolbarItem {
+                            Toggle(isOn: $inRoom) { Label("In room", systemImage: "arkit") }
+                                .toggleStyle(.button)
+                                .accessibilityHint("Places the twin on a table or floor through the camera")
+                        }
+                    }
+                    #endif
                 }
                 .task(id: RefreshKey(root: root, revision: env.revision)) { await refresh(scene) }
             } else {
@@ -339,6 +372,91 @@ struct DigitalTwinScreen: View {
         overlays = values
     }
 }
+
+#if canImport(RealityKit)
+/// The twin in its own lit space, orbiting with a drag.
+struct OrbitTwinView: View {
+    @Environment(NexusEnvironment.self) private var env
+    let scene: SceneDescription
+    let presentation: TwinPresentation
+
+    var body: some View {
+        RealityView { content in
+            content.add(RealityKitSceneBuilder.makeEntities(for: scene, presentation: presentation))
+        } update: { content in
+            content.entities.removeAll()
+            content.add(RealityKitSceneBuilder.makeEntities(for: scene, presentation: presentation))
+        }
+        .realityViewCameraControls(.orbit)
+        .gesture(
+            SpatialTapGesture().targetedToAnyEntity().onEnded { value in
+                if let object = RealityKitSceneBuilder.object(for: value.entity) {
+                    try? env.context.select(object, from: .spatial)
+                }
+            }
+        )
+    }
+}
+#endif
+
+#if canImport(RealityKit) && canImport(ARKit) && os(iOS)
+/// The twin placed on a real surface through the camera, at table scale.
+/// On LiDAR devices (iPhone 17 Pro and Pro Max) the room's mesh occludes
+/// the twin and receives its shadows.
+struct RoomTwinView: View {
+    @Environment(NexusEnvironment.self) private var env
+    let scene: SceneDescription
+    let presentation: TwinPresentation
+    @State private var session = SpatialTrackingSession()
+    @State private var status: String?
+
+    static var isSupported: Bool { ARWorldTrackingConfiguration.isSupported }
+
+    var body: some View {
+        RealityView { content in
+            content.camera = .spatialTracking
+            content.add(anchored())
+        } update: { content in
+            content.entities.removeAll()
+            content.add(anchored())
+        }
+        .gesture(
+            SpatialTapGesture().targetedToAnyEntity().onEnded { value in
+                if let object = RealityKitSceneBuilder.object(for: value.entity) {
+                    try? env.context.select(object, from: .spatial)
+                }
+            }
+        )
+        .overlay(alignment: .top) {
+            if let status { Text(status).font(.caption).padding(8).glassEffect(.regular, in: Capsule()).padding() }
+        }
+        .task { await startTracking() }
+    }
+
+    /// The twin at 1:6 scale, on the first horizontal surface found.
+    private func anchored() -> Entity {
+        let anchor = AnchorEntity(.plane(.horizontal, classification: .any, minimumBounds: [0.3, 0.3]))
+        let twin = RealityKitSceneBuilder.makeEntities(for: scene, presentation: presentation)
+        twin.findEntity(named: "floor")?.removeFromParent()
+        twin.scale = SIMD3(repeating: 0.16)
+        twin.position.y = 0.1
+        anchor.addChild(twin)
+        return anchor
+    }
+
+    private func startTracking() async {
+        var configuration = SpatialTrackingSession.Configuration(tracking: [.plane])
+        if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
+            configuration = SpatialTrackingSession.Configuration(tracking: [.plane], sceneUnderstanding: [.occlusion, .shadow])
+        }
+        if let unavailable = await session.run(configuration), !unavailable.anchor.isEmpty {
+            status = "Surface tracking isn't available here. Move to a lit area with a clear table or floor."
+        } else {
+            status = "Point at a table or floor to place the twin."
+        }
+    }
+}
+#endif
 
 /// Guided, Technician and Expert depth over the same simulated signals.
 struct TelemetryScreen: View {
