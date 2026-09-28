@@ -335,6 +335,9 @@ struct CommandPresentation: ViewModifier {
                         }
                 }
             }
+            // Haptics: a success tap when a command completes, a warning when it fails.
+            .sensoryFeedback(.success, trigger: runner.confirmation)
+            .sensoryFeedback(.warning, trigger: runner.error?.whatHappened)
             .fileExporter(
                 isPresented: Binding(get: { runner.export != nil }, set: { if !$0 { runner.export = nil } }),
                 document: runner.export.map(ExportDocument.init),

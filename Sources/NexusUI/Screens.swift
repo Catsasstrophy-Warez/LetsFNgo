@@ -162,6 +162,7 @@ struct SearchScreen: View {
     @State private var nameplateMatches: [ObjectID] = []
     @State private var reading = false
     @State private var error: ClassifiedError?
+    @State private var scanning = false
 
     enum Window: String, CaseIterable {
         case any = "Any time"
@@ -236,6 +237,11 @@ struct SearchScreen: View {
                 } label: {
                     Label("Filters", systemImage: "line.3.horizontal.decrease.circle")
                 }
+                #if canImport(VisionKit) && os(iOS)
+                if NameplateScannerSheet.isAvailable {
+                    Button { scanning = true } label: { Label("Scan nameplate", systemImage: "text.viewfinder") }
+                }
+                #endif
                 if env.identifyNameplate != nil {
                     PhotosPicker(selection: $photo, matching: .images) {
                         Label("Nameplate photo", systemImage: "camera.viewfinder")
@@ -244,6 +250,9 @@ struct SearchScreen: View {
             }
         }
         .onChange(of: photo) { identify() }
+        #if canImport(VisionKit) && os(iOS)
+        .fullScreenCover(isPresented: $scanning) { NameplateScannerSheet().environment(env) }
+        #endif
     }
 
     private func identify() {
