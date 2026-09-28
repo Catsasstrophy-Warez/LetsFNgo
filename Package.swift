@@ -47,6 +47,7 @@ let package = Package(
         .library(name: "NexusAutomation", targets: ["NexusAutomation"]),
         .library(name: "NexusFinance", targets: ["NexusFinance"]),
         .library(name: "NexusSync", targets: ["NexusSync"]),
+        .library(name: "NexusCommunications", targets: ["NexusCommunications"]),
     ],
     dependencies: [
         // AES-GCM for sync payloads off Apple platforms; Apple platforms use CryptoKit.
@@ -104,7 +105,7 @@ let package = Package(
                 "NexusInvestigation", "NexusSimulation", "NexusReality", "NexusRealityKit", "NexusAI", "NexusAgents", "NexusDemo",
                 "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusActions", "NexusResearch", "NexusLearning",
                 "NexusVisualization", "NexusTelemetry", "NexusMeasurement", "NexusAutomotive", "NexusOBDTransports",
-                "NexusAutomation", "NexusFinance", "NexusSync",
+                "NexusAutomation", "NexusFinance", "NexusSync", "NexusCommunications",
             ]
         ),
         // Apple-only: Siri/Shortcuts, Spotlight, Visual Intelligence, speech, Live Activities, Foundation Models.
@@ -265,6 +266,9 @@ let package = Package(
             ]
         ),
         .testTarget(name: "NexusSyncTests", dependencies: ["NexusSync", "NexusPersistence", "NexusModel", "NexusCore"]),
+        // Email and message threads as objects (docs/COMMUNICATIONS.md): .eml/.mbox import, mention links, sent records.
+        .target(name: "NexusCommunications", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSearch"]),
+        .testTarget(name: "NexusCommunicationsTests", dependencies: ["NexusCommunications", "NexusCore", "NexusModel", "NexusPersistence"]),
     ],
     // Swift 6 language mode everywhere: complete data-race checking.
     swiftLanguageModes: [.v6]
