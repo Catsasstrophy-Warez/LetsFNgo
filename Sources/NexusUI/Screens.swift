@@ -536,7 +536,7 @@ struct AgentActivityScreen: View {
                     let steps = (try? env.store.events(about: run.id).filter { $0.kind == .agentAction }) ?? []
                     ForEach(steps) { step in
                         HStack(alignment: .top) {
-                            Text(phase(of: step)).font(.caption.monospaced()).frame(width: 90, alignment: .leading)
+                            Text(phase(of: step)).font(.caption.monospaced()).frame(minWidth: 90, alignment: .leading)
                             Text(step.summary).font(.callout)
                         }
                     }

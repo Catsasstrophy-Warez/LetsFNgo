@@ -31,11 +31,15 @@ public struct TwinPresentation: Sendable {
     public var overlays: [OverlayValue]
     /// Nodes where observed and modeled values disagree (first divergence).
     public var alerts: Set<EntityHandle>
+    /// Reduce Motion is on: alerts glow steadily instead of pulsing and
+    /// sparking, and connectors don't animate.
+    public var reduceMotion: Bool
 
-    public init(selected: ObjectID? = nil, overlays: [OverlayValue] = [], alerts: Set<EntityHandle> = []) {
+    public init(selected: ObjectID? = nil, overlays: [OverlayValue] = [], alerts: Set<EntityHandle> = [], reduceMotion: Bool = false) {
         self.selected = selected
         self.overlays = overlays
         self.alerts = alerts
+        self.reduceMotion = reduceMotion
     }
 
     /// Nodes whose observed (or recorded) reading differs from the modeled
@@ -83,13 +87,15 @@ public enum RealityKitSceneBuilder {
         for node in scene.nodes {
             let isSelected = node.object == presentation.selected
             let isAlert = presentation.alerts.contains(node.entity)
-            let entity = Geometry.entity(for: node, level: level(in: overlays[node.entity] ?? []), selected: isSelected, alert: isAlert)
+            let entity = Geometry.entity(
+                for: node, level: level(in: overlays[node.entity] ?? []), selected: isSelected, alert: isAlert, animated: !presentation.reduceMotion
+            )
             entity.name = node.title
             entity.position = point(node.position)
             entity.components.set(CanonicalObjectComponent(object: node.object, handle: node.entity))
             entity.components.set(InputTargetComponent())
             entity.generateCollisionShapes(recursive: true)
-            if isAlert {
+            if isAlert && !presentation.reduceMotion {
                 var sparks = ParticleEmitterComponent.Presets.sparks
                 sparks.mainEmitter.birthRate = 40
                 sparks.emitterShapeSize = SIMD3(repeating: 0.05)
@@ -109,7 +115,7 @@ public enum RealityKitSceneBuilder {
 
         for link in scene.links {
             guard let from = scene.node(link.from), let to = scene.node(link.to),
-                let connector = connector(from: point(from.position), to: point(to.position))
+                let connector = connector(from: point(from.position), to: point(to.position), animated: !presentation.reduceMotion)
             else { continue }
             root.addChild(connector)
         }
@@ -166,12 +172,12 @@ public enum RealityKitSceneBuilder {
     }
 
     /// A cable or pipe between two nodes, with the signal-flow shader when
-    /// the Metal library is available.
-    private static func connector(from start: SIMD3<Float>, to end: SIMD3<Float>) -> Entity? {
+    /// the Metal library is available and motion is allowed.
+    private static func connector(from start: SIMD3<Float>, to end: SIMD3<Float>, animated: Bool) -> Entity? {
         let delta = end - start
         let length = simd_length(delta)
         guard length > 0.0001 else { return nil }
-        let material: any RealityKit.Material = Shaders.signalFlow() ?? SimpleMaterial(color: .darkGray, isMetallic: true)
+        let material: any RealityKit.Material = (animated ? Shaders.signalFlow() : nil) ?? SimpleMaterial(color: .darkGray, isMetallic: true)
         let entity = ModelEntity(mesh: Geometry.cylinder(height: length, radius: 0.012), materials: [material])
         entity.position = (start + end) / 2
         entity.orientation = simd_quatf(from: SIMD3(0, 1, 0), to: delta / length)
@@ -232,8 +238,8 @@ enum Geometry {
         }
     }
 
-    static func entity(for node: SceneNode, level: Double?, selected: Bool, alert: Bool) -> Entity {
-        let body = material(for: kind(of: node), selected: selected, alert: alert)
+    static func entity(for node: SceneNode, level: Double?, selected: Bool, alert: Bool, animated: Bool = true) -> Entity {
+        let body = material(for: kind(of: node), selected: selected, alert: alert, animated: animated)
         switch kind(of: node) {
         case .vessel:
             let shell = ModelEntity(mesh: cylinder(height: 0.8, radius: 0.35), materials: [glass(selected: selected)])
@@ -277,8 +283,9 @@ enum Geometry {
         }
     }
 
-    static func material(for kind: Kind, selected: Bool, alert: Bool) -> any RealityKit.Material {
-        if alert, let pulse = Shaders.alertPulse() { return pulse }
+    /// Without motion an alert keeps the steady red glow below.
+    static func material(for kind: Kind, selected: Bool, alert: Bool, animated: Bool = true) -> any RealityKit.Material {
+        if alert, animated, let pulse = Shaders.alertPulse() { return pulse }
         var material = PhysicallyBasedMaterial()
         let tint: UIColorLike = switch kind {
         case .instrument: .init(0.20, 0.45, 0.85)

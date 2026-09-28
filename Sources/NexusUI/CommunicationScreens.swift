@@ -199,6 +199,7 @@ struct MessageView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Image(systemName: message.isOutgoing ? "arrow.up.right" : "arrow.down.left").foregroundStyle(.secondary)
+                    .accessibilityLabel(message.isOutgoing ? "Sent" : "Received")
                 Text(message.isOutgoing ? "You" : (message.from.first ?? "Unknown sender")).font(.subheadline.bold())
                 Spacer()
                 TruthBadge(message.record.provenance.truth)

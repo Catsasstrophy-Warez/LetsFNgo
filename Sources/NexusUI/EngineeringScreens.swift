@@ -268,6 +268,7 @@ struct HypothesisActions: View {
 /// the main thread.
 struct DigitalTwinScreen: View {
     @Environment(NexusEnvironment.self) private var env
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var sizeClass
     #endif
@@ -295,7 +296,8 @@ struct DigitalTwinScreen: View {
         return Group {
             if let scene = scene(), let root = scene.object(for: scene.root) {
                 let presentation = TwinPresentation(
-                    selected: env.context.focus, overlays: overlays, alerts: TwinPresentation.divergences(in: overlays)
+                    selected: env.context.focus, overlays: overlays, alerts: TwinPresentation.divergences(in: overlays),
+                    reduceMotion: reduceMotion
                 )
                 let layout = compact ? AnyLayout(VStackLayout(spacing: 0)) : AnyLayout(HStackLayout(spacing: 0))
                 layout {
