@@ -28,8 +28,9 @@ an app for your phone.
    - `ASC_KEY_P8`: the whole contents of the downloaded `.p8` file.
    - `BUNDLE_ID_PREFIX` (optional): for example `com.yourname.nexus`. Set it
      if you registered a different ID in step 2.
-4. Run the **iPhone build** workflow: from the Actions tab, or by pushing a
-   tag named `iphone-<something>`. It archives for iOS 27, signs, and
+4. Run the **iPhone build** workflow in one of three ways: from the Actions
+   tab, by pushing a tag named `iphone-<something>`, or by pushing a commit
+   whose message contains `[iphone]`. It archives for iOS 27, signs, and
    uploads the build.
 5. After 5–15 minutes of processing, the build appears in App Store
    Connect → TestFlight. Answer the export-compliance question once, then
