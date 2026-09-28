@@ -48,6 +48,10 @@ let package = Package(
         .library(name: "NexusFinance", targets: ["NexusFinance"]),
         .library(name: "NexusSync", targets: ["NexusSync"]),
         .library(name: "NexusCommunications", targets: ["NexusCommunications"]),
+        .library(name: "NexusTravel", targets: ["NexusTravel"]),
+        .library(name: "NexusCareer", targets: ["NexusCareer"]),
+        .library(name: "NexusCRM", targets: ["NexusCRM"]),
+        .library(name: "NexusArchitecture", targets: ["NexusArchitecture"]),
     ],
     dependencies: [
         // AES-GCM for sync payloads off Apple platforms; Apple platforms use CryptoKit.
@@ -74,6 +78,7 @@ let package = Package(
             dependencies: [
                 "NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSearch", "NexusPermissions", "NexusAI", "NexusInvestigation",
                 "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusResearch", "NexusFinance",
+                "NexusTravel", "NexusCareer", "NexusCRM", "NexusArchitecture",
             ]
         ),
         // Optional cloud models (L4). Plain HTTP, so it builds and tests on Linux.
@@ -106,6 +111,7 @@ let package = Package(
                 "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusActions", "NexusResearch", "NexusLearning",
                 "NexusVisualization", "NexusTelemetry", "NexusMeasurement", "NexusAutomotive", "NexusOBDTransports",
                 "NexusAutomation", "NexusFinance", "NexusSync", "NexusCommunications",
+                "NexusTravel", "NexusCareer", "NexusCRM", "NexusArchitecture",
             ]
         ),
         // Apple-only: Siri/Shortcuts, Spotlight, Visual Intelligence, speech, Live Activities, Foundation Models.
@@ -158,7 +164,10 @@ let package = Package(
         .testTarget(name: "NexusAITests", dependencies: ["NexusAI"]),
         .testTarget(
             name: "NexusAgentsTests",
-            dependencies: ["NexusAgents", "NexusInvestigation", "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusResearch", "NexusFinance"]
+            dependencies: [
+                "NexusAgents", "NexusInvestigation", "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusResearch", "NexusFinance",
+                "NexusTravel", "NexusCareer", "NexusCRM", "NexusArchitecture",
+            ]
         ),
         .testTarget(name: "NexusCloudProvidersTests", dependencies: ["NexusCloudProviders", "NexusAI"]),
         .testTarget(name: "NexusEngineeringTests", dependencies: ["NexusEngineering", "ControlsReasoning", "ControlsPLC"]),
@@ -269,6 +278,15 @@ let package = Package(
         // Email and message threads as objects (docs/COMMUNICATIONS.md): .eml/.mbox import, mention links, sent records.
         .target(name: "NexusCommunications", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSearch"]),
         .testTarget(name: "NexusCommunicationsTests", dependencies: ["NexusCommunications", "NexusCore", "NexusModel", "NexusPersistence"]),
+        // Personal domains (docs/DOMAINS.md): vocabularies, importers and derived checks over the one store.
+        .target(name: "NexusTravel", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
+        .testTarget(name: "NexusTravelTests", dependencies: ["NexusTravel", "NexusCore", "NexusModel", "NexusPersistence"]),
+        .target(name: "NexusCareer", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusTasks"]),
+        .testTarget(name: "NexusCareerTests", dependencies: ["NexusCareer", "NexusCore", "NexusModel", "NexusPersistence", "NexusTasks"]),
+        .target(name: "NexusCRM", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusTasks"]),
+        .testTarget(name: "NexusCRMTests", dependencies: ["NexusCRM", "NexusCore", "NexusModel", "NexusPersistence", "NexusTasks"]),
+        .target(name: "NexusArchitecture", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
+        .testTarget(name: "NexusArchitectureTests", dependencies: ["NexusArchitecture", "NexusCore", "NexusModel", "NexusPersistence"]),
     ],
     // Swift 6 language mode everywhere: complete data-race checking.
     swiftLanguageModes: [.v6]

@@ -12,9 +12,9 @@ import NexusSearch
 /// graph and search as the UI; writes are agent interpretations or drafts.
 public enum WorldTools {
     /// Every tool: the world-model tools, then tasks, documents, meetings,
-    /// research, finance and delegation.
+    /// research, finance, the read-only domain tools and delegation.
     public static var all: [any AgentTool] {
-        world + WorkTools.all + FinanceTools.all + [DelegateTool()]
+        world + WorkTools.all + FinanceTools.all + DomainTools.all + [DelegateTool()]
     }
 
     /// Tools over objects, relationships and measurements.

@@ -353,6 +353,10 @@ struct ProjectScreen: View {
                     }
                     GarageSection()
                     MoneySection()
+                    TravelSection()
+                    ContactsSection()
+                    CareerSection()
+                    SpacesSection()
                     ForEach(Self.groups, id: \.title) { group in
                         let items = members.filter { group.types.contains($0.type) }
                         if !items.isEmpty {
