@@ -6,8 +6,8 @@
 # Needs Xcode 27, signed in to your Apple ID (Xcode → Settings → Accounts;
 # a free Apple ID works, the app then expires after 7 days). The team ID is
 # found from your Apple Development certificate when you don't pass one.
-# Set BUNDLE_ID_PREFIX (e.g. com.yourname.nexus) if com.catsasstrophy.nexus
-# isn't registered to your team.
+# Bundle IDs end in your team ID; set BUNDLE_ID_PREFIX (e.g.
+# com.yourname.nexus) to change the part before it.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

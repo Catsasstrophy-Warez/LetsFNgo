@@ -15,7 +15,7 @@ an app for your phone.
 
 1. Join the Apple Developer Program (developer.apple.com, 99 USD a year).
 2. In App Store Connect, go to Apps → + → New App, platform iOS. Use the
-   bundle ID `com.catsasstrophy.nexus`, or your own prefix (see step 3). If
+   bundle ID `com.catsasstrophy.nexus.<TEAM_ID>` (bundle IDs end in your team ID, so they're always yours), or your own prefix (see step 3). If
    the ID isn't in the list, register it first at developer.apple.com →
    Identifiers.
 3. In App Store Connect, go to Users and Access → Integrations → App Store
@@ -68,8 +68,8 @@ The script:
 - builds for iOS 27 and registers the phone with automatic signing;
 - installs the app and launches it.
 
-If `com.catsasstrophy.nexus` isn't registered to your team, choose your
-own prefix:
+Bundle IDs end in your team ID (`com.catsasstrophy.nexus.<TEAM_ID>`), so
+they don't clash with anyone else's. To use a different prefix anyway:
 `BUNDLE_ID_PREFIX=com.yourname.nexus scripts/install-on-iphone.sh`.
 
 The first time the app opens, the phone may say "Untrusted Developer". Go to

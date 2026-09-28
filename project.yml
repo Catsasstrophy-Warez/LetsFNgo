@@ -6,6 +6,12 @@ options:
     iOS: "27.0"
     macOS: "27.0"
   createIntermediateGroups: true
+settings:
+  base:
+    # Bundle IDs end in the signing team, so every team gets IDs of its own
+    # (Apple refuses an ID another team already registered). Unsigned
+    # builds use "dev".
+    NEXUS_BUNDLE_ID: com.catsasstrophy.nexus.$(DEVELOPMENT_TEAM:default=dev)
 packages:
   Nexus:
     path: .
@@ -24,7 +30,7 @@ targets:
         destinationFilters: [iOS]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.catsasstrophy.nexus
+        PRODUCT_BUNDLE_IDENTIFIER: $(NEXUS_BUNDLE_ID)
         PRODUCT_NAME: Nexus
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
@@ -72,7 +78,7 @@ targets:
         product: NexusAppleIntelligence
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.catsasstrophy.nexus.widgets
+        PRODUCT_BUNDLE_IDENTIFIER: $(NEXUS_BUNDLE_ID).widgets
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "6.0"
@@ -87,7 +93,7 @@ targets:
       - target: NexusApp
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.catsasstrophy.nexus.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: $(NEXUS_BUNDLE_ID).uitests
         GENERATE_INFOPLIST_FILE: YES
         SWIFT_VERSION: "6.0"
         TEST_TARGET_NAME: NexusApp
