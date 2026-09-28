@@ -140,10 +140,15 @@ public enum OFX {
 
     /// Every bank and card statement in the file.
     public static func statements(_ text: String) throws -> [OFXStatement] {
-        let root = try parse(text)
+        let statements = try bankStatements(parse(text))
+        guard !statements.isEmpty else { throw FinanceError.malformedOFX("no STMTRS or CCSTMTRS statement") }
+        return statements
+    }
+
+    /// Bank and card statements under `root`; empty when there are none.
+    static func bankStatements(_ root: OFXElement) throws -> [OFXStatement] {
         let organization = root.first("FI")?["ORG"]
         let responses = root.all("STMTRS").map { ($0, false) } + root.all("CCSTMTRS").map { ($0, true) }
-        guard !responses.isEmpty else { throw FinanceError.malformedOFX("no STMTRS or CCSTMTRS statement") }
         return try responses.map { response, isCard in
             guard let from = response.child(isCard ? "CCACCTFROM" : "BANKACCTFROM"), let accountID = from["ACCTID"] else {
                 throw FinanceError.malformedOFX("statement without an account ID")

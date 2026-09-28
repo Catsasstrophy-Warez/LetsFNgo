@@ -19,6 +19,57 @@ public struct ImportResult: Sendable, Hashable {
     public var balance: Money?
 }
 
+/// What an OFX file import did, per statement.
+public struct StatementImportSummary: Sendable, Hashable {
+    public var document: ObjectRecord
+    /// Bank and card statements.
+    public var bank: [ImportResult]
+    /// Brokerage statements.
+    public var investment: [InvestmentImportResult]
+}
+
+/// A CSV import worked out before anything is stored, for the person to check.
+public struct CSVImportPlan: Sendable, Hashable {
+    public var account: Account
+    public var rows: [CSVStatementRow]
+    /// Rows that would be stored.
+    public var new: [TransactionDraft]
+    /// Rows that match a stored transaction and would be skipped.
+    public var duplicates: [DuplicateRow]
+    /// The balance the statement ends on, when the mapping has a balance column.
+    public var closingBalance: Money?
+}
+
+/// The dedup rules, over an account's stored transactions plus the rows
+/// added so far from the file being imported.
+struct DuplicateIndex {
+    var byFitID: [String: ObjectID] = [:]
+    var byContent: [String: (id: ObjectID, hasFitID: Bool)] = [:]
+    var occurrences: [String: Int] = [:]
+
+    init(_ existing: [FinancialTransaction]) {
+        for transaction in existing {
+            if let fitID = transaction.fitID { byFitID[fitID] = transaction.id }
+            if let key = transaction.contentKey { byContent[key] = (transaction.id, transaction.fitID != nil) }
+        }
+    }
+
+    /// The row's occurrence-numbered content key, and the stored transaction it duplicates, if any.
+    mutating func classify(_ draft: TransactionDraft) -> (contentKey: String, duplicate: ObjectID?) {
+        let hash = draft.contentHash
+        occurrences[hash, default: 0] += 1
+        let contentKey = "\(hash)#\(occurrences[hash]!)"
+        if let fitID = draft.fitID, let match = byFitID[fitID] { return (contentKey, match) }
+        if let match = byContent[contentKey], draft.fitID == nil || !match.hasFitID { return (contentKey, match.id) }
+        return (contentKey, nil)
+    }
+
+    mutating func add(_ id: ObjectID, draft: TransactionDraft, contentKey: String) {
+        if let fitID = draft.fitID { byFitID[fitID] = id }
+        byContent[contentKey] = (id, draft.fitID != nil)
+    }
+}
+
 /// Imports CSV and OFX/QFX bank statements.
 ///
 /// The file is stored first, as a blob behind a `document` object. Every
@@ -52,28 +103,70 @@ public struct StatementImporter: Sendable {
             throw FinanceError.malformedCSV(line: 0, reason: "not text")
         }
         let account = try ledger.account(accountID)
-        let rows = try CSV.transactions(text, mapping: mapping, currency: account.currency)
+        let rows = try CSV.statementRows(text, mapping: mapping, currency: account.currency)
+        let balance = mapping.balance == nil ? nil : CSV.closingBalance(rows)
         return try store.batch { _ in
             let document = try storeDocument(data, named: fileName, mediaType: "text/csv", format: "CSV", by: author)
-            return try insert(rows.map { ($0.draft, "CSV line \($0.line)") }, into: account, document: document, format: "CSV", balance: nil, by: author)
+            return try insert(
+                rows.map { ($0.draft, "CSV line \($0.line)") }, into: account, document: document, format: "CSV", balance: balance, by: author)
         }
+    }
+
+    /// What importing a CSV statement into the account would do, without
+    /// storing anything: every row read with the mapping and checked against
+    /// the account's transactions by the same dedup rules as the import.
+    public func previewCSV(_ data: Data, into accountID: ObjectID, mapping: CSVMapping) throws -> CSVImportPlan {
+        guard let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
+            throw FinanceError.malformedCSV(line: 0, reason: "not text")
+        }
+        let account = try ledger.account(accountID)
+        let rows = try CSV.statementRows(text, mapping: mapping, currency: account.currency)
+        var index = DuplicateIndex(try ledger.transactions(in: [account.id]))
+        var plan = CSVImportPlan(account: account, rows: rows, new: [], duplicates: [], closingBalance: nil)
+        for row in rows {
+            let (contentKey, match) = index.classify(row.draft)
+            if let match {
+                plan.duplicates.append(DuplicateRow(draft: row.draft, existing: match))
+            } else {
+                plan.new.append(row.draft)
+                // A placeholder ID: later rows in this file dedup against earlier ones the same way the import does.
+                index.add(ObjectID(uuid: UUID()), draft: row.draft, contentKey: contentKey)
+            }
+        }
+        if mapping.balance != nil { plan.closingBalance = CSV.closingBalance(rows).map { $0.balance } }
+        return plan
     }
 
     /// Imports every statement in an OFX or QFX file. Each statement goes to
     /// the account with its ACCTID (and BANKID), or to a new account created
     /// from the statement, or to `accountID` when the file holds one statement.
+    /// Investment statements are imported too (see `importStatements`); the
+    /// result lists their cash rows.
     @discardableResult
     public func importOFX(_ data: Data, named fileName: String, into accountID: ObjectID? = nil, by author: Origin) throws -> [ImportResult] {
+        let summary = try importStatements(data, named: fileName, into: accountID, by: author)
+        return summary.bank + summary.investment.map(\.cash)
+    }
+
+    /// Imports every bank, card and investment statement in an OFX or QFX file.
+    @discardableResult
+    public func importStatements(_ data: Data, named fileName: String, into accountID: ObjectID? = nil, by author: Origin) throws
+        -> StatementImportSummary
+    {
         guard let text = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) else {
             throw FinanceError.malformedOFX("not text")
         }
-        let statements = try OFX.statements(text)
+        let root = try OFX.parse(text)
+        let statements = try OFX.bankStatements(root)
+        let investments = try OFX.investmentStatements(root)
+        guard !statements.isEmpty || !investments.isEmpty else { throw FinanceError.malformedOFX("no STMTRS, CCSTMTRS or INVSTMTRS statement") }
+        let single = statements.count + investments.count == 1
         return try store.batch { _ in
             let document = try storeDocument(data, named: fileName, mediaType: "application/x-ofx", format: "OFX", by: author)
             let importer = Origin.importer(source: document.id)
-            return try statements.map { statement in
+            let bank = try statements.map { statement in
                 let account: Account
-                if let accountID, statements.count == 1 {
+                if let accountID, single {
                     account = try ledger.account(accountID)
                 } else if let existing = try ledger.account(number: statement.accountID, bankID: statement.bankID) {
                     account = existing
@@ -93,6 +186,10 @@ public struct StatementImporter: Sendable {
                 }
                 return try insert(rows, into: account, document: document, format: "OFX", balance: balance, by: author)
             }
+            let investment = try investments.map { statement in
+                try importInvestments(statement, into: single ? accountID : nil, document: document, by: author)
+            }
+            return StatementImportSummary(document: document, bank: bank, investment: investment)
         }
     }
 
@@ -116,31 +213,18 @@ public struct StatementImporter: Sendable {
             ))
     }
 
-    private func insert(
+    func insert(
         _ rows: [(draft: TransactionDraft, locator: String)], into account: Account, document: ObjectRecord, format: String, balance: (Money, Date)?,
         by author: Origin
     ) throws -> ImportResult {
-        let existing = try ledger.transactions(in: [account.id])
-        var byFitID: [String: ObjectID] = [:]
-        var byContent: [String: (id: ObjectID, hasFitID: Bool)] = [:]
-        for transaction in existing {
-            if let fitID = transaction.fitID { byFitID[fitID] = transaction.id }
-            if let key = transaction.contentKey { byContent[key] = (transaction.id, transaction.fitID != nil) }
-        }
-        var occurrences: [String: Int] = [:]
+        var index = DuplicateIndex(try ledger.transactions(in: [account.id]))
         var created: [FinancialTransaction] = []
         var duplicates: [DuplicateRow] = []
         let importer = Origin.importer(source: document.id)
         for (draft, locator) in rows {
-            let hash = draft.contentHash
-            occurrences[hash, default: 0] += 1
-            let contentKey = "\(hash)#\(occurrences[hash]!)"
-            if let fitID = draft.fitID, let match = byFitID[fitID] {
+            let (contentKey, match) = index.classify(draft)
+            if let match {
                 duplicates.append(DuplicateRow(draft: draft, existing: match))
-                continue
-            }
-            if let match = byContent[contentKey], draft.fitID == nil || !match.hasFitID {
-                duplicates.append(DuplicateRow(draft: draft, existing: match.id))
                 continue
             }
             let provenance = Provenance(
@@ -148,8 +232,7 @@ public struct StatementImporter: Sendable {
                 dependencies: [document.id]
             )
             let transaction = try ledger.addTransaction(draft, to: account.id, contentKey: contentKey, provenance: provenance)
-            if let fitID = draft.fitID { byFitID[fitID] = transaction.id }
-            byContent[contentKey] = (transaction.id, draft.fitID != nil)
+            index.add(transaction.id, draft: draft, contentKey: contentKey)
             created.append(transaction)
         }
         var updated = account
@@ -157,7 +240,8 @@ public struct StatementImporter: Sendable {
             updated = try ledger.recordBalance(
                 amount, asOf: date, on: account.id,
                 provenance: Provenance(
-                    origin: importer, truth: .recorded, timestamp: clock.now(), method: "\(format) LEDGERBAL", dependencies: [document.id]
+                    origin: importer, truth: .recorded, timestamp: clock.now(), method: format == "CSV" ? "CSV running balance" : "\(format) LEDGERBAL",
+                    dependencies: [document.id]
                 )
             )
         }

@@ -135,6 +135,9 @@ public struct CSVMapping: Sendable, Hashable {
     public var memo: CSVColumn?
     public var fitID: CSVColumn?
     public var type: CSVColumn?
+    /// A running-balance column. The balance on the latest row becomes the
+    /// account's stated balance (recorded, pointing at the file).
+    public var balance: CSVColumn?
     /// A `DateFormatter` pattern, e.g. "yyyy-MM-dd", "dd.MM.yyyy", "MM/dd/yyyy", "d MMM yyyy".
     public var dateFormat: String
     /// Locale for month names in dates ("5 Sept. 2026" in en_GB, "5. Sept. 2026" in de_DE).
@@ -147,7 +150,7 @@ public struct CSVMapping: Sendable, Hashable {
 
     public init(
         date: CSVColumn, amount: Amount, payee: CSVColumn, memo: CSVColumn? = nil, fitID: CSVColumn? = nil, type: CSVColumn? = nil,
-        dateFormat: String = "yyyy-MM-dd", dateLocale: Locale = Locale(identifier: "en_US_POSIX"), numberFormat: NumberFormat = .us,
+        balance: CSVColumn? = nil, dateFormat: String = "yyyy-MM-dd", dateLocale: Locale = Locale(identifier: "en_US_POSIX"), numberFormat: NumberFormat = .us,
         delimiter: Character = ",", hasHeader: Bool = true, invertSign: Bool = false
     ) {
         self.date = date
@@ -156,6 +159,7 @@ public struct CSVMapping: Sendable, Hashable {
         self.memo = memo
         self.fitID = fitID
         self.type = type
+        self.balance = balance
         self.dateFormat = dateFormat
         self.dateLocale = dateLocale
         self.numberFormat = numberFormat
@@ -224,7 +228,83 @@ public enum CSV {
 
     /// Reads statement rows into transaction drafts with `mapping`.
     public static func transactions(_ text: String, mapping: CSVMapping, currency: Currency) throws -> [(line: Int, draft: TransactionDraft)] {
-        var rows = try parse(text, delimiter: mapping.delimiter)
+        try statementRows(text, mapping: mapping, currency: currency).map { ($0.line, $0.draft) }
+    }
+
+    /// Reads statement rows with their running balance, when the mapping has one.
+    public static func statementRows(_ text: String, mapping: CSVMapping, currency: Currency) throws -> [CSVStatementRow] {
+        let reader = try CSVRowReader(text, mapping: mapping, currency: currency)
+        return try reader.rows.map { try reader.read($0.line, $0.fields) }
+    }
+
+    /// Reads up to `limit` rows, keeping each row's error instead of stopping
+    /// at the first one, so a mapping can be previewed before anything is stored.
+    public static func preview(_ text: String, mapping: CSVMapping, currency: Currency, limit: Int = 10) throws -> [CSVPreviewRow] {
+        let reader = try CSVRowReader(text, mapping: mapping, currency: currency)
+        return reader.rows.prefix(limit).map { line, fields in
+            do {
+                return CSVPreviewRow(line: line, fields: fields, result: .success(try reader.read(line, fields)))
+            } catch let error as FinanceError {
+                return CSVPreviewRow(line: line, fields: fields, result: .failure(error))
+            } catch {
+                return CSVPreviewRow(line: line, fields: fields, result: .failure(.malformedCSV(line: line, reason: "\(error)")))
+            }
+        }
+    }
+
+    /// The balance the statement ends on: the running balance on its latest
+    /// row. Banks list rows newest first or oldest first; among rows on the
+    /// latest day, the one written last in time order wins.
+    public static func closingBalance(_ rows: [CSVStatementRow]) -> (balance: Money, date: Date)? {
+        let withBalance = rows.filter { $0.balance != nil }
+        guard let latest = withBalance.map(\.draft.date).max(), let first = rows.first, let last = rows.last else { return nil }
+        let newestFirst = first.draft.date > last.draft.date
+        let sameDay = withBalance.filter { $0.draft.date == latest }
+        guard let row = newestFirst ? sameDay.first : sameDay.last, let balance = row.balance else { return nil }
+        return (balance, latest)
+    }
+}
+
+/// One CSV row read with a mapping.
+public struct CSVStatementRow: Sendable, Hashable {
+    public var line: Int
+    public var draft: TransactionDraft
+    /// The running balance after this row, when the mapping has a balance column.
+    public var balance: Money?
+}
+
+/// One row of a mapping preview: the raw fields and what they read as.
+public struct CSVPreviewRow: Sendable {
+    public var line: Int
+    public var fields: [String]
+    public var result: Result<CSVStatementRow, FinanceError>
+
+    public var row: CSVStatementRow? { try? result.get() }
+
+    public var error: FinanceError? {
+        if case .failure(let error) = result { return error }
+        return nil
+    }
+}
+
+/// Resolves a mapping's columns once, then reads rows with it.
+struct CSVRowReader {
+    let mapping: CSVMapping
+    let currency: Currency
+    let rows: [(line: Int, fields: [String])]
+    let dateIndex: Int
+    let payeeIndex: Int
+    let memoIndex: Int?
+    let fitIndex: Int?
+    let typeIndex: Int?
+    let balanceIndex: Int?
+    let amountIndexes: (Int, Int?)
+    let formatter: DateFormatter
+
+    init(_ text: String, mapping: CSVMapping, currency: Currency) throws {
+        self.mapping = mapping
+        self.currency = currency
+        var rows = try CSV.parse(text, delimiter: mapping.delimiter)
         var headers: [String: Int] = [:]
         if mapping.hasHeader, !rows.isEmpty {
             for (index, name) in rows.removeFirst().fields.enumerated() {
@@ -232,6 +312,7 @@ public enum CSV {
                 if headers[key] == nil { headers[key] = index }
             }
         }
+        self.rows = rows
         func resolve(_ column: CSVColumn) throws -> Int {
             switch column {
             case .index(let index): return index
@@ -240,60 +321,55 @@ public enum CSV {
                 return index
             }
         }
-        let dateIndex = try resolve(mapping.date)
-        let payeeIndex = try resolve(mapping.payee)
-        let memoIndex = try mapping.memo.map(resolve)
-        let fitIndex = try mapping.fitID.map(resolve)
-        let typeIndex = try mapping.type.map(resolve)
-        let amountIndexes: (Int, Int?)
+        dateIndex = try resolve(mapping.date)
+        payeeIndex = try resolve(mapping.payee)
+        memoIndex = try mapping.memo.map(resolve)
+        fitIndex = try mapping.fitID.map(resolve)
+        typeIndex = try mapping.type.map(resolve)
+        balanceIndex = try mapping.balance.map(resolve)
         switch mapping.amount {
         case .signed(let column): amountIndexes = (try resolve(column), nil)
         case .debitCredit(let debit, let credit): amountIndexes = (try resolve(debit), try resolve(credit))
         }
 
-        let formatter = DateFormatter()
+        formatter = DateFormatter()
         formatter.locale = mapping.dateLocale
         formatter.timeZone = TimeZone(identifier: "UTC")
         formatter.calendar = FinanceCalendar.calendar
         formatter.dateFormat = mapping.dateFormat
         formatter.isLenient = false
+    }
 
-        return try rows.map { line, fields in
-            func field(_ index: Int?) -> String? {
-                guard let index, index < fields.count else { return nil }
-                let text = fields[index].trimmingCharacters(in: .whitespaces)
-                return text.isEmpty ? nil : text
-            }
-            guard let dateText = field(dateIndex) else { throw FinanceError.unparsableDate("", line: line) }
-            guard let date = formatter.date(from: dateText) else { throw FinanceError.unparsableDate(dateText, line: line) }
-            var amount: Decimal
-            switch amountIndexes {
-            case (let index, nil):
-                let text = field(index) ?? ""
-                guard let value = mapping.numberFormat.parse(text) else { throw FinanceError.unparsableAmount(text, line: line) }
-                amount = value
-            case (let debitIndex, let creditIndex?):
-                let debitText = field(debitIndex)
-                let creditText = field(creditIndex)
-                guard debitText != nil || creditText != nil else { throw FinanceError.unparsableAmount("", line: line) }
-                let debit: Decimal =
-                    try debitText.map { text -> Decimal in
-                        guard let value = mapping.numberFormat.parse(text) else { throw FinanceError.unparsableAmount(text, line: line) }
-                        return value
-                    } ?? 0
-                let credit: Decimal =
-                    try creditText.map { text -> Decimal in
-                        guard let value = mapping.numberFormat.parse(text) else { throw FinanceError.unparsableAmount(text, line: line) }
-                        return value
-                    } ?? 0
-                amount = credit.magnitude - debit.magnitude
-            }
-            if mapping.invertSign { amount = -amount }
-            let draft = TransactionDraft(
-                date: date, amount: Money(amount, currency), payee: field(payeeIndex) ?? "", memo: field(memoIndex), fitID: field(fitIndex),
-                type: field(typeIndex)
-            )
-            return (line, draft)
+    func read(_ line: Int, _ fields: [String]) throws -> CSVStatementRow {
+        func field(_ index: Int?) -> String? {
+            guard let index, index < fields.count else { return nil }
+            let text = fields[index].trimmingCharacters(in: .whitespaces)
+            return text.isEmpty ? nil : text
         }
+        func number(_ text: String) throws -> Decimal {
+            guard let value = mapping.numberFormat.parse(text) else { throw FinanceError.unparsableAmount(text, line: line) }
+            return value
+        }
+        guard let dateText = field(dateIndex) else { throw FinanceError.unparsableDate("", line: line) }
+        guard let date = formatter.date(from: dateText) else { throw FinanceError.unparsableDate(dateText, line: line) }
+        var amount: Decimal
+        switch amountIndexes {
+        case (let index, nil):
+            amount = try number(field(index) ?? "")
+        case (let debitIndex, let creditIndex?):
+            let debitText = field(debitIndex)
+            let creditText = field(creditIndex)
+            guard debitText != nil || creditText != nil else { throw FinanceError.unparsableAmount("", line: line) }
+            let debit = try debitText.map(number) ?? 0
+            let credit = try creditText.map(number) ?? 0
+            amount = credit.magnitude - debit.magnitude
+        }
+        if mapping.invertSign { amount = -amount }
+        let balance = try field(balanceIndex).map { Money(try number($0), currency) }
+        let draft = TransactionDraft(
+            date: date, amount: Money(amount, currency), payee: field(payeeIndex) ?? "", memo: field(memoIndex), fitID: field(fitIndex),
+            type: field(typeIndex)
+        )
+        return CSVStatementRow(line: line, draft: draft, balance: balance)
     }
 }

@@ -12,6 +12,8 @@ public struct Security: Sendable, Hashable, Identifiable {
     public var name: String { record.title }
     public var assetClass: AssetClass { record.string(FinanceKey.assetClass).flatMap(AssetClass.init(rawValue:)) ?? .other }
     public var currency: Currency { (try? Currency(record.string(FinanceKey.currency) ?? "")) ?? .usd }
+    /// CUSIP or ISIN, for a security that came from a statement.
+    public var uniqueID: String? { record.string(FinanceKey.uniqueID) }
 }
 
 public enum TradeSide: String, Codable, Sendable, CaseIterable {
@@ -49,6 +51,8 @@ public struct Trade: Sendable, Hashable, Identifiable {
     public var fees: Money? { record.money(FinanceKey.fees) }
     public var security: ObjectID? { record.reference(FinanceKey.security) }
     public var account: ObjectID? { record.reference(FinanceKey.account) }
+    /// The broker's transaction ID, for a trade imported from a statement.
+    public var fitID: String? { record.string(FinanceKey.fitID) }
 }
 
 /// A price for a security, with the truth of whoever stated it.
@@ -128,6 +132,12 @@ public struct Portfolio: Sendable {
 
     @discardableResult
     public func addSecurity(symbol: String, name: String, assetClass: AssetClass, currency: Currency, by author: Origin) throws -> Security {
+        try addSecurity(symbol: symbol, name: name, assetClass: assetClass, currency: currency, uniqueID: nil, by: author, provenance: nil)
+    }
+
+    func addSecurity(
+        symbol: String, name: String, assetClass: AssetClass, currency: Currency, uniqueID: String?, by author: Origin, provenance: Provenance?
+    ) throws -> Security {
         let symbol = symbol.uppercased()
         if try security(symbol: symbol) != nil { throw FinanceError.duplicateSymbol(symbol) }
         let record = try store.create(
@@ -137,8 +147,8 @@ public struct Portfolio: Sendable {
                     FinanceKey.symbol: Attribute(.string(symbol)),
                     FinanceKey.assetClass: Attribute(.string(assetClass.rawValue)),
                     FinanceKey.currency: Attribute(.string(currency.code)),
-                ],
-                provenance: Provenance(origin: author, truth: author.defaultTruth, timestamp: clock.now())
+                ].merging(uniqueID.map { [FinanceKey.uniqueID: Attribute(.string($0))] } ?? [:]) { first, _ in first },
+                provenance: provenance ?? Provenance(origin: author, truth: author.defaultTruth, timestamp: clock.now())
             ))
         return Security(record: record)
     }
@@ -152,12 +162,31 @@ public struct Portfolio: Sendable {
         try store.objects(ofType: .security).map(Security.init).first { $0.symbol == symbol.uppercased() }
     }
 
+    /// The security with this CUSIP or ISIN (a statement's SECID).
+    public func security(uniqueID: String) throws -> Security? {
+        try store.objects(ofType: .security).map(Security.init).first { $0.uniqueID == uniqueID }
+    }
+
+    /// Securities, by symbol.
+    public func securities() throws -> [Security] {
+        try store.objects(ofType: .security).filter { $0.lifecycle != .deleted }.map(Security.init).sorted { $0.symbol < $1.symbol }
+    }
+
     // MARK: Trades
 
     /// Records a buy or sell as a trade object on the account's holding. A
     /// sale larger than the position throws.
     @discardableResult
     public func recordTrade(_ draft: TradeDraft, of securityID: ObjectID, in accountID: ObjectID, by author: Origin) throws -> Trade {
+        try recordTrade(
+            draft, of: securityID, in: accountID,
+            provenance: Provenance(origin: author, truth: author.defaultTruth, timestamp: clock.now(), method: "trade"), fitID: nil)
+    }
+
+    /// Records a trade with an importer's provenance and the broker's own
+    /// transaction ID, which import dedup matches on.
+    @discardableResult
+    func recordTrade(_ draft: TradeDraft, of securityID: ObjectID, in accountID: ObjectID, provenance: Provenance, fitID: String?) throws -> Trade {
         guard draft.quantity > 0 else { throw FinanceError.invalidQuantity(draft.quantity) }
         let security = try security(securityID)
         _ = try Ledger(store: store, clock: clock).account(accountID)
@@ -168,7 +197,6 @@ public struct Portfolio: Sendable {
                 let held = try position(of: securityID, in: accountID, asOf: draft.date).quantity
                 guard held >= draft.quantity else { throw FinanceError.insufficientQuantity(available: held, requested: draft.quantity) }
             }
-            let provenance = Provenance(origin: author, truth: author.defaultTruth, timestamp: clock.now(), method: "trade")
             var attributes: [String: Attribute] = [
                 FinanceKey.date: Attribute(.date(draft.date)),
                 FinanceKey.side: Attribute(.string(draft.side.rawValue)),
@@ -178,6 +206,7 @@ public struct Portfolio: Sendable {
                 FinanceKey.account: Attribute(.reference(accountID)),
             ]
             if let fees = draft.fees { attributes[FinanceKey.fees] = Attribute(fees.value) }
+            if let fitID, !fitID.isEmpty { attributes[FinanceKey.fitID] = Attribute(.string(fitID)) }
             let title = "\(draft.side == .buy ? "Buy" : "Sell") \(draft.quantity.plainString) \(security.symbol) @ \(draft.price)"
             let record = try store.create(ObjectRecord(type: .trade, title: title, attributes: attributes, provenance: provenance))
             try store.relate(Relationship(kind: .postedTo, from: record.id, to: accountID, validFrom: draft.date, provenance: provenance))
@@ -196,7 +225,7 @@ public struct Portfolio: Sendable {
         }
     }
 
-    private func ensureHolding(of security: Security, in accountID: ObjectID, provenance: Provenance) throws -> ObjectRecord {
+    func ensureHolding(of security: Security, in accountID: ObjectID, provenance: Provenance) throws -> ObjectRecord {
         if let existing = try holding(of: security.id, in: accountID) { return existing }
         let holding = try store.create(
             ObjectRecord(
@@ -240,7 +269,13 @@ public struct Portfolio: Sendable {
         case .agent, .model: truth = .claimed
         default: truth = author.defaultTruth
         }
-        let provenance = Provenance(origin: author, truth: truth, timestamp: clock.now(), method: method ?? "price quote")
+        return try recordPrice(
+            price, of: security, at: date, provenance: Provenance(origin: author, truth: truth, timestamp: clock.now(), method: method ?? "price quote"))
+    }
+
+    @discardableResult
+    func recordPrice(_ price: Money, of security: Security, at date: Date, provenance: Provenance) throws -> PriceQuote {
+        let securityID = security.id
         try store.record(
             Event(
                 at: date, kind: .priceQuote, subjects: [securityID], summary: "\(security.symbol) \(price)", payload: [FinanceKey.price: price.value],

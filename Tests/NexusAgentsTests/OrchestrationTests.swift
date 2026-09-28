@@ -21,7 +21,8 @@ private func answer(_ text: String, structured: JSONValue? = nil) -> ModelRespon
             #expect(profile.tools.isSubset(of: registered), "\(profile.id) uses an unregistered tool")
             #expect(!profile.summary.isEmpty && !profile.instructions.isEmpty)
         }
-        #expect(AgentProfile.specialists.map(\.id) == ["diagnostic", "research", "document", "project", "engineering", "meeting", "writing"])
+        #expect(
+            AgentProfile.specialists.map(\.id) == ["diagnostic", "research", "document", "project", "engineering", "meeting", "writing", "finance"])
         // Same tools as the app's assistant always had.
         #expect(AgentProfile.diagnostician.tools == diagnostician.tools)
         #expect(!AgentProfile.writing.tools.contains("send_message"), "Only the diagnostician may reach outside")
@@ -41,6 +42,7 @@ private func answer(_ text: String, structured: JSONValue? = nil) -> ModelRespon
             ("Calculate the loop resistance budget for this circuit", "engineering"),
             ("Promote the notes from this morning's meeting", "meeting"),
             ("Write a short email summarizing the outage", "writing"),
+            ("How much did I spend on groceries against my budget?", "finance"),
         ]
         for (goal, expected) in cases {
             let choice = await orchestrator.choose(for: goal, model: nil)

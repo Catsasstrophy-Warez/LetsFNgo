@@ -71,7 +71,7 @@ let package = Package(
             name: "NexusAgents",
             dependencies: [
                 "NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSearch", "NexusPermissions", "NexusAI", "NexusInvestigation",
-                "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusResearch",
+                "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusResearch", "NexusFinance",
             ]
         ),
         // Optional cloud models (L4). Plain HTTP, so it builds and tests on Linux.
@@ -152,7 +152,7 @@ let package = Package(
         .testTarget(name: "NexusAITests", dependencies: ["NexusAI"]),
         .testTarget(
             name: "NexusAgentsTests",
-            dependencies: ["NexusAgents", "NexusInvestigation", "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusResearch"]
+            dependencies: ["NexusAgents", "NexusInvestigation", "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusResearch", "NexusFinance"]
         ),
         .testTarget(name: "NexusCloudProvidersTests", dependencies: ["NexusCloudProviders", "NexusAI"]),
         .testTarget(name: "NexusEngineeringTests", dependencies: ["NexusEngineering", "ControlsReasoning", "ControlsPLC"]),
