@@ -75,7 +75,7 @@ let package = Package(
         ),
         .target(
             name: "NexusLearning",
-            dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusInvestigation", "NexusSimulation"]
+            dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusInvestigation", "NexusSimulation", "NexusAutomotive"]
         ),
         .target(name: "NexusReality", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSimulation"]),
         .target(
@@ -140,7 +140,12 @@ let package = Package(
         ),
         .testTarget(name: "NexusCloudProvidersTests", dependencies: ["NexusCloudProviders", "NexusAI"]),
         .testTarget(name: "NexusEngineeringTests", dependencies: ["NexusEngineering", "ControlsReasoning", "ControlsPLC"]),
-        .testTarget(name: "NexusLearningTests", dependencies: ["NexusLearning"]),
+        .testTarget(
+            name: "NexusLearningTests",
+            dependencies: [
+                "NexusLearning", "NexusCore", "NexusModel", "NexusPersistence", "NexusInvestigation", "NexusSimulation", "NexusAutomotive",
+            ]
+        ),
         .testTarget(name: "NexusRealityTests", dependencies: ["NexusReality", "NexusProjects"]),
         .testTarget(
             name: "NexusDemoTests",
@@ -204,7 +209,7 @@ let package = Package(
             name: "NexusActionsTests",
             dependencies: [
                 "NexusActions", "NexusDocuments", "NexusInvestigation", "NexusLearning", "NexusMeasurement", "NexusProjects", "NexusSimulation",
-                "NexusTasks",
+                "NexusTasks", "NexusAutomotive", "NexusCore", "NexusModel", "NexusPersistence",
             ]
         ),
         // Second domain (docs/decisions/0002-second-domain.md): garage, OBD-II/CAN, DTCs and the charging-system solver.
