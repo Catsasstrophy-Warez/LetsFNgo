@@ -356,7 +356,9 @@ extension ActionExecutor {
 
     /// A replayable training scenario from a resolved investigation. The
     /// loop, fault and tests default to the loop binding of the
-    /// investigation's subjects.
+    /// investigation's subjects. With no loop, the generic path
+    /// (`LearningRuntime.makeScenario(from:by:)`) finds the simulator from
+    /// the subjects, such as a vehicle's charging system.
     @discardableResult
     public func generateTrainingScenario(
         from investigation: ObjectID,
@@ -371,11 +373,20 @@ extension ActionExecutor {
             binding = try self.binding(for: subject)
         }
         guard let loop = loop ?? binding?.loop else {
-            throw ActionError.unsupported(
-                Unsupported(
-                    command: .generateTrainingScenario, subject: investigation, type: record.type,
-                    reason: "Training scenarios replay a simulated loop, and \(record.title) is not about one."
-                ))
+            // No loop: let the learning runtime find another domain's simulator (a vehicle's charging system, say).
+            do {
+                let scenario = try learning.makeScenario(from: investigation, by: actor)
+                return ActionResult(
+                    detail: scenario, produced: [scenario.id], screen: .objectDetail, focus: scenario.id,
+                    summary: "Training scenario from \(record.title)"
+                )
+            } catch LearningError.noSimulator {
+                throw ActionError.unsupported(
+                    Unsupported(
+                        command: .generateTrainingScenario, subject: investigation, type: record.type,
+                        reason: "Training scenarios replay a simulation, and nothing simulable is known for \(record.title)."
+                    ))
+            }
         }
         guard let fault = fault ?? binding?.faults.first else {
             throw ActionError.unsupported(
