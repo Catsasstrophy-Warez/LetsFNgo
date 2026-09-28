@@ -15,6 +15,7 @@ import NexusPersistence
 import NexusProjects
 import NexusResearch
 import NexusSearch
+import NexusSync
 import NexusTasks
 import Observation
 
@@ -45,6 +46,8 @@ public final class NexusEnvironment {
     public let learners: LearnerRecords
     /// Rules that act on the store's changes; started with the environment.
     public let automation: AutomationRuntime
+    /// iCloud sync, off by default. The app supplies the transport.
+    public let sync: SyncController
     /// Set by the app once a language model is available on this device.
     public var agents: AgentRuntime?
     /// Names of the installed language models, for Settings.
@@ -90,6 +93,7 @@ public final class NexusEnvironment {
             learning: learning, searchEngine: search, actor: user, loops: loops
         )
         automation = AutomationRuntime(store: store, permissions: permissions, loops: loops)
+        sync = SyncController(store: store)
         // Observable properties are set only once every stored `let` is.
         demo = seeded
         commands.env = self

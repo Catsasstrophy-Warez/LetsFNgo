@@ -1,6 +1,6 @@
 # 0001 — Sync, backup and encryption at rest
 
-Status: **proposed**. Needs the owner's decision on the sync transport. The transport-independent sync engine, backup and at-rest protection are implemented.
+Status: **accepted: B** (CloudKit private database). The owner chose option B. The sync engine, the CloudKit transport, the Keychain key, backup and at-rest protection are implemented; see "Built: option B" below.
 
 ## Context
 Nexus is local-first. One SQLite file is the canonical store, per the locked decisions. It will hold equipment data, measurements, meeting notes, and possibly finance and personal data later. People will use it on iPhone, iPad and Mac.
@@ -26,10 +26,10 @@ Measurements are append-only, so they never conflict.
 
 ## Consequences
 - The sync engine consumes `changes(after:)` and writes through the same `NexusStore` APIs, so `TruthPolicy` and revisions apply to synced writes too.
-- If B is chosen, the next steps are:
-  1. The CloudKit container and entitlement.
-  2. A `NexusSync` Apple-only target.
-  3. A record ↔ model mapping that can be tested on Linux.
+- With B chosen, these were built (see "Built: option B"):
+  1. The CloudKit container and entitlement, opt-in per build.
+  2. The Apple-only CloudKit transport, Keychain key and FileVault check, in `NexusSync` behind `#if canImport`.
+  3. A record ↔ change set mapping that is tested on Linux.
 
 ## Implemented: the transport-independent half of sync
 Whichever transport the owner picks, these parts are the same, so they are built and tested on Linux:
@@ -58,5 +58,35 @@ Whichever transport the owner picks, these parts are the same, so they are built
 
 **Sync payloads: CryptoKit AES-GCM with a Keychain key (implemented as a helper).** CloudKit private-database records are encrypted by Apple. They are end-to-end only when the user has Advanced Data Protection on, and `CKAsset` files are not end-to-end otherwise. So Nexus seals every change set and every blob before it leaves the device:
 - **`NexusSync.PayloadCipher`.** AES-256-GCM, via CryptoKit on Apple platforms and `apple/swift-crypto` (the same API) on Linux. The format is a version byte, then the 12-byte nonce, the ciphertext and the 16-byte tag. Associated data binds a payload to its record (a replica ID or a blob's SHA-256), so a ciphertext can't be replayed onto another record. `InMemorySyncTransport(cipher:)` exercises it end to end in the tests.
-- **Key.** 256 random bits, generated once on the first device. It is stored as a Keychain generic password with `kSecAttrSynchronizable = true` and `kSecAttrAccessibleAfterFirstUnlock`, so iCloud Keychain (itself end-to-end encrypted) carries it to the user's other devices, and Apple never holds it next to the ciphertext. A device without the key can't read synced data. Recovery is re-pairing from a device that has it. Key rotation will need a new format version that carries a key ID. The Keychain wrapper is Apple-only and not written yet; it belongs in the Apple-only CloudKit transport.
+- **Key.** 256 random bits, generated once on the first device. It is stored as a Keychain generic password with `kSecAttrSynchronizable = true` and `kSecAttrAccessibleAfterFirstUnlock`, so iCloud Keychain (itself end-to-end encrypted) carries it to the user's other devices, and Apple never holds it next to the ciphertext. A device without the key can't read synced data. Recovery is re-pairing from a device that has it. Key rotation will need a new format version that carries a key ID. The Keychain wrapper is `NexusSync.SyncKeychain` (Apple-only).
 - **Dependency cost.** `swift-crypto` builds only off Apple platforms (a platform condition on the product), so the app links CryptoKit and nothing extra. It is held at 3.9.x. From 3.10 its BoringSSL is C++, and on Linux a C++ link fails against Swift 6.2's `libswiftObservation` (undefined `swift::threading::fatal`). Lift the cap once the toolchain is fixed.
+
+## Built: option B
+Everything except the `CKDatabase` calls is plain Swift and is tested on Linux.
+
+- **Records** (`SyncRecordCodec`). There are two custom zones in the private database.
+  - `NexusChangeSets` holds one `NexusChangeSet` record per pushed change set, named `cs-<change set ID>`. Its plain fields are what a reader needs before decrypting: `replica`, `since`, `through`, `createdAt`, `version`, `layout`, `keyID`, `byteCount` and `digest`, the SHA-256 of the sealed bytes. The payload is the change set's JSON, sealed with `PayloadCipher`. The associated data covers the record name, replica and range, so a payload can't be moved to another record and the plain fields can't be edited unnoticed.
+  - A sealed payload of up to 700 KB goes inline in `payload`, well under CloudKit's 1 MB record limit. A larger one is split into `CKAsset` parts in `parts`, 32 MB each.
+  - `NexusBlobs` holds `NexusBlob` records, named `blob-<sha256>`. They are always sealed assets, bound to their digest. Blobs have their own zone so that fetching change sets never downloads blob bytes. Content addressing makes uploads idempotent: an existing blob is detected without downloading it, and a racing duplicate save counts as success.
+- **Transport** (`RecordSyncTransport` over a `SyncRecordDatabase`).
+  - Push saves a record. Pull follows the zone's change feed, page by page, and skips the device's own records before decrypting.
+  - The `SyncCursor` is the server change token, base64-encoded. An expired token restarts the feed from the start, which is safe because `apply` is idempotent.
+  - A missing zone is created on first use, or after the user deletes the app's iCloud data.
+  - `InMemoryRecordDatabase` mimics CloudKit's semantics for tests: zones, atomic saves, change tags, `serverRecordChanged`, the 1 MB limit, paged change feeds, and tokens that expire when a zone is deleted.
+- **CloudKit** (`CloudKitSyncTransport`, `CloudKitRecordDatabase`, Apple-only). It uses `CKDatabase` zone change fetches with server change tokens instead of `CKSyncEngine`. `SyncEngine` already owns scheduling, state and merging, and a token maps one-to-one onto `SyncCursor`, so the in-memory fake covers the logic.
+  - The iCloud account is checked before each push and pull.
+  - `CKError`s map to a typed `CloudSyncError`: account unavailable, quota exceeded, network, rate limited, zone not found, server record changed, change token expired, record too large, not configured and permission failure. A record sealed with another key raises `keyMismatch`.
+- **Key** (`SyncKeychain`, Apple-only). A generic password, `kSecAttrSynchronizable = true`, `kSecAttrAccessibleAfterFirstUnlock`, in the data-protection keychain.
+  - Records carry a 16-hex-digit fingerprint of the key (`PayloadCipher.keyID`), so a device holding another key reports a mismatch rather than a decryption failure.
+  - Turn sync on first on one device, so the others receive its key through iCloud Keychain.
+- **FileVault** (`DiskEncryption`). A best-effort, sandbox-safe read of the volume's `volumeIsEncrypted` value. Settings → Sync on a Mac warns when the volume isn't encrypted. On Apple silicon the volume can report encryption without FileVault, so "on" is not proof.
+- **App.**
+  - `SyncLoop` runs `SyncEngine` at launch, on foreground, every 5 minutes, and 5 s after local changes. Only one sync runs at a time.
+  - Settings → Sync shows the last sync, errors, pending files and the number of `syncConflict` events.
+  - Sync is off by default. CloudKit is compiled into the app only with `NEXUS_CLOUDKIT_ENABLED=YES`, which adds `App/NexusCloud.entitlements` (container `iCloud.$(NEXUS_BUNDLE_ID)`) and the `NEXUS_CLOUDKIT` condition. A free Apple ID can't sign that entitlement, so the default build leaves it out. docs/DEVICE.md → "iCloud sync" has the setup.
+- **Not yet.**
+  - Push notifications for immediate fetches (CloudKit subscriptions). Sync is polled instead.
+  - Key rotation.
+  - Compacting old change-set records.
+  - Re-pushing history after the user deletes the app's iCloud data. The zone is recreated, but only changes made after that are uploaded.
+

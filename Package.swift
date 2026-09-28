@@ -103,7 +103,7 @@ let package = Package(
                 "NexusInvestigation", "NexusSimulation", "NexusReality", "NexusRealityKit", "NexusAI", "NexusAgents", "NexusDemo",
                 "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusActions", "NexusResearch", "NexusLearning",
                 "NexusVisualization", "NexusTelemetry", "NexusMeasurement", "NexusAutomotive",
-                "NexusAutomation", "NexusFinance",
+                "NexusAutomation", "NexusFinance", "NexusSync",
             ]
         ),
         // Apple-only: Siri/Shortcuts, Spotlight, Visual Intelligence, speech, Live Activities, Foundation Models.
@@ -247,7 +247,8 @@ let package = Package(
         // Finance domain (docs/FINANCE.md): accounts, statement import, categories, budgets, cash flow, scenarios, investments.
         .target(name: "NexusFinance", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
         .testTarget(name: "NexusFinanceTests", dependencies: ["NexusFinance", "NexusCore", "NexusModel", "NexusPersistence"]),
-        // Transport-independent sync (docs/decisions/0001-sync-backup-encryption.md): engine, transports, payload encryption.
+        // Sync (docs/decisions/0001-sync-backup-encryption.md): engine, record mapping, payload encryption and the
+        // CloudKit transport. The CloudKit, Keychain and FileVault parts are Apple-only (#if canImport); the rest tests on Linux.
         .target(
             name: "NexusSync",
             dependencies: [
