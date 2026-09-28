@@ -57,6 +57,10 @@ jobs:
         run: |
           brew install xcodegen
           xcodegen generate
+      - name: Metal toolchain
+        # Xcode 27 ships the Metal compiler as a separate component; the app's
+        # RealityKit surface shaders (App/Shaders) need it.
+        run: xcodebuild -downloadComponent MetalToolchain
       - name: Build app (iOS Simulator)
         run: xcodebuild build -project Nexus.xcodeproj -scheme NexusApp -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -quiet
       - name: Build app (iOS device, arm64)
