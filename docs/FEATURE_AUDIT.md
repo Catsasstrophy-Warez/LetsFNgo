@@ -27,6 +27,8 @@ Everything below this section is the original audit. This section records what t
 | Second domain | **Built (core).** `NexusAutomotive` covers VIN, OBD-II Mode 01/03/07/09, ELM327, CAN/DBC, 48 DTCs, a charging-system solver and an end-to-end diagnosis. It has no UI yet. |
 | Own model | **Partial.** MLX LoRA pipeline (`Training/`), the evaluator, a registry `register` step behind the gate, and the gate proven in CI (`Training/smoke.sh`). No model has been trained; that needs an Apple silicon Mac. |
 | Apple surfaces | **Built.** The Live Activity follows agent runs, speech transcribes in Meetings, nameplate photos search, Writing Tools are on in notes, meetings and artifacts. |
+| Sync | **Built (transport-independent).** Migration 7 adds a trigger-maintained sync feed. `ChangeSet` (versioned, Codable) carries objects and relationships with per-field clocks, events, measurements, claims, blob references by SHA-256, telemetry and tombstones. `apply` merges per field (later clock wins, replica ID breaks ties). `TruthPolicy` comes first: a losing newer agent/modeled value is kept as an alternate revision plus a `syncConflict` event. Deletes are tombstones. `NexusSync` has `SyncTransport`, an in-memory transport, `SyncEngine` and AES-GCM `PayloadCipher`. Two-replica convergence, conflict and replay are tested. The transport itself (CloudKit or other) is still the owner's call (decision 0001). |
+| Relationship history | **Built.** `relate`, `end`, `updateRelationship` (under `TruthPolicy`) and synced merges each write a `RelationshipRevision` with author, instruction and snapshot. Migration 7 synthesizes a first revision for existing relationships. |
 
 ### Still unbuilt
 
@@ -35,7 +37,7 @@ Everything below this section is the original audit. This section records what t
 - **Communications:** no EventKit, email or messages.
 - **Rendering:** no Metal renderer, and no large-scale LOD or instancing in 3D.
 - **Input methods:** no iPad Pencil markup and no iPhone swipe gestures. There's no high-contrast or reduced-motion work and no device accessibility audit.
-- **Data safety:** no sync, no encryption at rest on macOS, and no revision history for relationships.
+- **Data safety:** no sync transport yet (decision 0001: CloudKit or other), no Keychain key wrapper for sync payloads, and macOS encryption at rest still relies on FileVault (SQLCipher assessed in 0001, not adopted).
 - **Domains:** no finance, travel, career, CRM, social or architecture domains. Creative has one text workflow, not media.
 - **Automotive:** no UI, and no hardware OBD/CAN acquisition.
 - **Own model:** a model trained on a Mac, and Core AI once `coreai-models` builds for the simulator.

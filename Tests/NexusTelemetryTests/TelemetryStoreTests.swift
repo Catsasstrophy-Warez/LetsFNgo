@@ -25,7 +25,7 @@ private func makeStore(chunkSize: Int = 1_000) throws -> TelemetryStore {
 @Suite struct TelemetryStoreTests {
     @Test func migrationFiveAddsTelemetryAndChannelsRoundTrip() async throws {
         let telemetry = try makeStore()
-        #expect(telemetry.store.schemaVersion == 5)
+        #expect(telemetry.store.schemaVersion >= 5)
         let testPoint = ObjectID.make()
         let channel = try await telemetry.createChannel(object: testPoint, quantity: "voltage", unit: "V", sampleRate: 10, provenance: observed())
         #expect(try await telemetry.channel(channel.id) == channel)
