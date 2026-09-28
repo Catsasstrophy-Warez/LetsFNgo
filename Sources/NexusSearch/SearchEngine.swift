@@ -9,6 +9,16 @@ import NexusPersistence
 public protocol SemanticIndex: Sendable {
     /// Nearest objects to `text`, most similar first.
     func nearest(to text: String, limit: Int) throws -> [ObjectID]
+    /// Nearest objects of `types` inside `scope` (nil for any). An index that
+    /// can filter while it ranks should, so `limit` counts only eligible
+    /// objects; the default filters nothing and leaves it to the caller.
+    func nearest(to text: String, limit: Int, types: Set<ObjectType>?, scope: Set<ObjectID>?) throws -> [ObjectID]
+}
+
+extension SemanticIndex {
+    public func nearest(to text: String, limit: Int, types: Set<ObjectType>?, scope: Set<ObjectID>?) throws -> [ObjectID] {
+        try nearest(to: text, limit: limit)
+    }
 }
 
 public struct SearchQuery: Sendable, Hashable {
@@ -87,6 +97,30 @@ public struct SearchEngine: Sendable {
         self.scopeKinds = scopeKinds
     }
 
+    /// Full text fused with semantic retrieval from a `VectorSemanticIndex`
+    /// over `store`, embedding with `embedder` (hashed features by default,
+    /// which know field abbreviations; pass an `NLEmbeddingEmbedder` for
+    /// Apple's sentence model). The index keeps itself current in the background.
+    public init(
+        store: NexusStore,
+        graph: ObjectGraph,
+        embedder: any Embedder,
+        scopeKinds: Set<RelationKind> = [.contains]
+    ) throws {
+        self.init(store: store, graph: graph, semantic: try VectorSemanticIndex(store: store, embedder: embedder), scopeKinds: scopeKinds)
+    }
+
+    /// The default engine: full text plus vector search with `HashingEmbedder`,
+    /// fused by reciprocal rank.
+    public static func withVectors(
+        store: NexusStore,
+        graph: ObjectGraph,
+        embedder: any Embedder = HashingEmbedder(),
+        scopeKinds: Set<RelationKind> = [.contains]
+    ) throws -> SearchEngine {
+        try SearchEngine(store: store, graph: graph, embedder: embedder, scopeKinds: scopeKinds)
+    }
+
     public func search(_ query: SearchQuery) throws -> [SearchResult] {
         let text = query.text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, query.limit > 0 else { return [] }
@@ -118,7 +152,7 @@ public struct SearchEngine: Sendable {
             credit(hit.id, .fullText, 1 / (Self.fusionK + Double(rank + 1)))
         }
         if let semantic {
-            for (rank, id) in try semantic.nearest(to: text, limit: depth).enumerated() {
+            for (rank, id) in try semantic.nearest(to: text, limit: depth, types: query.types, scope: scope).enumerated() {
                 credit(id, .semantic, 1 / (Self.fusionK + Double(rank + 1)))
             }
         }

@@ -136,7 +136,7 @@ let package = Package(
         .testTarget(name: "NexusModelTests", dependencies: ["NexusModel"]),
         .testTarget(name: "NexusPersistenceTests", dependencies: ["NexusPersistence"]),
         .testTarget(name: "NexusGraphTests", dependencies: ["NexusGraph"]),
-        .testTarget(name: "NexusSearchTests", dependencies: ["NexusSearch"]),
+        .testTarget(name: "NexusSearchTests", dependencies: ["NexusSearch", "NexusCore", "NexusModel", "NexusPersistence", "NexusGraph"]),
         .testTarget(name: "NexusProjectsTests", dependencies: ["NexusProjects", "NexusSearch"]),
         .testTarget(name: "NexusSimulationTests", dependencies: ["NexusSimulation", "ControlsSimulation"]),
         .testTarget(name: "NexusPermissionsTests", dependencies: ["NexusPermissions", "NexusPersistence"]),

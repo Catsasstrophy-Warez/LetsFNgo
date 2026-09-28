@@ -163,6 +163,23 @@ enum Migrations {
             );
             CREATE INDEX IF NOT EXISTS telemetry_chunks_range ON telemetry_chunks(channel_id, end_at);
             """),
+        // Version 6 depends on no earlier table. See NexusStore+Vectors.swift.
+        Migration(version: 6, name: "semantic vectors", sql: """
+            -- One embedding per object per model. Derived data: it can always be
+            -- rebuilt from the object, so the object isn't a foreign key.
+            -- `vector` is base64 of little-endian Float32; `content_hash` is the
+            -- hash of the text that was embedded, for staleness checks.
+            CREATE TABLE IF NOT EXISTS vectors (
+                object_id TEXT NOT NULL,
+                model TEXT NOT NULL,
+                dimension INTEGER NOT NULL,
+                vector TEXT NOT NULL,
+                content_hash TEXT NOT NULL,
+                updated_at REAL NOT NULL,
+                PRIMARY KEY (object_id, model)
+            );
+            CREATE INDEX IF NOT EXISTS vectors_model ON vectors(model, object_id);
+            """),
     ]
 
     static var latestVersion: Int { all.last?.version ?? 0 }

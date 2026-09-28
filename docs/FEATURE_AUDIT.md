@@ -33,7 +33,7 @@ Everything below this section is the original audit. This section records what t
 
 ### Still unbuilt
 
-- **Semantic search:** there are no embeddings; semantic search is only a protocol.
+- **Semantic search:** now **built** and tested on Linux. `VectorSemanticIndex` embeds each object's title and text attributes, including document passages, with `HashingEmbedder`. It hashes words, word pairs, character trigrams and a field-engineering synonym table, so "xmtr" finds a transmitter and "power supply" finds a PSU. Vectors are stored in migration 6 with a content hash, so a reload doesn't re-embed. The index follows the change feed in the background and drops deleted objects. It ranks by brute-force cosine with type and scope filters, and `SearchEngine.withVectors` fuses it with FTS. At 100k × 256 a query takes under 20 ms (release). Still left: `NLEmbeddingEmbedder` (Apple's sentence model) compiles but hasn't run on a device. Nothing in the app calls `withVectors` yet, and there's no ANN index beyond about 1M objects.
 - **Automation in the app:** `NexusAutomation` is built, but the app doesn't start it or tick its schedules. There's no rule editor, the Calendar doesn't show start conditions, and nothing runs queued `agentRequest` goals.
 - **Communications:** no EventKit, email or messages.
 - **Rendering:** no Metal renderer, and no large-scale LOD or instancing in 3D.

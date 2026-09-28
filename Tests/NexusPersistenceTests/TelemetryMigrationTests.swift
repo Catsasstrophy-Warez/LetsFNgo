@@ -22,7 +22,7 @@ import Testing
         }
 
         let store = try NexusStore(.file(url))
-        #expect(store.schemaVersion == 5)
+        #expect(store.schemaVersion == Migrations.latestVersion)
         let channel = TelemetryChannel(
             object: .make(), quantity: "voltage", unit: "V",
             provenance: Provenance(origin: .instrument(id: .make()), truth: .observed, timestamp: Date(timeIntervalSinceReferenceDate: 0))
