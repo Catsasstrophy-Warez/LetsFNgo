@@ -44,6 +44,11 @@ Everything below this section is the original audit. This section records what t
 - **Input:** iPad workspace-first; iPhone swipe-up for Intelligence and sideways to related objects; Pencil markup saved as annotations; outlines under Increase Contrast; large targets for confirm and reject.
 - **Rendering:** a Metal line-strip plot for long series.
 - **Sync groundwork:** relationship revisions (migration 7); transport-independent change sets with per-field merge; TruthPolicy conflicts preserved on both replicas; an AES-GCM payload cipher.
+- **iOS 26 / iPhone 17 Pro Max build:** strict Swift 6 (complete concurrency checking), iOS and macOS 26 deployment, and an app icon and accent colour. CI builds for the Simulator, a real iPhone (arm64) and macOS, and runs the UI tests on an iPhone 17 Pro Max simulator. See `docs/DEVICE.md`.
+- **On-device model:** the Foundation Models system model on iOS 26 supports guided generation (JSON Schema → `DynamicGenerationSchema`) and Nexus tools, and maps errors to stop reasons. Private Cloud Compute is used on iOS 27.
+- **RealityKit twin:** PBR geometry for each kind of equipment, with liquid level shown on vessels. Overlay cards are always on a solid background, and truth is given in words and symbols. Alert nodes show spark particles. Signal-flow and alert-pulse Metal surface shaders fall back to plain materials if they aren't available. There are orbit and tap-to-select controls and a compact layout.
+- **Room mode (AR):** places the twin on a real table or floor using spatial tracking, with LiDAR occlusion and shadows.
+- **iPhone features:** a Live Text nameplate scanner (VisionKit) that searches for what it reads, Liquid Glass command banners, haptic feedback on confirm and on error, and Visual Intelligence results that open in the app.
 
 ### Still unbuilt
 
@@ -55,7 +60,7 @@ Everything below this section is the original audit. This section records what t
 - **Automotive:** no hardware OBD/CAN acquisition.
 - **Semantic search:** the Apple sentence embedder hasn't run on a device, and there's no ANN index beyond about 1M objects.
 - **3D:** no large-scale LOD or instancing, and no real geometry assets.
-- **Device checks:** no VoiceOver or Dynamic Type audit on a device, and no reduced-motion review.
+- **Device checks:** AR room mode, the Metal shaders, the nameplate scanner and the on-device model compile and pass simulator CI but haven't run on a physical iPhone 17 Pro Max. No VoiceOver or Dynamic Type audit on a device, and no reduced-motion review.
 - **Own model:** a model trained on a Mac, and Core AI once `coreai-models` builds for the simulator.
 
 ---
@@ -68,7 +73,7 @@ This compares every feature in `docs/handoff/` with what the code actually does.
 - **Stub:** declared or placeholder only.
 - **Missing:** no code.
 
-Apple-side code compiles in macOS CI, and one iPhone UI test runs in the simulator. None of it has run on a device.
+Apple-side code builds in CI for the Simulator, a real iPhone and macOS. The iPhone UI tests run on an iPhone 17 Pro Max simulator. None of it has run on a physical device.
 
 ## Summary
 
