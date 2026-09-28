@@ -45,7 +45,7 @@ targets:
         INFOPLIST_KEY_NSCameraUsageDescription: "Nexus reads equipment nameplates and places the digital twin in your room."
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Nexus records meeting and field notes when you ask it to."
         INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Nexus transcribes your notes on device."
-        INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: "Nexus shows your fixed events next to your work."
+        INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: "Nexus shows your fixed events next to your work, and creates and updates the events you schedule from it."
         INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: "Nexus adds tasks you choose to Reminders."
         INFOPLIST_KEY_NSSupportsLiveActivities: YES
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity

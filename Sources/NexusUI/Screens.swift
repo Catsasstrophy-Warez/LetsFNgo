@@ -1,6 +1,7 @@
 #if canImport(SwiftUI)
 import NexusAgents
 import NexusAutomotive
+import NexusCommunications
 import NexusFinance
 import NexusCore
 import NexusGraph
@@ -325,6 +326,16 @@ struct ObjectDetailScreen: View {
                 if record.type == "trainingScenario" {
                     ScenarioPracticeView(id: record.id)
                 }
+                if record.type == .thread {
+                    ThreadMessagesSection(thread: record.id)
+                } else if record.type != .message && record.type != .person {
+                    CommunicationsSection(subject: record.id)
+                }
+                #if canImport(EventKit)
+                if record.type != .thread && record.type != .message && record.type != .person {
+                    CalendarLinkSection(record: record)
+                }
+                #endif
                 #if canImport(PencilKit) && os(iOS)
                 Section { MarkupButton(subject: record.id) }
                 #endif

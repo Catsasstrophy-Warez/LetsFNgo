@@ -2,6 +2,7 @@
 import Foundation
 import NexusCore
 import NexusDocuments
+import NexusMeetings
 import NexusModel
 import NexusTasks
 import SwiftUI
@@ -185,12 +186,14 @@ struct TaskDetail: View {
 
 /// Fixed, flexible and conditional time. Fixed: work with a due date.
 /// Flexible: open work with no date. Conditional: work that starts when
-/// other work (a future state of the system) is done.
+/// other work (a future state of the system) is done. Events scheduled from
+/// Nexus are written to the person's calendar and read back on refresh.
 struct CalendarScreen: View {
     @Environment(NexusEnvironment.self) private var env
     #if canImport(EventKit)
-    @State private var sync = CalendarSync()
+    @State private var sync = CalendarSync.shared
     @State private var error: ClassifiedError?
+    @State private var editing: CalendarEditTarget?
     #endif
 
     var body: some View {
@@ -207,6 +210,7 @@ struct CalendarScreen: View {
             }
             #if canImport(EventKit)
             FixedTimeSection(sync: sync)
+            scheduledFromNexus
             if let error { Section { ClassifiedErrorView(error) } }
             #endif
             ForEach(days.keys.sorted(), id: \.self) { day in
@@ -214,9 +218,14 @@ struct CalendarScreen: View {
                     ForEach(days[day] ?? []) { task in
                         TaskRow(task: task)
                         #if canImport(EventKit)
-                        if task.record.attributes[CalendarSync.reminderKey] == nil {
-                            Button("Add to Reminders", systemImage: "checklist") { sendToReminders(task) }.font(.caption)
+                        HStack {
+                            if task.record.attributes[CalendarSync.reminderKey] == nil {
+                                Button("Add to Reminders", systemImage: "checklist") { sendToReminders(task) }
+                            }
+                            Button("Schedule in Calendar", systemImage: "calendar.badge.plus") { editing = CalendarEditTarget(id: task.id) }
                         }
+                        .buttonStyle(.borderless)
+                        .font(.caption)
                         #endif
                     }
                 }
@@ -251,11 +260,49 @@ struct CalendarScreen: View {
         }
         .formStyle(.grouped)
         #if canImport(EventKit)
-        .task { await sync.loadWeek() }
+        .task { await refresh() }
+        .refreshable { await refresh() }
+        .sheet(item: $editing) { target in
+            CalendarEventEditor(target: target.id, sync: sync).environment(env)
+        }
         #endif
     }
 
     #if canImport(EventKit)
+    /// Events Nexus wrote to the calendar, as last read back from it.
+    @ViewBuilder private var scheduledFromNexus: some View {
+        let linked = ((try? sync.linker(env).linkedObjects()) ?? []).sorted { start($0) < start($1) }
+        if !linked.isEmpty {
+            Section("Scheduled from Nexus") {
+                ForEach(linked) { event in
+                    LinkedEventRow(record: event) { editing = CalendarEditTarget(id: event.id) }
+                        .contentShape(Rectangle())
+                        .onTapGesture { try? env.context.open(event.id, from: .collection) }
+                }
+                if let refresh = sync.lastRefresh, !refresh.changed.isEmpty || !refresh.removed.isEmpty {
+                    Text("Last refresh: \(refresh.changed.count) changed in Calendar, \(refresh.removed.count) removed.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Button("Refresh from Calendar", systemImage: "arrow.clockwise") { Task { await refresh() } }
+            }
+        }
+    }
+
+    private func start(_ record: ObjectRecord) -> Date {
+        if case .date(let date)? = record.attributes[CalendarKey.start]?.value { return date }
+        return .distantFuture
+    }
+
+    private func refresh() async {
+        await sync.loadWeek()
+        do {
+            try sync.refreshLinks(env)
+            error = nil
+        } catch {
+            self.error = classify(error).preserving("Linked events keep the values from the last refresh.")
+        }
+    }
+
     private func sendToReminders(_ task: TaskItem) {
         Task {
             do {
