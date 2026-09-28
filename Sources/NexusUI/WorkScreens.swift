@@ -221,11 +221,24 @@ struct CalendarScreen: View {
                     }
                 }
             }
+            let waiting = (try? env.tasks.waitingOnConditions()) ?? []
+            if !waiting.isEmpty {
+                Section("Conditional — starts when the system reaches a state") {
+                    ForEach(waiting) { task in
+                        VStack(alignment: .leading) {
+                            TaskRow(task: task)
+                            ForEach(((try? env.tasks.conditions(for: task.id)) ?? []), id: \.self) { condition in
+                                Label(condition.label, systemImage: "bolt.horizontal.circle").font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
             if !flexible.isEmpty {
                 Section("Flexible — any time") { ForEach(flexible) { TaskRow(task: $0) } }
             }
             if !conditional.isEmpty {
-                Section("Conditional — starts when") {
+                Section("Conditional — waiting on other work") {
                     ForEach(conditional) { task in
                         VStack(alignment: .leading) {
                             TaskRow(task: task)
@@ -292,6 +305,7 @@ struct ProjectScreen: View {
                         }
                     }
                     GarageSection()
+                    MoneySection()
                     ForEach(Self.groups, id: \.title) { group in
                         let items = members.filter { group.types.contains($0.type) }
                         if !items.isEmpty {

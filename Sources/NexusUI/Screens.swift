@@ -1,6 +1,7 @@
 #if canImport(SwiftUI)
 import NexusAgents
 import NexusAutomotive
+import NexusFinance
 import NexusCore
 import NexusGraph
 import NexusModel
@@ -80,6 +81,7 @@ struct CommandCenterScreen: View {
                 .buttonStyle(.bordered)
                 .labelStyle(.titleAndIcon)
             }
+            PracticeSection()
             Section("Now") {
                 if runs.isEmpty && drafts.isEmpty {
                     Text("Nothing is running or waiting for approval.").foregroundStyle(.secondary)
@@ -307,6 +309,12 @@ struct ObjectDetailScreen: View {
                 }
                 if record.type == .vehicle {
                     VehicleDomainView(id: record.id)
+                }
+                if record.type == .account {
+                    AccountDomainView(id: record.id)
+                }
+                if record.type == "trainingScenario" {
+                    ScenarioPracticeView(id: record.id)
                 }
                 #if canImport(PencilKit) && os(iOS)
                 Section { MarkupButton(subject: record.id) }
@@ -543,6 +551,7 @@ struct PermissionsScreen: View {
                 }
             }
             ModelSettingsSection()
+            AutomationSection()
             Section("Add rule") {
                 TextField("Agent (blank = any)", text: $agent)
                 TextField("Action (blank = any)", text: $action)

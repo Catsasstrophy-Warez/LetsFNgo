@@ -86,6 +86,13 @@ public struct RootView: View {
                 .environment(env)
         }
         .commandPresentation()
+        .task {
+            // Schedule triggers and time-based start conditions, once a minute.
+            while !Task.isCancelled {
+                _ = try? env.automation.tick(now: Date())
+                try? await Task.sleep(for: .seconds(60))
+            }
+        }
         .background {
             Button("Command Palette") { showPalette = true }
                 .keyboardShortcut("k", modifiers: .command)

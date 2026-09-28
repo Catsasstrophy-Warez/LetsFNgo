@@ -1,6 +1,7 @@
 #if canImport(SwiftUI)
 import Foundation
 import NexusActions
+import NexusAutomation
 import NexusAgents
 import NexusCore
 import NexusDemo
@@ -39,6 +40,11 @@ public final class NexusEnvironment {
     /// Runs commands for the UI: input forms, navigation, errors.
     public let commands = CommandRunner()
     public let research: ResearchRuntime
+    public let learning: LearningRuntime
+    public let reviews: ReviewRuntime
+    public let learners: LearnerRecords
+    /// Rules that act on the store's changes; started with the environment.
+    public let automation: AutomationRuntime
     /// Set by the app once a language model is available on this device.
     public var agents: AgentRuntime?
     /// Names of the installed language models, for Settings.
@@ -65,7 +71,8 @@ public final class NexusEnvironment {
         self.store = store
         self.user = user
         graph = ObjectGraph(store: store)
-        search = SearchEngine(store: store, graph: graph)
+        // Full text fused with semantic vectors ("xmtr" finds a transmitter).
+        search = (try? SearchEngine.withVectors(store: store, graph: graph)) ?? SearchEngine(store: store, graph: graph)
         projects = ProjectRuntime(store: store, graph: graph)
         investigations = InvestigationRuntime(store: store)
         permissions = try PermissionEngine(store: store)
@@ -73,15 +80,20 @@ public final class NexusEnvironment {
         tasks = TaskRuntime(store: store)
         documents = DocumentLibrary(store: store, pdfExtractor: DocumentLibrary.platformPDFExtractor)
         research = ResearchRuntime(store: store)
+        learning = LearningRuntime(store: store)
+        reviews = ReviewRuntime(store: store)
+        learners = LearnerRecords(store: store)
         let seeded = seedDemo ? try DemoWorld.seedIfNeeded(into: store) : nil
         let loops = seeded.map { [LoopBinding(loop: $0.loop, faults: [$0.fault], tests: $0.tests)] } ?? []
         actions = ActionExecutor(
             store: store, graph: graph, projects: projects, investigations: investigations, tasks: tasks, documents: documents,
-            learning: LearningRuntime(store: store), searchEngine: search, actor: user, loops: loops
+            learning: learning, searchEngine: search, actor: user, loops: loops
         )
+        automation = AutomationRuntime(store: store, permissions: permissions, loops: loops)
         // Observable properties are set only once every stored `let` is.
         demo = seeded
         commands.env = self
+        try? automation.start()
         observation = store.observeChanges { [weak self] _ in
             Task { @MainActor in self?.revision += 1 }
         }

@@ -95,6 +95,7 @@ let package = Package(
                 "NexusInvestigation", "NexusSimulation", "NexusReality", "NexusRealityKit", "NexusAI", "NexusAgents", "NexusDemo",
                 "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusActions", "NexusResearch", "NexusLearning",
                 "NexusVisualization", "NexusTelemetry", "NexusMeasurement", "NexusAutomotive",
+                "NexusAutomation", "NexusFinance",
             ]
         ),
         // Apple-only: Siri/Shortcuts, Spotlight, Visual Intelligence, speech, Live Activities, Foundation Models.
