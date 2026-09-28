@@ -1,5 +1,6 @@
 #if canImport(SwiftUI)
 import NexusAgents
+import NexusAutomotive
 import NexusCore
 import NexusGraph
 import NexusModel
@@ -303,6 +304,9 @@ struct ObjectDetailScreen: View {
                             LabeledContent(edge.relationship.kind.rawValue, value: "\(edge.direction == .outgoing ? "→" : "←") \(env.title(edge.neighbor))")
                         }
                     }
+                }
+                if record.type == .vehicle {
+                    VehicleDomainView(id: record.id)
                 }
                 Section("Actions") {
                     let commands = CommandRegistry().commands(for: [record]).filter { $0.commandID != .open }

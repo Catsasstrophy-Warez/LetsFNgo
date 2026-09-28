@@ -188,6 +188,10 @@ struct TaskDetail: View {
 /// other work (a future state of the system) is done.
 struct CalendarScreen: View {
     @Environment(NexusEnvironment.self) private var env
+    #if canImport(EventKit)
+    @State private var sync = CalendarSync()
+    @State private var error: ClassifiedError?
+    #endif
 
     var body: some View {
         _ = env.revision
@@ -201,9 +205,20 @@ struct CalendarScreen: View {
             if open.isEmpty {
                 NextActionEmptyState("Nothing scheduled", message: "Create tasks in Tasks; give them a due date to fix them in time.", systemImage: "calendar")
             }
+            #if canImport(EventKit)
+            FixedTimeSection(sync: sync)
+            if let error { Section { ClassifiedErrorView(error) } }
+            #endif
             ForEach(days.keys.sorted(), id: \.self) { day in
                 Section(day.formatted(date: .complete, time: .omitted)) {
-                    ForEach(days[day] ?? []) { TaskRow(task: $0) }
+                    ForEach(days[day] ?? []) { task in
+                        TaskRow(task: task)
+                        #if canImport(EventKit)
+                        if task.record.attributes[CalendarSync.reminderKey] == nil {
+                            Button("Add to Reminders", systemImage: "checklist") { sendToReminders(task) }.font(.caption)
+                        }
+                        #endif
+                    }
                 }
             }
             if !flexible.isEmpty {
@@ -222,7 +237,23 @@ struct CalendarScreen: View {
             }
         }
         .formStyle(.grouped)
+        #if canImport(EventKit)
+        .task { await sync.loadWeek() }
+        #endif
     }
+
+    #if canImport(EventKit)
+    private func sendToReminders(_ task: TaskItem) {
+        Task {
+            do {
+                try await sync.sendToReminders(task, env: env)
+                error = nil
+            } catch {
+                self.error = classify(error).preserving("The task is unchanged.")
+            }
+        }
+    }
+    #endif
 }
 
 /// Mission, objectives, and the project's objects grouped by what they are.
@@ -260,6 +291,7 @@ struct ProjectScreen: View {
                             }
                         }
                     }
+                    GarageSection()
                     ForEach(Self.groups, id: \.title) { group in
                         let items = members.filter { group.types.contains($0.type) }
                         if !items.isEmpty {
