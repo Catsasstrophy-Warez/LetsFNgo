@@ -72,18 +72,20 @@ extension NexusObjectEntity {
     }
 }
 
-public struct OpenObjectIntent: AppIntent {
+/// An `OpenIntent`, so the system can open any Nexus object it surfaces
+/// (Spotlight, Siri, Visual Intelligence results).
+public struct OpenObjectIntent: OpenIntent {
     public static let title: LocalizedStringResource = "Open in Nexus"
     public static let description = IntentDescription("Opens an object, keeping it as the context for everything else.")
     public static let openAppWhenRun = true
 
-    @Parameter(title: "Object") public var object: NexusObjectEntity
+    @Parameter(title: "Object") public var target: NexusObjectEntity
 
     public init() {}
 
     @MainActor
     public func perform() async throws -> some IntentResult {
-        try AppleIntelligence.requireEnvironment().context.open(try object.objectID, from: .command)
+        try AppleIntelligence.requireEnvironment().context.open(try target.objectID, from: .command)
         return .result()
     }
 }
