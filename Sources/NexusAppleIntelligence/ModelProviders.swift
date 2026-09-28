@@ -14,7 +14,7 @@ import NexusUI
 enum ModelProviders {
     static func install(into env: NexusEnvironment) async {
         var providers: [any LanguageModelProvider] = []
-        // L1: Apple's on-device model, from iOS 26 (iPhone 15 Pro and later,
+        // L1: Apple's on-device model (iPhone 15 Pro and later,
         // including iPhone 17 Pro Max).
         let system = SystemLanguageModel.default
         if system.isAvailable {
@@ -26,10 +26,8 @@ enum ModelProviders {
                 makeSession: { tools, instructions in LanguageModelSession(model: system, tools: tools) { instructions } }
             ))
         }
-        // L3: Private Cloud Compute, from iOS 27.
-        if #available(iOS 27.0, macOS 27.0, *) {
-            providers += await privateCloudProviders()
-        }
+        // L3: Private Cloud Compute.
+        providers += await privateCloudProviders()
         // L4: opt-in third-party cloud. The router only reaches it when the
         // person allows third-party cloud, and each run asks before data leaves.
         if let key = CloudCredentials.key(for: "anthropic") {
@@ -41,7 +39,6 @@ enum ModelProviders {
             : AgentRuntime(store: env.store, router: ModelRouter(providers: providers), permissions: env.permissions, tools: WorldTools.all)
     }
 
-    @available(iOS 27.0, macOS 27.0, *)
     private static func privateCloudProviders() async -> [any LanguageModelProvider] {
         let cloud = PrivateCloudComputeLanguageModel()
         guard cloud.isAvailable else { return [] }
@@ -62,7 +59,7 @@ enum ModelProviders {
 }
 
 /// A Foundation Models session behind Nexus's provider protocol: the
-/// on-device system model (iOS 26) or Private Cloud Compute (iOS 27).
+/// on-device system model or Private Cloud Compute.
 ///
 /// The framework runs tools itself, so every tool call is routed back through
 /// `toolHandler`: the agent runtime's permission checks, per-call rollback and
@@ -104,10 +101,10 @@ struct FoundationModelsProvider: LanguageModelProvider {
     }
 
     /// Refusals and guardrails end the turn as a refusal; an overlong
-    /// context as max tokens. iOS 27 names these `LanguageModelError`; on
-    /// iOS 26 the session's generation error carries the same cases.
+    /// context as max tokens. Errors that aren't a `LanguageModelError`
+    /// are matched by their description.
     static func stopReason(for error: any Error) -> StopReason? {
-        if #available(iOS 27.0, macOS 27.0, *), let error = error as? LanguageModelError {
+        if let error = error as? LanguageModelError {
             switch error {
             case .refusal, .guardrailViolation: return .refusal
             case .contextSizeExceeded: return .maxTokens

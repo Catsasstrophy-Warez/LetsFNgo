@@ -1,27 +1,65 @@
 # Running Nexus on an iPhone 17 Pro Max
 
-Nexus targets iOS 26 and later and is tuned for iPhone 17 Pro Max: the
+Nexus targets iOS 27 and later and is tuned for iPhone 17 Pro Max: the
 on-device model, LiDAR room placement of the digital twin, live text
 scanning and 120 Hz Metal rendering all use that hardware. CI builds the app
 for the device (arm64) and runs the UI tests on an iPhone 17 Pro Max
 simulator; nothing replaces a run on the phone itself.
 
-## Build and install
+## Getting it on the phone
 
-1. On a Mac with Xcode 27 (iOS 27 SDK; the app still deploys to iOS 26):
+There are three ways. Each needs your Apple ID, because only you can sign
+an app for your phone.
+
+### A. TestFlight (no Mac needed; Apple Developer Program)
+
+1. Join the Apple Developer Program (developer.apple.com, 99 USD a year).
+2. In App Store Connect, go to Apps → + → New App, platform iOS. Use the
+   bundle ID `com.catsasstrophy.nexus`, or your own prefix (see step 3). If
+   the ID isn't in the list, register it first at developer.apple.com →
+   Identifiers.
+3. In App Store Connect, go to Users and Access → Integrations → App Store
+   Connect API, and create a key with the Admin role. Admin lets CI create
+   the signing certificate and profiles. Then add these repository secrets
+   on GitHub (Settings → Secrets and variables → Actions):
+   - `APPLE_TEAM_ID`: your team ID (developer.apple.com → Membership).
+   - `ASC_KEY_ID`: the key's ID.
+   - `ASC_ISSUER_ID`: the issuer ID shown above the list of keys.
+   - `ASC_KEY_P8`: the whole contents of the downloaded `.p8` file.
+   - `BUNDLE_ID_PREFIX` (optional): for example `com.yourname.nexus`. Set it
+     if you registered a different ID in step 2.
+4. Run the **iPhone build** workflow: from the Actions tab, or by pushing a
+   tag named `iphone-<something>`. It archives for iOS 27, signs, and
+   uploads the build.
+5. After 5–15 minutes of processing, the build appears in App Store
+   Connect → TestFlight. Answer the export-compliance question once, then
+   add yourself as an internal tester. Install the TestFlight app on the
+   phone and install Nexus from it. Later runs update the app in place.
+
+### B. Unsigned build and a sideloading tool (no Mac; free Apple ID)
+
+Without the secrets, the same workflow produces `Nexus-unsigned.ipa` as an
+artifact of the run. A sideloading tool such as Sideloadly or AltStore signs
+it with your free Apple ID and installs it over USB or Wi-Fi. With a free
+Apple ID, the app expires after 7 days and must be re-signed.
+
+### C. Xcode on a Mac
+
+1. On a Mac with Xcode 27 (iOS 27 SDK):
    ```sh
    brew install xcodegen
    xcodegen generate
    open Nexus.xcodeproj
    ```
-2. In the NexusApp and NexusWidgets targets, Signing & Capabilities: choose
-   your team. The bundle ids are `com.catsasstrophy.nexus` and
-   `com.catsasstrophy.nexus.widgets`; change the prefix in `project.yml` if
-   your team can't use them, and regenerate.
-3. Connect the iPhone, enable Developer Mode (Settings → Privacy & Security),
-   pick it as the run destination and run the `NexusApp` scheme.
-4. Launch with `-demo` (Edit Scheme → Arguments) for an in-memory demo world,
-   or without it for the on-device store with the demo seeded once.
+2. In the NexusApp and NexusWidgets targets, open Signing & Capabilities and
+   choose your team. A free Apple ID works too.
+3. Connect the iPhone and turn on Developer Mode (Settings → Privacy &
+   Security). Pick the phone as the run destination and run the `NexusApp`
+   scheme.
+
+With any of these, launching with `-demo` (in Xcode: Edit Scheme →
+Arguments) gives an in-memory demo world. Without it, the app uses the
+on-device store, seeded with the demo once.
 
 ## What to try on the phone
 
@@ -42,7 +80,7 @@ simulator; nothing replaces a run on the phone itself.
 
 ## Capabilities you may need to add in Xcode
 
-- **Private Cloud Compute** (iOS 27 only): the
+- **Private Cloud Compute**: the
   `com.apple.developer.private-cloud-compute` entitlement.
 - **Push/CloudKit**: not used until the sync transport is chosen
   (docs/decisions/0001).

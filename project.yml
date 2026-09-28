@@ -3,8 +3,8 @@ name: Nexus
 options:
   bundleIdPrefix: com.catsasstrophy.nexus
   deploymentTarget:
-    iOS: "26.0"
-    macOS: "26.0"
+    iOS: "27.0"
+    macOS: "27.0"
   createIntermediateGroups: true
 packages:
   Nexus:
@@ -56,7 +56,7 @@ targets:
   NexusWidgets:
     type: app-extension
     platform: iOS
-    deploymentTarget: "26.0"
+    deploymentTarget: "27.0"
     sources:
       - path: Widgets
     info:
@@ -80,7 +80,7 @@ targets:
   NexusAppUITests:
     type: bundle.ui-testing
     platform: iOS
-    deploymentTarget: "26.0"
+    deploymentTarget: "27.0"
     sources:
       - path: UITests
     dependencies:

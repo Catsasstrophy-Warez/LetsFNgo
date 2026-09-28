@@ -69,7 +69,7 @@ jobs:
         run: xcodebuild build -project Nexus.xcodeproj -scheme NexusApp -destination 'generic/platform=macOS' CODE_SIGNING_ALLOWED=NO -quiet
       - name: UI tests (iPhone 17 Pro Max simulator)
         run: |
-          # The reference device is iPhone 17 Pro Max, on an iOS 26 runtime when
+          # The reference device is iPhone 17 Pro Max, on an iOS 27 runtime when
           # the runner has one (the deployment target), else the newest iOS.
           # Runner images ship only the newest phones, so make the reference
           # device from its device type when there's no simulator for it yet.
