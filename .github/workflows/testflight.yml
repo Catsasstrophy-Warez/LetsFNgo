@@ -15,6 +15,9 @@ name: iPhone build
 #   ASC_ISSUER_ID        the issuer ID shown above the keys
 #   ASC_KEY_P8           the contents of the downloaded AuthKey_<id>.p8
 #   BUNDLE_ID_PREFIX     optional; replaces com.catsasstrophy.nexus if that id isn't yours
+#
+# Variable (same page, Variables tab):
+#   NEXUS_CLOUDKIT       1 to build the signed app with iCloud sync (docs/DEVICE.md → iCloud sync)
 
 on:
   workflow_dispatch:
@@ -38,6 +41,7 @@ jobs:
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
       BUNDLE_ID_PREFIX: ${{ secrets.BUNDLE_ID_PREFIX }}
+      CLOUDKIT_SETTING: ${{ vars.NEXUS_CLOUDKIT == '1' && 'YES' || 'NO' }}
       BUILD_NUMBER: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
@@ -70,6 +74,7 @@ jobs:
           xcodebuild archive -project Nexus.xcodeproj -scheme NexusApp -configuration Release \
             -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Nexus.xcarchive" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" CODE_SIGN_STYLE=Automatic CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            NEXUS_CLOUDKIT_ENABLED="$CLOUDKIT_SETTING" \
             "${AUTH[@]}" -quiet
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>

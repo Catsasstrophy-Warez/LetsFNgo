@@ -105,8 +105,53 @@ on-device store, seeded with the demo once.
 
 - **Private Cloud Compute**: the
   `com.apple.developer.private-cloud-compute` entitlement.
-- **Push/CloudKit**: not used until the sync transport is chosen
-  (docs/decisions/0001).
+- **iCloud (CloudKit)**: only for iCloud sync; see below.
+
+## iCloud sync
+
+Settings → Sync syncs your data through your own iCloud private database
+(decision 0001, option B). It is off by default. Everything is encrypted on
+the device before it's uploaded, with a key kept in iCloud Keychain, so only
+your devices can read it.
+
+A **free Apple ID can't sign apps that use iCloud**, so the default build
+leaves CloudKit out; its Sync section explains this. To build with sync you
+need the Apple Developer Program, and:
+
+1. At developer.apple.com → Certificates, Identifiers & Profiles:
+   - Identifiers → **iCloud Containers** → +. Use the identifier
+     `iCloud.com.catsasstrophy.nexus.<TEAM_ID>`, which is `iCloud.` plus the
+     app's bundle ID. With `BUNDLE_ID_PREFIX`, use `iCloud.<prefix>.<TEAM_ID>`.
+   - Identifiers → the app's ID (`com.catsasstrophy.nexus.<TEAM_ID>`) →
+     tick **iCloud**, choose **CloudKit**, click **Configure** and select
+     that container. Save. Profiles made before this are outdated;
+     automatic signing makes new ones.
+2. Build with `NEXUS_CLOUDKIT_ENABLED=YES`. That setting signs the app with
+   `App/NexusCloud.entitlements` and compiles it with `NEXUS_CLOUDKIT`:
+   - Mac: `NEXUS_CLOUDKIT=1 scripts/install-on-iphone.sh`. In Xcode, you can
+     instead set `NEXUS_CLOUDKIT_ENABLED` to `YES` in `project.yml` and run
+     `xcodegen generate`.
+   - TestFlight: add the repository variable `NEXUS_CLOUDKIT` = `1`
+     (Settings → Secrets and variables → Actions → Variables). The unsigned
+     `.ipa` never includes sync.
+3. TestFlight and App Store builds use CloudKit's **production**
+   environment. After a development build has synced once, open the
+   CloudKit Console (icloud.developer.apple.com), select the container,
+   and use **Deploy Schema Changes** to copy the `NexusChangeSet` and
+   `NexusBlob` record types to production. Until you do, TestFlight builds
+   report an error in Settings → Sync.
+4. On the phone, sign in to iCloud with iCloud Drive and iCloud Keychain on
+   (Settings → your name → iCloud). Turn on Settings → Sync in Nexus on
+   **one** device first, and wait a minute before turning it on anywhere
+   else. The first device creates the encryption key; the others need it
+   from iCloud Keychain. If a device made its own key, Sync says "Another
+   device synced with a different key".
+
+Sync runs at launch, when the app comes to the foreground, every five
+minutes, and a few seconds after you change something. The section shows
+the last sync, errors (no iCloud account, iCloud storage full, offline), and
+how many conflicts were kept for review. A conflict is a newer modeled or
+agent value that lost to a recorded or observed one.
 
 ## Known limits on device
 

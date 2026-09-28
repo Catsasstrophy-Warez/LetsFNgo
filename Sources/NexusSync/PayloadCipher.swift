@@ -43,6 +43,14 @@ public struct PayloadCipher: Sendable {
 
     private var key: SymmetricKey { SymmetricKey(data: keyData) }
 
+    /// A short, public fingerprint of the key: 16 hex characters of a
+    /// domain-separated SHA-256. Records carry it, so a device holding a
+    /// different key reports a clear mismatch instead of a decryption failure.
+    public var keyID: String {
+        let digest = SHA256.hash(data: Data("nexus.sync.key-id.v1".utf8) + keyData)
+        return digest.prefix(8).map { String(format: "%02x", $0) }.joined()
+    }
+
     /// 32 random bytes for a new key, from the system's secure generator.
     public static func generateKeyData() -> Data {
         SymmetricKey(size: .bits256).withUnsafeBytes { Data($0) }

@@ -560,6 +560,7 @@ struct PermissionsScreen: View {
                 }
             }
             ModelSettingsSection()
+            SyncSettingsSection()
             AutomationSection()
             Section("Add rule") {
                 TextField("Agent (blank = any)", text: $agent)

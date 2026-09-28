@@ -26,6 +26,8 @@ targets:
         product: NexusUI
       - package: Nexus
         product: NexusAppleIntelligence
+      - package: Nexus
+        product: NexusSync
       - target: NexusWidgets
         destinationFilters: [iOS]
     settings:
@@ -56,6 +58,18 @@ targets:
         ENABLE_APP_SANDBOX: YES
         ENABLE_USER_SELECTED_FILES: readwrite
         TARGETED_DEVICE_FAMILY: "1,2"
+        # iCloud sync (docs/DEVICE.md → "iCloud sync"). NO by default, because a
+        # free Apple ID can't sign the iCloud entitlement. YES (here, or as
+        # `xcodebuild … NEXUS_CLOUDKIT_ENABLED=YES`) signs with
+        # App/NexusCloud.entitlements and compiles the app with NEXUS_CLOUDKIT,
+        # which is what lets it call CloudKit. Needs a paid developer account.
+        NEXUS_CLOUDKIT_ENABLED: "NO"
+        NEXUS_ENTITLEMENTS_YES: App/NexusCloud.entitlements
+        NEXUS_ENTITLEMENTS_NO: ""
+        NEXUS_CONDITIONS_YES: NEXUS_CLOUDKIT
+        NEXUS_CONDITIONS_NO: ""
+        CODE_SIGN_ENTITLEMENTS: $(NEXUS_ENTITLEMENTS_$(NEXUS_CLOUDKIT_ENABLED))
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) $(NEXUS_CONDITIONS_$(NEXUS_CLOUDKIT_ENABLED))
     scheme:
       testTargets:
         - NexusAppUITests

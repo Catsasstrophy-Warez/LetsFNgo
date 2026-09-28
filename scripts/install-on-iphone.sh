@@ -7,7 +7,8 @@
 # a free Apple ID works, the app then expires after 7 days). The team ID is
 # found from your Apple Development certificate when you don't pass one.
 # Bundle IDs end in your team ID; set BUNDLE_ID_PREFIX (e.g.
-# com.yourname.nexus) to change the part before it.
+# com.yourname.nexus) to change the part before it. NEXUS_CLOUDKIT=1 builds
+# with iCloud sync, which needs a paid developer account (docs/DEVICE.md).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -67,9 +68,11 @@ build=build/device
 # Building for this phone (its UDID) lets automatic signing register it.
 destination="generic/platform=iOS"
 [ -n "$DEVICE_UDID" ] && destination="id=$DEVICE_UDID"
+cloudkit=NO
+[ "${NEXUS_CLOUDKIT:-0}" = 1 ] && cloudkit=YES && echo "With iCloud sync (needs a paid developer account)."
 xcodebuild build -project Nexus.xcodeproj -scheme NexusApp -configuration Debug \
     -destination "$destination" -derivedDataPath "$build" \
-    DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic -allowProvisioningUpdates -quiet
+    DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic NEXUS_CLOUDKIT_ENABLED="$cloudkit" -allowProvisioningUpdates -quiet
 app="$build/Build/Products/Debug-iphoneos/Nexus.app"
 [ -d "$app" ] || fail "The build finished but $app is missing."
 

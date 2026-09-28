@@ -387,6 +387,13 @@ extension NexusStore {
         }
     }
 
+    /// Number of `syncConflict` events: TruthPolicy conflicts kept for review.
+    public func syncConflictCount() throws -> Int {
+        try locked {
+            Int(try db.query("SELECT COUNT(*) FROM events WHERE kind = ?", [.text(EventKind.syncConflict.rawValue)]) { $0.int(0) }.first ?? 0)
+        }
+    }
+
     /// Blobs referenced by applied change sets whose bytes have not arrived.
     public func pendingBlobs() throws -> [BlobRef] {
         try locked {
