@@ -155,7 +155,7 @@ enum SchemaBridge {
             return DynamicGenerationSchema(name: name, description: description, properties: properties)
         case "array":
             let item = schema["items"].map { dynamic($0, name: "\(name)_item") } ?? DynamicGenerationSchema(type: String.self)
-            return DynamicGenerationSchema(arrayOf: item)
+            return DynamicGenerationSchema(arrayOf: item, minimumElements: nil, maximumElements: nil)
         case "number": return DynamicGenerationSchema(type: Double.self)
         case "integer": return DynamicGenerationSchema(type: Int.self)
         case "boolean": return DynamicGenerationSchema(type: Bool.self)
