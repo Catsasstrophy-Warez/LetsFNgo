@@ -248,6 +248,7 @@ struct HypothesisActions: View {
             }
         }
         .buttonStyle(.bordered)
+        .controlSize(.large)
     }
 
     private var parameters: ActionParameters {
@@ -344,6 +345,7 @@ struct TelemetryScreen: View {
     @Environment(NexusEnvironment.self) private var env
     @State private var depth = Depth.technician
     @State private var showTable = false
+    @State private var gpu = false
     @State private var series: [Sample] = []
 
     enum Depth: String, CaseIterable {
@@ -381,6 +383,17 @@ struct TelemetryScreen: View {
                 .accessibilityLabel("Chart of \(Set(visibleSeries.map(\.signal)).sorted().joined(separator: ", ")) over time")
                 Toggle("Show as table", isOn: $showTable).padding(.horizontal)
                 if depth == .expert {
+                    #if canImport(MetalKit)
+                    Toggle("GPU plot (Metal, for long series)", isOn: $gpu).padding(.horizontal)
+                    if gpu {
+                        MetalPlotView(plot: MetalPlot(series: Dictionary(grouping: visibleSeries, by: \.signal).keys.sorted().map { signal in
+                            visibleSeries.filter { $0.signal == signal }.map { SIMD2(Float($0.seconds), Float($0.value)) }
+                        }))
+                        .frame(height: 180)
+                        .padding(.horizontal)
+                        .accessibilityLabel("GPU plot of the same signals; the table below has the values")
+                    }
+                    #endif
                     expertViews
                 }
                 if showTable || depth == .expert {

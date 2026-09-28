@@ -308,6 +308,9 @@ struct ObjectDetailScreen: View {
                 if record.type == .vehicle {
                     VehicleDomainView(id: record.id)
                 }
+                #if canImport(PencilKit) && os(iOS)
+                Section { MarkupButton(subject: record.id) }
+                #endif
                 Section("Actions") {
                     let commands = CommandRegistry().commands(for: [record]).filter { $0.commandID != .open }
                     ForEach(commands) { command in
@@ -330,11 +333,36 @@ struct ObjectDetailScreen: View {
                 }
             }
             .formStyle(.grouped)
+            // Sideways swipe: to the first related object, or back.
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 40).onEnded { drag in
+                    let dx = drag.translation.width
+                    guard abs(dx) > 100, abs(dx) > abs(drag.translation.height) * 2 else { return }
+                    if dx < 0, let next = edges.first?.neighbor {
+                        try? env.context.open(next, from: .collection)
+                    } else if dx > 0 {
+                        env.context.back()
+                    }
+                }
+            )
         } else {
             NextActionEmptyState("Nothing selected", message: "Select an object in the context list, in 3D, or with ⌘K.", systemImage: "cube")
         }
     }
 }
+
+#if canImport(PencilKit) && os(iOS)
+struct MarkupButton: View {
+    let subject: ObjectID
+    @Environment(NexusEnvironment.self) private var env
+    @State private var drawing = false
+
+    var body: some View {
+        Button("Markup with Pencil", systemImage: "pencil.tip.crop.circle") { drawing = true }
+            .fullScreenCover(isPresented: $drawing) { MarkupSheet(subject: subject).environment(env) }
+    }
+}
+#endif
 
 /// One revision: who changed what (with each value's truth class), and a
 /// restore that writes a new revision rather than rewriting history.

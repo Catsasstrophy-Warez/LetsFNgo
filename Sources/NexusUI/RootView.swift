@@ -4,6 +4,9 @@ import NexusCore
 import NexusModel
 import NexusProjects
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 extension ScreenFamily {
     var title: String {
@@ -94,13 +97,24 @@ public struct RootView: View {
 struct RegularRoot: View {
     @Environment(NexusEnvironment.self) private var env
     @Binding var showIntelligence: Bool
+    /// iPad is workspace-first: the navigation and context columns start
+    /// collapsed and slide in from the toolbar. The Mac shows all four regions.
+    @State private var columns: NavigationSplitViewVisibility = RegularRoot.isPad ? .detailOnly : .all
+
+    static var isPad: Bool {
+        #if os(iOS)
+        UIDevice.current.userInterfaceIdiom == .pad
+        #else
+        false
+        #endif
+    }
 
     private var screen: Binding<ScreenFamily?> {
         Binding(get: { env.context.screen }, set: { if let value = $0 { env.context.open(value) } })
     }
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columns) {
             List(ScreenFamily.allCases, id: \.self, selection: screen) { family in
                 Label(family.title, systemImage: family.symbol)
             }
@@ -137,6 +151,19 @@ struct CompactRoot: View {
     var body: some View {
         NavigationStack {
             Workspace()
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    // Swipe up on the grabber for Intelligence (the Ask button does the same).
+                    Capsule()
+                        .fill(.secondary.opacity(0.5))
+                        .frame(width: 44, height: 5)
+                        .frame(maxWidth: .infinity, minHeight: 22)
+                        .contentShape(Rectangle())
+                        .gesture(DragGesture(minimumDistance: 20).onEnded { if $0.translation.height < -30 { showIntelligence = true } })
+                        .accessibilityLabel("Intelligence")
+                        .accessibilityHint("Swipe up to ask about the selection")
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityAction { showIntelligence = true }
+                }
                 .toolbar {
                     ToolbarItemGroup(placement: .bottomBar) {
                         Button { showContext = true } label: { Label("Context", systemImage: "list.bullet.indent") }

@@ -45,6 +45,7 @@ extension TruthClass {
 /// Symbol + text + color for a truth class. Readable in grayscale and by VoiceOver.
 public struct TruthBadge: View {
     let truth: TruthClass
+    @Environment(\.colorSchemeContrast) private var contrast
 
     public init(_ truth: TruthClass) {
         self.truth = truth
@@ -57,7 +58,11 @@ public struct TruthBadge: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .foregroundStyle(truth.tint)
-            .background(truth.tint.opacity(0.12), in: Capsule())
+            .background(truth.tint.opacity(contrast == .increased ? 0.25 : 0.12), in: Capsule())
+            .overlay {
+                // Increased contrast: an outline so the badge never relies on a tint.
+                if contrast == .increased { Capsule().strokeBorder(truth.tint, lineWidth: 1) }
+            }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Truth: \(truth.label)")
     }
