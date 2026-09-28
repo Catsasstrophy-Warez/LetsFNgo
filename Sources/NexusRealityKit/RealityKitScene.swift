@@ -98,12 +98,10 @@ public enum RealityKitSceneBuilder {
                 emitter.position = [0, 0.18, 0]
                 entity.addChild(emitter)
             }
-            if let values = overlays[node.entity], !values.isEmpty {
-                let card = Entity()
-                card.components.set(ViewAttachmentComponent(rootView: OverlayCard(title: node.title, values: values, alert: isAlert)))
-                card.components.set(BillboardComponent())
-                card.position = [0, Geometry.height(of: node) / 2 + 0.22, 0]
-                card.scale = SIMD3(repeating: 0.6)
+            if let values = overlays[node.entity], !values.isEmpty,
+                let card = cardEntity(OverlayCard(title: node.title, values: values, alert: isAlert))
+            {
+                card.position = [0, Geometry.height(of: node) / 2 + 0.2, 0]
                 entity.addChild(card)
             }
             root.addChild(entity)
@@ -136,6 +134,24 @@ public enum RealityKitSceneBuilder {
             current = candidate.parent
         }
         return nil
+    }
+
+    /// A SwiftUI view drawn into a texture on a plane that always faces the
+    /// camera. The card is rendered at 3x for a crisp result on Pro displays.
+    private static func cardEntity(_ view: OverlayCard) -> Entity? {
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 3
+        guard let image = renderer.cgImage,
+            let texture = try? TextureResource(image: image, options: .init(semantic: .color))
+        else { return nil }
+        var material = UnlitMaterial()
+        material.color = .init(tint: .white, texture: .init(texture))
+        material.blending = .transparent(opacity: .init(floatLiteral: 1))
+        let width: Float = 0.5
+        let height = width * Float(image.height) / Float(max(image.width, 1))
+        let plane = ModelEntity(mesh: .generatePlane(width: width, height: height), materials: [material])
+        plane.components.set(BillboardComponent())
+        return plane
     }
 
     /// A level percentage from the node's readings, preferring observed over modeled.
@@ -412,12 +428,14 @@ struct OverlayCard: View {
                         .font(.caption2)
                         .labelStyle(.titleAndIcon)
                         .padding(.horizontal, 4)
-                        .background(.thinMaterial, in: Capsule())
+                        .background(Color.white.opacity(0.18), in: Capsule())
                 }
             }
         }
         .padding(10)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 12))
+        .foregroundStyle(.white)
+        .background(Color.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 12))
+        .environment(\.colorScheme, .dark)
         .accessibilityElement(children: .combine)
     }
 
