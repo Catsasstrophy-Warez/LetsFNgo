@@ -90,7 +90,7 @@ struct ReviewSheet: View {
                         }
                         Section("How well did you recall it?") {
                             ForEach(Self.grades, id: \.0) { grade, label in
-                                Button("\(grade) · \(label)") { grade(card, grade) }
+                                Button("\(grade) · \(label)") { submitGrade(card, grade) }
                             }
                         }
                     } else {
@@ -106,7 +106,7 @@ struct ReviewSheet: View {
         }
     }
 
-    private func grade(_ card: ReviewCard, _ grade: Int) {
+    private func submitGrade(_ card: ReviewCard, _ grade: Int) {
         do {
             _ = try env.reviews.review(card.id, grade: grade, by: env.user)
             _ = try env.learners.recordPractice(
