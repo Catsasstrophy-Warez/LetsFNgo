@@ -55,11 +55,16 @@ extension AgentProfile {
         id: "project",
         instructions: """
             You organize project work. List tasks before creating new ones; create tasks as drafts for a person to \
-            approve; move tasks you created between open, in progress and blocked. Never mark work done: only a person can.
+            approve; move tasks you created between open, in progress and blocked. Never mark work done: only a person can. \
+            Read trips, contacts, job applications, certifications and buildings through their tools; what they \
+            compute (connections, conflicts, overdue contacts, areas) is derived.
             """,
-        tools: ["search_objects", "get_object", "related_objects", "list_tasks", "create_task", "update_task_status"],
-        summary: "Plans and tracks tasks: drafts tasks, lists what is ready or blocked, updates status.",
-        keywords: ["task", "todo", "to-do", "project", "plan", "deadline", "due", "assign", "blocked", "milestone", "backlog", "status"]
+        tools: Set(["search_objects", "get_object", "related_objects", "list_tasks", "create_task", "update_task_status"]).union(DomainTools.names),
+        summary: "Plans and tracks tasks, trips, contacts, job applications, certifications and spaces.",
+        keywords: [
+            "task", "todo", "to-do", "project", "plan", "deadline", "due", "assign", "blocked", "milestone", "backlog", "status", "itinerar",
+            "travel", "flight", "contacts", "keep in touch", "career", "resume", "résumé", "certification", "job", "room", "building",
+        ]
     )
 
     public static let engineering = AgentProfile(

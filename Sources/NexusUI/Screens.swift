@@ -1,6 +1,8 @@
 #if canImport(SwiftUI)
 import NexusAgents
+import NexusArchitecture
 import NexusAutomotive
+import NexusCareer
 import NexusFinance
 import NexusCore
 import NexusGraph
@@ -9,6 +11,7 @@ import NexusPermissions
 import NexusPersistence
 import NexusProjects
 import NexusSearch
+import NexusTravel
 import PhotosUI
 import SwiftUI
 
@@ -321,6 +324,21 @@ struct ObjectDetailScreen: View {
                 }
                 if record.type == .account {
                     AccountDomainView(id: record.id)
+                }
+                if record.type == .trip {
+                    TripDomainView(id: record.id)
+                }
+                if record.type == .person {
+                    PersonDomainView(id: record.id)
+                }
+                if record.type == .jobApplication {
+                    ApplicationDomainView(id: record.id)
+                }
+                if SpatialLevel(record.type) != nil {
+                    SpatialDomainView(id: record.id)
+                }
+                if AssetLocationView.assetTypes.contains(record.type) {
+                    AssetLocationView(id: record.id)
                 }
                 if record.type == "trainingScenario" {
                     ScenarioPracticeView(id: record.id)
