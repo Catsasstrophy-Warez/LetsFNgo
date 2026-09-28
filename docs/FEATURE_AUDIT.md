@@ -33,16 +33,29 @@ Everything below this section is the original audit. This section records what t
 | Sync | **Built (transport-independent).** Migration 7 adds a trigger-maintained sync feed. `ChangeSet` (versioned, Codable) carries objects and relationships with per-field clocks, events, measurements, claims, blob references by SHA-256, telemetry and tombstones. `apply` merges per field (later clock wins, replica ID breaks ties). `TruthPolicy` comes first: a losing newer agent/modeled value is kept as an alternate revision plus a `syncConflict` event. Deletes are tombstones. `NexusSync` has `SyncTransport`, an in-memory transport, `SyncEngine` and AES-GCM `PayloadCipher`. Two-replica convergence, conflict and replay are tested. The transport itself (CloudKit or other) is still the owner's call (decision 0001). |
 | Relationship history | **Built.** `relate`, `end`, `updateRelationship` (under `TruthPolicy`) and synced merges each write a `RelationshipRevision` with author, instruction and snapshot. Migration 7 synthesizes a first revision for existing relationships. |
 
+### Built since this update was first written
+
+- **Semantic search:** the app searches with `SearchEngine.withVectors`. `HashingEmbedder` with a field-engineering synonym table is stored in migration 6, and a query takes under 20 ms at 100k objects.
+- **Automation:** the runtime starts with the app and ticks every minute. Settings lists rules, approves blocked runs and builds threshold rules. The Calendar shows tasks waiting on a system state.
+- **Learning:** generic scenarios (loop, automotive, any solver), a tutor with locked answers, SM-2 review cards and a learner record. The Command Center has a Practice section, and training scenarios are practised in Object Detail.
+- **Finance UI:** accounts and OFX import in the Project screen. Account detail shows transactions and who set each category, with a person's override.
+- **Automotive UI:** garage, add by VIN, trouble codes, service history, scan-tool log import, and a charging diagnosis.
+- **Calendar:** EventKit fixed events (read-only), and sending tasks to Reminders.
+- **Input:** iPad workspace-first; iPhone swipe-up for Intelligence and sideways to related objects; Pencil markup saved as annotations; outlines under Increase Contrast; large targets for confirm and reject.
+- **Rendering:** a Metal line-strip plot for long series.
+- **Sync groundwork:** relationship revisions (migration 7); transport-independent change sets with per-field merge; TruthPolicy conflicts preserved on both replicas; an AES-GCM payload cipher.
+
 ### Still unbuilt
 
-- **Semantic search:** now **built** and tested on Linux. `VectorSemanticIndex` embeds each object's title and text attributes, including document passages, with `HashingEmbedder`. It hashes words, word pairs, character trigrams and a field-engineering synonym table, so "xmtr" finds a transmitter and "power supply" finds a PSU. Vectors are stored in migration 6 with a content hash, so a reload doesn't re-embed. The index follows the change feed in the background and drops deleted objects. It ranks by brute-force cosine with type and scope filters, and `SearchEngine.withVectors` fuses it with FTS. At 100k × 256 a query takes under 20 ms (release). Still left: `NLEmbeddingEmbedder` (Apple's sentence model) compiles but hasn't run on a device. Nothing in the app calls `withVectors` yet, and there's no ANN index beyond about 1M objects.
-- **Automation in the app:** `NexusAutomation` is built, but the app doesn't start it or tick its schedules. There's no rule editor, the Calendar doesn't show start conditions, and nothing runs queued `agentRequest` goals.
-- **Communications:** no EventKit, email or messages.
-- **Rendering:** no Metal renderer, and no large-scale LOD or instancing in 3D.
-- **Input methods:** no iPad Pencil markup and no iPhone swipe gestures. There's no high-contrast or reduced-motion work and no device accessibility audit.
-- **Data safety:** no sync transport yet (decision 0001: CloudKit or other), no Keychain key wrapper for sync payloads, and macOS encryption at rest still relies on FileVault (SQLCipher assessed in 0001, not adopted).
-- **Domains:** finance is built as a core with no UI (`NexusFinance`, see `docs/FINANCE.md`): OFX/CSV import with dedup, rules and model categorisation, budgets, cash flow, recurring detection, modeled scenarios and investments. It still has no UI, no OFX investment statements and no finance agent. There are no travel, career, CRM, social or architecture domains. Creative has one text workflow, not media.
-- **Automotive:** no UI, and no hardware OBD/CAN acquisition.
+- **Sync transport:** decision 0001 (CloudKit or other) is the owner's. There's also no Keychain key wrapper for sync payloads, and macOS encryption at rest relies on FileVault.
+- **Automation gaps:** queued `agentRequest` goals aren't run by the app yet, and the rule builder covers threshold rules only.
+- **Communications:** no email or messages. Calendar events are read-only.
+- **Finance gaps:** no CSV import UI (it needs a column mapping), budgets and forecasts have no screens yet, and there are no OFX investment statements or finance agent.
+- **Other domains:** no travel, career, CRM, social or architecture domains. Creative has one text workflow, not media.
+- **Automotive:** no hardware OBD/CAN acquisition.
+- **Semantic search:** the Apple sentence embedder hasn't run on a device, and there's no ANN index beyond about 1M objects.
+- **3D:** no large-scale LOD or instancing, and no real geometry assets.
+- **Device checks:** no VoiceOver or Dynamic Type audit on a device, and no reduced-motion review.
 - **Own model:** a model trained on a Mac, and Core AI once `coreai-models` builds for the simulator.
 
 ---
