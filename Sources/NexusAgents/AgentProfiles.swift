@@ -100,6 +100,28 @@ extension AgentProfile {
         keywords: ["write", "draft", "summar", "email", "rewrite", "report", "explain", "letter", "post", "describe", "memo"]
     )
 
+    /// Money questions over the finance domain. It reads through P0 tools;
+    /// running a forecast or categorising a transaction is P3 and asks first.
+    public static let finance = AgentProfile(
+        id: "finance",
+        instructions: """
+            You answer questions about the person's money: balances, spending by category, budgets, recurring charges \
+            and forecasts. Read every number from the finance tools and say its truth class: balances and transactions \
+            are recorded, totals and budget actuals are derived, forecasts are modeled and scenario assumptions are claimed. \
+            Never present a forecast as a balance. Run a forecast or categorise a transaction only when the goal asks for it; \
+            a category a person set is never changed.
+            """,
+        tools: [
+            "finance_balances", "finance_spending", "finance_budget_status", "finance_recurring", "finance_forecast", "run_forecast",
+            "categorize_transaction", "search_objects", "get_object",
+        ],
+        summary: "Money: balances, spending by category, budgets, recurring charges and forecasts.",
+        keywords: [
+            "spend", "spent", "budget", "balance", "bank", "money", "forecast", "recurring", "subscription", "income", "expense", "cash flow",
+            "salary", "afford", "saving", "transaction", "categor",
+        ]
+    )
+
     /// Routes a goal to specialists through `delegate`.
     public static let coordinator = AgentProfile(
         id: "orchestrator",
@@ -114,6 +136,6 @@ extension AgentProfile {
 
     /// Every specialist the orchestrator can choose, in tie-break order.
     public static var specialists: [AgentProfile] {
-        [.diagnostician, .research, .document, .project, .engineering, .meeting, .writing]
+        [.diagnostician, .research, .document, .project, .engineering, .meeting, .writing, .finance]
     }
 }

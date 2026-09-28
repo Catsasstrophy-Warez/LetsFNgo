@@ -75,6 +75,8 @@ public enum FinanceKey {
     public static let blob = "blob"
     public static let mediaType = "mediaType"
     public static let format = "format"
+    /// The CSV column mapping remembered on an account.
+    public static let csvMapping = "csvMapping"
     // Rules
     public static let payeeContains = "payeeContains"
     public static let minimumAmount = "minimumAmount"
@@ -107,6 +109,14 @@ public enum FinanceKey {
     public static let price = "price"
     public static let fees = "fees"
     public static let costBasis = "costBasis"
+    /// A security's CUSIP or ISIN from a statement.
+    public static let uniqueID = "uniqueID"
+    /// A position as the broker stated it (recorded), beside the derived quantity.
+    public static let statedQuantity = "statedQuantity"
+    public static let statedMarketValue = "statedMarketValue"
+    public static let statedAsOf = "statedAsOf"
+    // Budgets: carry each category's unspent (or overspent) amount into the next month.
+    public static let rollover = "rollover"
 }
 
 public enum AccountKind: String, Codable, Sendable, CaseIterable {
@@ -152,6 +162,8 @@ public enum FinanceError: Error, Equatable, Sendable {
     case invalidQuantity(Decimal)
     case missingBalance(ObjectID)
     case duplicateSymbol(String)
+    /// A form field that must be filled was left blank.
+    case missingInput(String)
 }
 
 /// The calendar all finance dates use: Gregorian in UTC. A posted date is a

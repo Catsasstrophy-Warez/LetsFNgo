@@ -13,6 +13,7 @@ struct MoneySection: View {
     @Environment(NexusEnvironment.self) private var env
     @State private var importing = false
     @State private var adding = false
+    @State private var sheet: FinanceSheet?
     @State private var summary: String?
     @State private var error: ClassifiedError?
 
@@ -32,7 +33,10 @@ struct MoneySection: View {
                     }
                 }
             }
-            Button("Import bank statement (OFX/QFX)", systemImage: "square.and.arrow.down") { importing = true }
+            Button("Import bank or brokerage statement (OFX/QFX)", systemImage: "square.and.arrow.down") { importing = true }
+            Button("Import CSV statement", systemImage: "tablecells") { sheet = .csv }
+            Button("Budget", systemImage: "chart.bar.doc.horizontal") { sheet = .budgets }
+            Button("Forecasts", systemImage: "chart.line.uptrend.xyaxis") { sheet = .forecasts }
             Button("Add account", systemImage: "plus") { adding = true }
             if let summary { Label(summary, systemImage: "checkmark.circle").font(.caption) }
             if let error { ClassifiedErrorView(error) }
@@ -41,6 +45,21 @@ struct MoneySection: View {
             importStatement($0)
         }
         .sheet(isPresented: $adding) { AddAccountSheet().environment(env) }
+        .sheet(item: $sheet) { sheet in
+            switch sheet {
+            case .csv: CSVImportSheet().environment(env)
+            case .budgets: BudgetsView().environment(env)
+            case .forecasts: ForecastsView().environment(env)
+            }
+        }
+    }
+
+    enum FinanceSheet: String, Identifiable {
+        case csv
+        case budgets
+        case forecasts
+
+        var id: String { rawValue }
     }
 
     private func importStatement(_ result: Result<URL, Error>) {
@@ -48,10 +67,18 @@ struct MoneySection: View {
             let url = try result.get()
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            let results = try StatementImporter(store: env.store).importOFX(Data(contentsOf: url), named: url.lastPathComponent, by: env.user)
+            let imported = try StatementImporter(store: env.store).importStatements(Data(contentsOf: url), named: url.lastPathComponent, by: env.user)
+            let results = imported.bank + imported.investment.map(\.cash)
             let created = results.map(\.created.count).reduce(0, +)
-            let duplicates = results.map(\.duplicates.count).reduce(0, +)
-            summary = "Imported \(created) transactions into \(results.count) account(s); \(duplicates) already present were skipped."
+            let duplicates = results.map(\.duplicates.count).reduce(0, +) + imported.investment.map(\.duplicateTrades.count).reduce(0, +)
+            var text = "Imported \(created) transactions into \(imported.bank.count + imported.investment.count) account(s); \(duplicates) already present were skipped."
+            let trades = imported.investment.map(\.trades.count).reduce(0, +)
+            if !imported.investment.isEmpty {
+                text += " \(trades) trades, \(imported.investment.map(\.positions.count).reduce(0, +)) stated positions."
+            }
+            let skipped = imported.investment.flatMap(\.skippedTrades)
+            if !skipped.isEmpty { text += " \(skipped.count) trades skipped: " + skipped.map(\.reason).joined(separator: "; ") }
+            summary = text
             error = nil
         } catch {
             self.error = classify(error).preserving("Nothing from the file was stored; an import is all or nothing.")

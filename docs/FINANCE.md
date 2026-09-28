@@ -62,11 +62,46 @@ A rule run replaces a model's suggestion and an older rule's result. A model pas
 - `ScenarioTests`: the projection is modeled and stored on the scenario, and the account is untouched. A modeled balance is refused by the ledger and by `TruthPolicy`. Assumptions are claimed. Two scenarios are compared, and the first negative month is found.
 - `InvestmentTests`: FIFO and average cost, realised and unrealised gains, recorded and claimed prices, allocation, unpriced holdings and overselling.
 - `FinanceSliceTests`: end to end on one SQLite file. It imports OFX (SGML and XML) and CSV, dedups, and categorises with rules plus a person's override that a later rule run leaves alone. It then checks a budget variance, detects the recurring rent, runs a modeled forecast that never changes the recorded balance, saves, and reloads with objects, revisions, relationships, timeline, blobs and reports identical.
+- `CSVMappingTests`: guessing a European debit/credit export and a US export with balance and ID columns, day-first or month-first dates, headerless files, card sign flipping, number-style votes, one field per column, a preview that keeps going past bad rows, a mapping remembered on the account that follows moved columns, and a duplicate count before import plus the closing balance after it.
+- `InvestmentImportTests`: `INVSTMTRS` parsing, then trades, income, cash, stated positions and prices imported as recorded truth; cost basis and gains from them; a sale of units bought before the statement is skipped; re-importing adds nothing.
+- `BudgetPlanningTests`: editing one amount, progress and status, rollover that chains and stops, copying a month, and actuals from recorded transactions only.
+- `ForecastPlanningTests`: the assumption form, assumption summaries, adding and removing assumptions (claimed), and chart points (a recorded opening, then modeled months).
+
+`Tests/NexusAgentsTests/FinanceToolTests` covers the finance tools: reads are P0 and label their truth, `run_forecast` and `categorize_transaction` are P3, a person's category is refused, and the runtime asks before a P3 finance call.
+
+## CSV column mapping
+
+`CSVMappingGuess.swift`. `CSVMappingGuesser.guess` detects the delimiter (`,` `;` tab `|`) and a header row, maps columns by header words in several languages (date, amount, debit, credit, payee, memo, balance, transaction ID, type) and then by content, picks the date pattern that reads every sample (a pattern's own separators must appear, and day-first wins a tie when numbers are European), votes on the number style, and flips signs on a card account whose amounts are mostly positive. It returns notes for anything the person should check. The result is a `CSVMappingDraft`: one field per column, which becomes a `CSVMapping`. `CSV.preview` reads the first rows and keeps each row's error; `StatementImporter.previewCSV` counts new rows and duplicates by the dedup rules without storing anything. With a balance column, the balance on the statement's latest row becomes the account's recorded balance. `Ledger.saveCSVMapping` remembers the draft on the account (`csvMapping`, recorded, the person's setting); the next guess for that account uses it, following columns that moved by header name.
+
+## Budget screen model
+
+`BudgetPlanning.swift`. `Budgets.overview(for:)` lists every expense and income category for the month: the person's amount (recorded), anything carried over, what is available, the actual (derived from recorded transactions), what is left, progress and a status (`onTrack` below 85 %, `nearLimit`, `over`, `incomeMet`, `incomeShort`, `unbudgeted`). `setAmount` edits one line, `copyBudget` copies a month. Rollover is a recorded flag on a month's budget (`rollover`): that month carries each expense category's previous available amount less its spending, chaining back through months that also roll over. The carry is computed on read and never stored.
+
+## Forecast screen model
+
+`ForecastPlanning.swift`. `Scenarios.scenarios()` and `summaries()` list scenarios with their last projection. `AssumptionDraft` turns form fields into an `Assumption`; `addAssumption` and `removeAssumption` edit the claimed list. `Forecast.chartPoints()` gives the opening balance as a recorded point and each month as a modeled point, so the chart can label them apart.
+
+## OFX investment statements
+
+`OFXInvestments.swift` reads `INVSTMTRS`: `INVACCTFROM`, buys and sells (`BUYSTOCK`, `BUYMF`, `BUYDEBT`, `BUYOPT`, `BUYOTHER` and the `SELL…` forms), `REINVEST`, `INCOME`, `INVBANKTRAN`, `INVPOSLIST` and `INVBAL`, with the file's `SECLIST`. `StatementImporter.importStatements` imports bank and investment statements from one file (`importOFX` still returns bank results plus each investment statement's cash rows). For an investment statement (`InvestmentImport.swift`):
+
+- The account is found by ACCTID and BROKERID or created as a brokerage account.
+- Securities are found by CUSIP/ISIN (`uniqueID`) or symbol, or created from the security list.
+- Trades are recorded through `Portfolio` with the importer's provenance and the FITID, oldest first. Dedup uses the FITID, or the day, side, units, price and security when there is none. A sale of more units than are recorded is skipped with its reason; it is not guessed.
+- Income (dividends, interest, capital gains) and cash movements become transactions and dedup like any statement row.
+- Position prices and security-list prices become recorded price quotes, stored once. A stated position sits on its holding as recorded `statedQuantity`, `statedMarketValue` and `statedAsOf`, beside the derived quantity.
+
+## Finance agent
+
+`Sources/NexusAgents/FinanceTools.swift` registers finance tools with `WorldTools.all`, and `AgentProfile.finance` is a specialist the orchestrator can pick. Reads are P0: `finance_balances`, `finance_spending`, `finance_budget_status`, `finance_recurring` and `finance_forecast`, each labelling the truth of what it reports. Writes are P3: `run_forecast` stores a modeled projection on the scenario, and `categorize_transaction` writes an agent interpretation that is refused over a person's category.
+
+## Screens
+
+`Sources/NexusUI/FinancePlanningScreens.swift`, opened from the Money section of the Project screen: CSV import with the column mapping, preview, duplicate count and a remembered mapping; the monthly budget with editable amounts, progress and rollover; and forecasts with a scenario list, new scenarios, assumptions (labelled claimed) and a Swift Charts projection (the opening labelled recorded, the months modeled). The OFX import button also imports brokerage statements.
 
 ## Follow-ups
 
-- OFX investment statements (`INVSTMTRS`: `BUYSTOCK`, `SELLSTOCK`, `INVPOS`) should feed `Portfolio`.
 - Multi-currency totals need an explicit, recorded FX rate. Until then, mixing currencies throws.
 - Finance research should use `NexusResearch` over filings and analyst sources, with its claims attached to `security` objects.
-- A finance specialist agent (`NexusAgents`) and finance screens (`NexusUI`).
 - Splits, and transfers matched across two accounts.
+- Short positions and option exercise in investment statements.
