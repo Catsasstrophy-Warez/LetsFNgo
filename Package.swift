@@ -43,6 +43,7 @@ let package = Package(
         .library(name: "NexusResearch", targets: ["NexusResearch"]),
         .library(name: "NexusActions", targets: ["NexusActions"]),
         .library(name: "NexusAutomotive", targets: ["NexusAutomotive"]),
+        .library(name: "NexusOBDTransports", targets: ["NexusOBDTransports"]),
         .library(name: "NexusAutomation", targets: ["NexusAutomation"]),
         .library(name: "NexusFinance", targets: ["NexusFinance"]),
         .library(name: "NexusSync", targets: ["NexusSync"]),
@@ -102,7 +103,7 @@ let package = Package(
                 "NexusCore", "NexusModel", "NexusPersistence", "NexusGraph", "NexusSearch", "NexusProjects", "NexusPermissions",
                 "NexusInvestigation", "NexusSimulation", "NexusReality", "NexusRealityKit", "NexusAI", "NexusAgents", "NexusDemo",
                 "NexusTasks", "NexusDocuments", "NexusMeetings", "NexusActions", "NexusResearch", "NexusLearning",
-                "NexusVisualization", "NexusTelemetry", "NexusMeasurement", "NexusAutomotive",
+                "NexusVisualization", "NexusTelemetry", "NexusMeasurement", "NexusAutomotive", "NexusOBDTransports",
                 "NexusAutomation", "NexusFinance",
             ]
         ),
@@ -236,14 +237,17 @@ let package = Package(
             ]
         ),
         // Second domain (docs/decisions/0002-second-domain.md): garage, OBD-II/CAN, DTCs and the charging-system solver.
+        // Live adapters (ELM327 session, poller, drive recorder) record into NexusTelemetry.
         .target(
             name: "NexusAutomotive",
-            dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusSimulation", "NexusInvestigation"]
+            dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusSimulation", "NexusInvestigation", "NexusTelemetry"]
         ),
         .testTarget(
             name: "NexusAutomotiveTests",
-            dependencies: ["NexusAutomotive", "NexusInvestigation", "NexusSimulation", "NexusPersistence", "NexusGraph"]
+            dependencies: ["NexusAutomotive", "NexusInvestigation", "NexusSimulation", "NexusPersistence", "NexusGraph", "NexusTelemetry"]
         ),
+        // Apple-only: Bluetooth LE (CoreBluetooth) and Wi-Fi (Network) links to ELM327 adapters. Empty on Linux.
+        .target(name: "NexusOBDTransports", dependencies: ["NexusAutomotive"]),
         // Finance domain (docs/FINANCE.md): accounts, statement import, categories, budgets, cash flow, scenarios, investments.
         .target(name: "NexusFinance", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
         .testTarget(name: "NexusFinanceTests", dependencies: ["NexusFinance", "NexusCore", "NexusModel", "NexusPersistence"]),

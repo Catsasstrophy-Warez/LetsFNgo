@@ -30,6 +30,11 @@ extension EventKind {
     public static let troubleCodesRead: EventKind = "troubleCodesRead"
     /// An odometer reading outside a service visit.
     public static let odometerReading: EventKind = "odometerReading"
+    /// A scan-tool session with a live adapter: its start (adapter, protocol,
+    /// VIN, supported PIDs) and its end. The payload's `phase` says which.
+    public static let obdSession: EventKind = "obdSession"
+    /// A person cleared the vehicle's codes with a scan tool (service 04).
+    public static let troubleCodesCleared: EventKind = "troubleCodesCleared"
 }
 
 /// Attribute keys used on automotive objects.
@@ -52,6 +57,9 @@ public enum AutomotiveKey {
     public static let steps = "steps"
     public static let parts = "parts"
     public static let performedAt = "performedAt"
+    /// An OBD adapter instrument's stable identity ("bluetoothLE:<UUID>", "wifi:192.168.0.10:35000").
+    public static let adapterIdentifier = "adapterIdentifier"
+    public static let transport = "transport"
 }
 
 /// The vehicle subsystem a component or trouble code belongs to.
