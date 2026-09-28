@@ -49,19 +49,45 @@ Everything below this section is the original audit. This section records what t
 - **RealityKit twin:** PBR geometry for each kind of equipment, with liquid level shown on vessels. Overlay cards are always on a solid background, and truth is given in words and symbols. Alert nodes show spark particles. Signal-flow and alert-pulse Metal surface shaders fall back to plain materials if they aren't available. There are orbit and tap-to-select controls and a compact layout.
 - **Room mode (AR):** places the twin on a real table or floor using spatial tracking, with LiDAR occlusion and shadows.
 - **iPhone features:** a Live Text nameplate scanner (VisionKit) that searches for what it reads, Liquid Glass command banners, haptic feedback on confirm and on error, and Visual Intelligence results that open in the app.
+- **Automation, finished:** queued agent goals now run through `AgentRequestRunner`, with the same permission engine. An unattended run never approves anything; it stops as `blocked` with what it needs, and a person approves it in Settings → Automations → Agent goals. A request is claimed in one batch, so it never runs twice, even after a restart. Runs are rate-limited. The rule builder covers every trigger (threshold, event, schedule, task status, attribute), all/any conditions, and every action.
+- **iCloud sync (decision 0001, option B):**
+  - Change sets and blobs become CloudKit-shaped records. Blobs have their own zone.
+  - Everything is sealed with AES-GCM under a key held in iCloud Keychain.
+  - The record mapping, chunking, cursor and convergence are tested on Linux against a fake CloudKit.
+  - The CloudKit transport, the Keychain key and the FileVault check are Apple-only.
+  - Sync is off by default, and the default build doesn't need the iCloud entitlement. It is enabled with `NEXUS_CLOUDKIT_ENABLED` (docs/DEVICE.md).
+- **Finance screens:**
+  - CSV import with guessed, editable column mappings, remembered per account.
+  - Budgets with rollover.
+  - Forecast scenarios with a chart labelled recorded, modeled and claimed.
+  - OFX investment statements.
+  - Finance agent tools: read-only P0 tools, plus P3 tools for forecasts and categorising.
+- **Calendar write-back:** create and edit Calendar events from tasks, meetings and objects. Changes made in Calendar come back as recorded truth.
+- **Communications:** `.eml`/`.mbox` import into threads, messages and people, with links to the objects they mention. Email and message drafts are made from objects and reports. A message is recorded as sent only when the system says it was sent (docs/COMMUNICATIONS.md).
+- **Live OBD-II:**
+  - An ELM327 session and poller, tested against scripted real-adapter behaviour.
+  - Bluetooth LE and Wi-Fi transports.
+  - Live gauges, and reading codes and freeze frames.
+  - Clearing codes needs a person's confirmation.
+  - Live ECU values are stored as display truth.
+- **New domains:**
+  - Travel: `.ics` itineraries, boarding passes, and conflict checks.
+  - Career: roles, certifications with renewal tasks, applications, and a derived résumé.
+  - Contacts: vCard and Apple Contacts import, and a keep-in-touch cadence.
+  - Buildings: sites down to spaces, room-list CSV and IFC spaces, asset locations, and room booking.
+  - Each has read-only agent tools (docs/DOMAINS.md).
 
 ### Still unbuilt
 
-- **Sync transport:** decision 0001 (CloudKit or other) is the owner's. There's also no Keychain key wrapper for sync payloads, and macOS encryption at rest relies on FileVault.
-- **Automation gaps:** queued `agentRequest` goals aren't run by the app yet, and the rule builder covers threshold rules only.
-- **Communications:** no email or messages. Calendar events are read-only.
-- **Finance gaps:** no CSV import UI (it needs a column mapping), budgets and forecasts have no screens yet, and there are no OFX investment statements or finance agent.
-- **Other domains:** no travel, career, CRM, social or architecture domains. Creative has one text workflow, not media.
-- **Automotive:** no hardware OBD/CAN acquisition.
+- **Device checks:** nothing Apple-only has run on a physical iPhone 17 Pro Max yet. That includes AR room mode, the Metal shaders, the nameplate scanner, the on-device model, CloudKit sync, OBD adapters, Calendar write-back and the compose sheets. There has been no VoiceOver or Dynamic Type audit on a device.
+- **Own model:** it has to be trained on an Apple silicon Mac, and Core AI support waits until `coreai-models` builds for the simulator.
+- **Sync follow-ups:** push notifications for instant fetches, key rotation, cleaning up old change-set records, and re-uploading history after the iCloud data is deleted.
+- **Communications:** Apple doesn't let apps read Mail or Messages. Receiving files through the share sheet needs a Share Extension target.
+- **Automotive:** classic-Bluetooth (SPP) adapters on macOS, faster multi-PID CAN polling, and raw CAN frames.
+- **Finance:** there's no finance agent that acts on its own beyond the P3 tools. OFX sales of units bought before the statement began are skipped.
+- **Domains:** zipped `.pkpass` files aren't read, and IFC import has no geometry. Creative still has one text workflow and no media.
 - **Semantic search:** the Apple sentence embedder hasn't run on a device, and there's no ANN index beyond about 1M objects.
 - **3D:** no large-scale LOD or instancing, and no real geometry assets.
-- **Device checks:** AR room mode, the Metal shaders, the nameplate scanner and the on-device model compile and pass simulator CI but haven't run on a physical iPhone 17 Pro Max. No VoiceOver or Dynamic Type audit on a device, and no reduced-motion review.
-- **Own model:** a model trained on a Mac, and Core AI once `coreai-models` builds for the simulator.
 
 ---
 
