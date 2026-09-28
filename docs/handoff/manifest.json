@@ -1,0 +1,24 @@
+{
+  "package": "Nexus AI Handoff",
+  "codename": "Nexus",
+  "purpose": "Transfer the full conversation-derived app concept to another AI for implementation.",
+  "files": [
+    "ACCEPTANCE_TESTS.md",
+    "COMPETITIVE_RESEARCH_SYNTHESIS.md",
+    "DATA_AGENT_SIMULATION_ARCHITECTURE.md",
+    "IMPLEMENTATION_ROADMAP.md",
+    "LOCKED_DECISIONS.md",
+    "MASTER_PRODUCT_SPEC.md",
+    "Nexus_Master_Handoff.docx",
+    "Nexus_Master_Handoff.pdf",
+    "README.md",
+    "START_HERE_PROMPT.txt",
+    "UX_18_SCREEN_SYSTEM.md",
+    "conversation_requirements.md",
+    "manifest.json"
+  ],
+  "start_with": "START_HERE_PROMPT.txt",
+  "locked_architecture": "LOCKED_DECISIONS.md",
+  "golden_vertical_slice": "Instrument-loop diagnostic end-to-end workflow",
+  "note": "This is a structured, implementation-ready reconstruction of the conversation rather than a verbatim UI chat export. It preserves the requirements, research synthesis, decisions, and build plan needed by another AI."
+}

@@ -1,0 +1,41 @@
+# LoRA fine-tuning config for mlx_lm.lora (checked against mlx-lm 0.31).
+# Keys are the long flag names with underscores; flags given on the command
+# line (train.sh passes --data and --adapter-path) override these values.
+
+# Base model: a Hugging Face repo or local directory in MLX format. Check its
+# licence before training (see README step 0). Qwen3-1.7B is Apache-2.0 and
+# its chat template supports tool calls, which the transcripts need.
+model: "Qwen/Qwen3-1.7B"
+
+fine_tune_type: lora
+optimizer: adamw
+seed: 42
+
+# Adapt the last 16 transformer blocks.
+num_layers: 16
+lora_parameters:
+  rank: 16
+  scale: 20.0
+  dropout: 0.05
+
+batch_size: 4
+grad_accumulation_steps: 2
+iters: 2000
+learning_rate: 1.0e-4
+lr_schedule:
+  name: cosine_decay
+  arguments: [1.0e-4, 2000, 1.0e-6]
+  warmup: 100
+
+# Train only on the final assistant message (answer + CAUSE/NEXT_TEST lines).
+mask_prompt: true
+# Tool transcripts are long; loop diagnoses carry many predictions.
+max_seq_length: 4096
+grad_checkpoint: true
+
+steps_per_report: 10
+steps_per_eval: 200
+val_batches: 25
+save_every: 200
+# -1 scores the whole test.jsonl with --test.
+test_batches: -1

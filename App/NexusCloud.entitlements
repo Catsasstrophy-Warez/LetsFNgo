@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  iCloud (CloudKit) for sync. Used only when NEXUS_CLOUDKIT_ENABLED=YES
+  (project.yml); a free Apple ID can't sign it. See docs/DEVICE.md → iCloud sync.
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudKit</string>
+	</array>
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.$(NEXUS_BUNDLE_ID)</string>
+	</array>
+</dict>
+</plist>

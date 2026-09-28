@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch cancels older in-flight runs, so
+# superseded commits don't spend Mac runner minutes.
+concurrency:
+  group: ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  linux:
+    name: Linux (Swift 6.2)
+    runs-on: ubuntu-latest
+    container: swift:6.2-noble
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SQLite headers
+        run: apt-get update && apt-get install -y --no-install-recommends libsqlite3-dev pkg-config
+      - name: Build
+        run: swift build --build-tests
+      - name: Test
+        run: swift test --skip-build
+      # Own-model pipeline without a model (Training/README.md): generate a small
+      # dataset, run the prepare/evaluate unit tests over it, score reference
+      # answers with the Swift evaluator, and prove the promotion gate refuses
+      # a worse candidate. The swift image may lack python3, so install it.
+      - name: Training pipeline and promotion gate
+        run: |
+          if ! command -v python3 >/dev/null 2>&1; then
+            apt-get update && apt-get install -y --no-install-recommends python3
+          fi
+          python3 --version
+          Training/smoke.sh
+
+  # Compiles every Apple-only target and runs the app's UI tests. Mac runner
+  # minutes cost more, so this runs on pull requests and on demand only.
+  apple:
+    name: Apple platforms (Xcode 27)
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: xcode-27
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Build package (macOS, all targets)
+        run: swift build --build-tests
+      - name: Test package on macOS
+        run: swift test --skip-build
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Metal toolchain
+        # Xcode 27 ships the Metal compiler as a separate component; the app's
+        # RealityKit surface shaders (App/Shaders) need it.
+        run: xcodebuild -downloadComponent MetalToolchain
+      - name: Build app (iOS Simulator)
+        run: xcodebuild build -project Nexus.xcodeproj -scheme NexusApp -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO -quiet
+      - name: Build app (iOS device, arm64)
+        run: xcodebuild build -project Nexus.xcodeproj -scheme NexusApp -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO -quiet
+      - name: Build app (macOS)
+        run: xcodebuild build -project Nexus.xcodeproj -scheme NexusApp -destination 'generic/platform=macOS' CODE_SIGNING_ALLOWED=NO -quiet
+      - name: UI tests (iPhone 17 Pro Max simulator)
+        run: |
+          # The reference device is iPhone 17 Pro Max, on an iOS 27 runtime when
+          # the runner has one (the deployment target), else the newest iOS.
+          # Runner images ship only the newest phones, so make the reference
+          # device from its device type when there's no simulator for it yet.
+          if ! xcrun simctl list devices available | grep -q "iPhone 17 Pro Max ("; then
+            TYPE=$(xcrun simctl list devicetypes | sed -n 's/^iPhone 17 Pro Max (\(.*\))$/\1/p' | head -1)
+            RUNTIME=$(xcrun simctl list runtimes available | sed -n 's/^iOS .* - \(com\.apple\.CoreSimulator\.SimRuntime\.iOS-[0-9-]*\)$/\1/p' | tail -1)
+            if [ -n "$TYPE" ] && [ -n "$RUNTIME" ]; then
+              xcrun simctl create "iPhone 17 Pro Max" "$TYPE" "$RUNTIME" || echo "Couldn't create iPhone 17 Pro Max on $RUNTIME"
+            fi
+          fi
+          DEVICE=$(xcrun simctl list devices available -j | python3 .github/scripts/pick_simulator.py "iPhone 17 Pro Max")
+          echo "Simulator: $DEVICE"
+          # Build first and boot the simulator fully before testing: a runner
+          # started against a still-booting simulator can stall in bootstrap.
+          xcodebuild build-for-testing -project Nexus.xcodeproj -scheme NexusApp -destination "id=$DEVICE" CODE_SIGNING_ALLOWED=NO -quiet
+          xcrun simctl boot "$DEVICE" || true
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcodebuild test-without-building -project Nexus.xcodeproj -scheme NexusApp -destination "id=$DEVICE" CODE_SIGNING_ALLOWED=NO \
+            -resultBundlePath UITests.xcresult -collect-test-diagnostics never -quiet
+      - name: UI test failures
+        if: failure()
+        run: xcrun xcresulttool get test-results tests --path UITests.xcresult --format json | python3 .github/scripts/xcresult_failures.py

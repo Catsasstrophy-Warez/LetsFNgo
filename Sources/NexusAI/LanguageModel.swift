@@ -1,0 +1,265 @@
+import Foundation
+import NexusCore
+import NexusModel
+import NexusPermissions
+
+/// A tool the model may call. Arguments and results are plain values so any
+/// provider (Apple Foundation Models, MLX, a cloud API) can map them.
+public struct ToolSpec: Sendable, Hashable {
+    public var name: String
+    public var description: String
+    /// JSON-Schema-like description of the arguments, as a `Value.map`.
+    public var parameters: Value
+    public var permission: PermissionLevel
+
+    public init(name: String, description: String, parameters: Value = .map([:]), permission: PermissionLevel) {
+        self.name = name
+        self.description = description
+        self.parameters = parameters
+        self.permission = permission
+    }
+}
+
+public struct ToolCall: Sendable, Hashable, Identifiable {
+    public var id: String
+    public var name: String
+    public var arguments: [String: Value]
+
+    public init(id: String, name: String, arguments: [String: Value] = [:]) {
+        self.id = id
+        self.name = name
+        self.arguments = arguments
+    }
+}
+
+public struct ToolResult: Sendable, Hashable {
+    public var callID: String
+    public var content: String
+    /// Failed or refused calls are returned as errors, never dropped.
+    public var isError: Bool
+
+    public init(callID: String, content: String, isError: Bool = false) {
+        self.callID = callID
+        self.content = content
+        self.isError = isError
+    }
+}
+
+public enum Role: String, Sendable, Hashable {
+    case system
+    case user
+    case assistant
+    case tool
+}
+
+public struct ChatMessage: Sendable, Hashable {
+    public var role: Role
+    public var text: String
+    /// Assistant turns may request several tools at once.
+    public var toolCalls: [ToolCall]
+    /// A tool turn returns every result for the preceding calls together.
+    public var toolResults: [ToolResult]
+    /// Opaque provider-specific JSON for an assistant turn (for example a
+    /// cloud API's raw content blocks, including thinking). The provider that
+    /// produced it replays it verbatim; everyone else ignores it.
+    public var providerContent: String?
+
+    public init(role: Role, text: String = "", toolCalls: [ToolCall] = [], toolResults: [ToolResult] = [], providerContent: String? = nil) {
+        self.role = role
+        self.text = text
+        self.toolCalls = toolCalls
+        self.toolResults = toolResults
+        self.providerContent = providerContent
+    }
+
+    public static func system(_ text: String) -> ChatMessage { ChatMessage(role: .system, text: text) }
+    public static func user(_ text: String) -> ChatMessage { ChatMessage(role: .user, text: text) }
+}
+
+public enum StopReason: String, Sendable, Hashable {
+    case endTurn
+    case toolUse
+    case maxTokens
+    /// The model declined. Callers must check before reading the output.
+    case refusal
+}
+
+public struct Usage: Sendable, Hashable {
+    public var inputTokens: Int
+    public var outputTokens: Int
+
+    public init(inputTokens: Int = 0, outputTokens: Int = 0) {
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+    }
+
+    public static func + (lhs: Usage, rhs: Usage) -> Usage {
+        Usage(inputTokens: lhs.inputTokens + rhs.inputTokens, outputTokens: lhs.outputTokens + rhs.outputTokens)
+    }
+}
+
+public struct GenerationRequest: Sendable, Hashable {
+    public var messages: [ChatMessage]
+    public var tools: [ToolSpec]
+    public var maxOutputTokens: Int
+    /// A JSON Schema the final answer must follow. Providers that support
+    /// structured output constrain generation to it and return the parsed
+    /// document in `ModelResponse.structured`; callers still validate it.
+    public var responseSchema: JSONValue?
+
+    public init(messages: [ChatMessage], tools: [ToolSpec] = [], maxOutputTokens: Int = 4_096, responseSchema: JSONValue? = nil) {
+        self.messages = messages
+        self.tools = tools
+        self.maxOutputTokens = maxOutputTokens
+        self.responseSchema = responseSchema
+    }
+
+    /// This request with other messages; everything else is kept.
+    public func with(messages: [ChatMessage]) -> GenerationRequest {
+        var copy = self
+        copy.messages = messages
+        return copy
+    }
+}
+
+public struct ModelResponse: Sendable, Hashable {
+    public var message: ChatMessage
+    public var stopReason: StopReason
+    public var usage: Usage
+    /// The parsed answer when the request carried a `responseSchema` and the
+    /// model produced JSON. Nil otherwise. Not yet validated.
+    public var structured: JSONValue?
+
+    public init(message: ChatMessage, stopReason: StopReason, usage: Usage = Usage(), structured: JSONValue? = nil) {
+        self.message = message
+        self.stopReason = stopReason
+        self.usage = usage
+        self.structured = structured
+    }
+}
+
+/// A provider's list price per token, for cost accounting.
+public struct ModelPrice: Sendable, Hashable {
+    public var inputPerMillionTokens: Double
+    public var outputPerMillionTokens: Double
+    /// ISO 4217 code.
+    public var currency: String
+
+    public init(inputPerMillionTokens: Double, outputPerMillionTokens: Double, currency: String = "USD") {
+        self.inputPerMillionTokens = inputPerMillionTokens
+        self.outputPerMillionTokens = outputPerMillionTokens
+        self.currency = currency
+    }
+
+    /// What `usage` costs at this price.
+    public func cost(of usage: Usage) -> Double {
+        (Double(usage.inputTokens) * inputPerMillionTokens + Double(usage.outputTokens) * outputPerMillionTokens) / 1_000_000
+    }
+}
+
+/// Where a model runs, in the order the router prefers them.
+public enum ModelTier: Int, Sendable, Hashable, Comparable, CaseIterable {
+    /// Apple's system model, optionally with a Nexus adapter.
+    case onDevice = 1
+    /// A Nexus-tuned open-weights model run locally through MLX.
+    case localLarge = 2
+    /// Apple Private Cloud Compute.
+    case privateCloud = 3
+    /// A third-party cloud model. Using it is an external action (P4).
+    case thirdPartyCloud = 4
+
+    public static func < (lhs: ModelTier, rhs: ModelTier) -> Bool { lhs.rawValue < rhs.rawValue }
+
+    public var isLocal: Bool { self <= .localLarge }
+}
+
+public struct ModelDescriptor: Sendable, Hashable {
+    public var ref: ModelRef
+    public var tier: ModelTier
+    public var contextTokens: Int
+    public var supportsTools: Bool
+    public var supportsImages: Bool
+    /// Per-token price, when the provider charges for use. Nil for local
+    /// models and for providers whose price is unknown.
+    public var price: ModelPrice?
+
+    public init(
+        ref: ModelRef,
+        tier: ModelTier,
+        contextTokens: Int,
+        supportsTools: Bool = true,
+        supportsImages: Bool = false,
+        price: ModelPrice? = nil
+    ) {
+        self.ref = ref
+        self.tier = tier
+        self.contextTokens = contextTokens
+        self.supportsTools = supportsTools
+        self.supportsImages = supportsImages
+        self.price = price
+    }
+}
+
+/// Runs one tool call on behalf of a provider that executes tools itself.
+public typealias ToolHandler = @Sendable (ToolCall) async -> ToolResult
+
+/// One piece of a streamed response.
+public enum ModelEvent: Sendable, Hashable {
+    /// Text as it is generated. The concatenated deltas equal the final text.
+    case textDelta(String)
+    /// The finished response. Always the last event of a successful stream.
+    case completed(ModelResponse)
+}
+
+/// Any language model Nexus can talk to. Implementations live in
+/// platform targets (Foundation Models, MLX, cloud); tests use `ScriptedModel`.
+///
+/// Some providers (Apple's Foundation Models) execute tools inside their own
+/// session. They receive a `ToolHandler` and call it for every tool call, so
+/// the caller's permission checks and ledger apply exactly as when the model
+/// returns `.toolUse` and the caller runs the tools.
+public protocol LanguageModelProvider: Sendable {
+    var descriptor: ModelDescriptor { get }
+    func respond(to request: GenerationRequest) async throws -> ModelResponse
+    /// Providers that run their own tool loop call `toolHandler` for every
+    /// tool call and return a final (non-toolUse) response. The default
+    /// ignores the handler and calls `respond(to:)`.
+    func respond(to request: GenerationRequest, toolHandler: @escaping ToolHandler) async throws -> ModelResponse
+    /// Streams output. Default: one `.completed` event from `respond(to:toolHandler:)`.
+    func stream(to request: GenerationRequest, toolHandler: @escaping ToolHandler) -> AsyncThrowingStream<ModelEvent, Error>
+    /// The provider's own token count for `messages`, or nil to use the
+    /// `ContextBudget` heuristic. Default: nil.
+    func countTokens(_ messages: [ChatMessage]) async throws -> Int?
+}
+
+extension LanguageModelProvider {
+    public func respond(to request: GenerationRequest, toolHandler: @escaping ToolHandler) async throws -> ModelResponse {
+        try await respond(to: request)
+    }
+
+    public func stream(to request: GenerationRequest, toolHandler: @escaping ToolHandler) -> AsyncThrowingStream<ModelEvent, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    let response = try await respond(to: request, toolHandler: toolHandler)
+                    continuation.yield(.completed(response))
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    public func countTokens(_ messages: [ChatMessage]) async throws -> Int? { nil }
+}
+
+public enum AIError: Error, Equatable, Sendable {
+    case noEligibleModel
+    case scriptExhausted
+    /// The request does not fit the model's context window even after trimming.
+    case contextTooLarge
+    /// A stream ended without a `.completed` event.
+    case incompleteResponse
+}
