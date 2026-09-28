@@ -87,9 +87,15 @@ public struct RootView: View {
         }
         .commandPresentation()
         .task {
-            // Schedule triggers and time-based start conditions, once a minute.
+            // Schedule triggers and time-based start conditions, once a minute,
+            // then the agent goals automations queued (when a model is installed).
+            // The drain runs on its own task, so a long agent run neither delays
+            // the next tick nor is cancelled with this view.
             while !Task.isCancelled {
                 _ = try? env.automation.tick(now: Date())
+                if env.agents != nil {
+                    Task { await env.drainAgentRequests() }
+                }
                 try? await Task.sleep(for: .seconds(60))
             }
         }

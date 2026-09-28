@@ -124,10 +124,14 @@ let package = Package(
         .target(name: "ControlsTraining", dependencies: ["ControlsPLC", "ControlsSimulation"]),
         .target(name: "NexusTasks", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph"]),
         .target(name: "NexusDocuments", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
-        // Automation runtime: rules as `automation` objects, change-feed triggers, schedules and conditional tasks.
+        // Automation runtime: rules as `automation` objects, change-feed triggers, schedules and conditional tasks,
+        // and the runner that carries out queued agent goals through NexusAgents.
         .target(
             name: "NexusAutomation",
-            dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusPermissions", "NexusProjects", "NexusTasks", "NexusActions"]
+            dependencies: [
+                "NexusCore", "NexusModel", "NexusPersistence", "NexusPermissions", "NexusProjects", "NexusTasks", "NexusActions", "NexusAI",
+                "NexusAgents",
+            ]
         ),
         // Units, uncertainty and instruments, with adapters for the trainer's evidence types.
         .target(name: "NexusMeasurement", dependencies: ["NexusCore", "NexusModel", "ControlsPLC", "ControlsReasoning"]),
@@ -204,8 +208,8 @@ let package = Package(
         .testTarget(
             name: "NexusAutomationTests",
             dependencies: [
-                "NexusAutomation", "NexusActions", "NexusCore", "NexusInvestigation", "NexusModel", "NexusPermissions", "NexusPersistence",
-                "NexusProjects", "NexusTasks",
+                "NexusAutomation", "NexusActions", "NexusAgents", "NexusAI", "NexusCore", "NexusInvestigation", "NexusModel", "NexusPermissions",
+                "NexusPersistence", "NexusProjects", "NexusTasks",
             ]
         ),
         .testTarget(name: "NexusDocumentsTests", dependencies: ["NexusDocuments"]),

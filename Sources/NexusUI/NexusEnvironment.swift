@@ -47,6 +47,9 @@ public final class NexusEnvironment {
     public let automation: AutomationRuntime
     /// Set by the app once a language model is available on this device.
     public var agents: AgentRuntime?
+    /// Agent goals automations queued: listed, approved and cancelled
+    /// without a model; run by `drainAgentRequests()` once there is one.
+    public let agentRequests: AgentRequestQueue
     /// Names of the installed language models, for Settings.
     public var installedModels: [String] = []
     /// Rebuilds the model list, e.g. after a cloud key changes. Set by the app.
@@ -66,6 +69,10 @@ public final class NexusEnvironment {
     public let user: Origin
 
     @ObservationIgnored private var observation: ChangeObservation?
+    @ObservationIgnored private var requestRunner: AgentRequestRunner?
+    /// Shared by every runner this launch, so replacing the models doesn't
+    /// mark the runs still going as interrupted.
+    private let requestSession = UUID().uuidString
 
     public init(store: NexusStore, user: Origin = .user(id: "local"), seedDemo: Bool = false) throws {
         self.store = store
@@ -90,6 +97,7 @@ public final class NexusEnvironment {
             learning: learning, searchEngine: search, actor: user, loops: loops
         )
         automation = AutomationRuntime(store: store, permissions: permissions, loops: loops)
+        agentRequests = AgentRequestQueue(store: store)
         // Observable properties are set only once every stored `let` is.
         demo = seeded
         commands.env = self
@@ -122,6 +130,22 @@ public final class NexusEnvironment {
         } catch {
             fatalError("Preview environment failed: \(error)")
         }
+    }
+
+    /// Runs pending agent goals through `agents`, within the runner's
+    /// concurrency and rate limits. Nothing happens until a model is
+    /// installed. Approval prompts go unanswered: a run that needs one ends
+    /// blocked, for a person to approve in Settings → Automations.
+    public func drainAgentRequests() async {
+        guard let agents else { return }
+        let runner: AgentRequestRunner
+        if let existing = requestRunner, existing.agents === agents {
+            runner = existing
+        } else {
+            runner = AgentRequestRunner(agents: agents, session: requestSession)
+            requestRunner = runner
+        }
+        _ = try? await runner.drain(privacy: ModelPrivacy.current.requirement)
     }
 
     // MARK: Convenience reads (views call these inside `body`)
