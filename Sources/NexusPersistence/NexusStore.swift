@@ -260,6 +260,7 @@ public final class NexusStore: @unchecked Sendable {
                     kind: .objectEdited, subjects: [id], summary: "Edited \(written.title)\(changes.summarySuffix)",
                     payload: changes.payload, author: author, revision: written.revision
                 )
+                try stampFieldClocks(from: old, to: written, by: author)
                 return written
             }
         }
@@ -315,11 +316,11 @@ public final class NexusStore: @unchecked Sendable {
         }
     }
 
-    private func exists(_ id: ObjectID) throws -> Bool {
+    func exists(_ id: ObjectID) throws -> Bool {
         try !db.query("SELECT 1 FROM objects WHERE id = ?", [.text(id.description)]) { _ in true }.isEmpty
     }
 
-    private func requireExists(_ id: ObjectID) throws {
+    func requireExists(_ id: ObjectID) throws {
         guard try exists(id) else { throw StoreError.notFound(id) }
     }
 
@@ -342,7 +343,7 @@ public final class NexusStore: @unchecked Sendable {
         return (row.0, row.1)
     }
 
-    private func insertObject(_ record: ObjectRecord, instruction: String?) throws -> ObjectRecord {
+    func insertObject(_ record: ObjectRecord, instruction: String?) throws -> ObjectRecord {
         var record = record
         let revision = RevisionID.make()
         record.revision = revision
@@ -474,8 +475,10 @@ public final class NexusStore: @unchecked Sendable {
 
     // MARK: Relationships
 
+    /// Stores a new relationship and its first revision, authored by the
+    /// relationship's own provenance origin.
     @discardableResult
-    public func relate(_ relationship: Relationship) throws -> Relationship {
+    public func relate(_ relationship: Relationship, instruction: String? = nil) throws -> Relationship {
         try locked {
             try transaction {
                 try relationship.validate()
@@ -497,6 +500,10 @@ public final class NexusStore: @unchecked Sendable {
                 )
                 try logChange(relationship.from, .related)
                 try logChange(relationship.to, .related)
+                try recordRelationshipRevision(
+                    relationship, author: relationship.provenance.origin, instruction: instruction,
+                    at: relationship.provenance.timestamp
+                )
                 return relationship
             }
         }
@@ -512,7 +519,7 @@ public final class NexusStore: @unchecked Sendable {
     /// Ending a recorded or observed relationship is limited to users and the
     /// system, the same rule as removing a protected attribute.
     @discardableResult
-    public func end(_ id: ObjectID, at date: Date, by author: Origin) throws -> Relationship {
+    public func end(_ id: ObjectID, at date: Date, by author: Origin, instruction: String? = nil) throws -> Relationship {
         try locked {
             try transaction {
                 guard var relationship = try fetchRelationship(id) else { throw StoreError.notFound(id) }
@@ -533,12 +540,15 @@ public final class NexusStore: @unchecked Sendable {
                 )
                 try logChange(relationship.from, .related)
                 try logChange(relationship.to, .related)
+                let now = clock.now()
+                try recordRelationshipRevision(relationship, author: author, instruction: instruction ?? "End", at: now)
+                try stampFieldClock(entity: id, field: "validTo", at: now, by: author)
                 return relationship
             }
         }
     }
 
-    private func fetchRelationship(_ id: ObjectID) throws -> Relationship? {
+    func fetchRelationship(_ id: ObjectID) throws -> Relationship? {
         try db.query("SELECT record FROM relationships WHERE id = ?", [.text(id.description)]) {
             try decode(Relationship.self, $0, table: "relationships")
         }.first
@@ -572,7 +582,7 @@ public final class NexusStore: @unchecked Sendable {
         }
     }
 
-    private func insertEvent(_ event: Event) throws {
+    func insertEvent(_ event: Event) throws {
         try event.validate()
         for subject in event.subjects {
             try requireExists(subject)
@@ -908,7 +918,7 @@ public final class NexusStore: @unchecked Sendable {
         }
     }
 
-    private func logChange(_ id: ObjectID, _ kind: StoreChange.Kind) throws {
+    func logChange(_ id: ObjectID, _ kind: StoreChange.Kind) throws {
         let now = clock.now()
         try db.run(
             "INSERT INTO changes (object_id, kind, at) VALUES (?, ?, ?)",

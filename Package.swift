@@ -45,6 +45,14 @@ let package = Package(
         .library(name: "NexusAutomotive", targets: ["NexusAutomotive"]),
         .library(name: "NexusAutomation", targets: ["NexusAutomation"]),
         .library(name: "NexusFinance", targets: ["NexusFinance"]),
+        .library(name: "NexusSync", targets: ["NexusSync"]),
+    ],
+    dependencies: [
+        // AES-GCM for sync payloads off Apple platforms; Apple platforms use CryptoKit.
+        // Held below 3.10: from 3.10 its BoringSSL is C++, and on Linux a C++ link
+        // fails against Swift 6.2's libswiftObservation (undefined
+        // swift::threading::fatal), which ControlsReasoning and NexusProjects import.
+        .package(url: "https://github.com/apple/swift-crypto.git", "3.9.0"..<"3.10.0")
     ],
     targets: [
         .target(name: "NexusCore"),
@@ -135,7 +143,7 @@ let package = Package(
         .executableTarget(name: "NexusBenchmarks", dependencies: ["NexusCore", "NexusModel", "NexusPersistence", "NexusGraph"]),
         .testTarget(name: "NexusCoreTests", dependencies: ["NexusCore"]),
         .testTarget(name: "NexusModelTests", dependencies: ["NexusModel"]),
-        .testTarget(name: "NexusPersistenceTests", dependencies: ["NexusPersistence"]),
+        .testTarget(name: "NexusPersistenceTests", dependencies: ["NexusPersistence", "NexusCore", "NexusModel"]),
         .testTarget(name: "NexusGraphTests", dependencies: ["NexusGraph"]),
         .testTarget(name: "NexusSearchTests", dependencies: ["NexusSearch", "NexusCore", "NexusModel", "NexusPersistence", "NexusGraph"]),
         .testTarget(name: "NexusProjectsTests", dependencies: ["NexusProjects", "NexusSearch"]),
@@ -239,5 +247,14 @@ let package = Package(
         // Finance domain (docs/FINANCE.md): accounts, statement import, categories, budgets, cash flow, scenarios, investments.
         .target(name: "NexusFinance", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
         .testTarget(name: "NexusFinanceTests", dependencies: ["NexusFinance", "NexusCore", "NexusModel", "NexusPersistence"]),
+        // Transport-independent sync (docs/decisions/0001-sync-backup-encryption.md): engine, transports, payload encryption.
+        .target(
+            name: "NexusSync",
+            dependencies: [
+                "NexusCore", "NexusModel", "NexusPersistence",
+                .product(name: "Crypto", package: "swift-crypto", condition: .when(platforms: [.linux, .android, .windows])),
+            ]
+        ),
+        .testTarget(name: "NexusSyncTests", dependencies: ["NexusSync", "NexusPersistence", "NexusModel", "NexusCore"]),
     ]
 )

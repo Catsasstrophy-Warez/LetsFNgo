@@ -200,6 +200,7 @@ extension NexusStore {
                     summary: "Restored \(written.title) to revision \(target.sequence)\(changes.summarySuffix)",
                     payload: payload, author: origin, revision: written.revision
                 )
+                try stampFieldClocks(from: current, to: written, by: origin)
                 return written
             }
         }
@@ -246,6 +247,7 @@ extension NexusStore {
                     payload: ["from": .string(current.lifecycle.rawValue), "to": .string(lifecycle.rawValue)],
                     author: origin, revision: written.revision
                 )
+                try stampFieldClocks(from: current, to: written, by: origin)
                 return written
             }
         }
