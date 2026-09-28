@@ -43,6 +43,7 @@ let package = Package(
         .library(name: "NexusResearch", targets: ["NexusResearch"]),
         .library(name: "NexusActions", targets: ["NexusActions"]),
         .library(name: "NexusAutomotive", targets: ["NexusAutomotive"]),
+        .library(name: "NexusFinance", targets: ["NexusFinance"]),
     ],
     targets: [
         .target(name: "NexusCore"),
@@ -216,5 +217,8 @@ let package = Package(
             name: "NexusAutomotiveTests",
             dependencies: ["NexusAutomotive", "NexusInvestigation", "NexusSimulation", "NexusPersistence", "NexusGraph"]
         ),
+        // Finance domain (docs/FINANCE.md): accounts, statement import, categories, budgets, cash flow, scenarios, investments.
+        .target(name: "NexusFinance", dependencies: ["NexusCore", "NexusModel", "NexusPersistence"]),
+        .testTarget(name: "NexusFinanceTests", dependencies: ["NexusFinance", "NexusCore", "NexusModel", "NexusPersistence"]),
     ]
 )
