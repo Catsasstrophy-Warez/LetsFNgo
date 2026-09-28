@@ -46,17 +46,39 @@ Apple ID, the app expires after 7 days and must be re-signed.
 
 ### C. Xcode on a Mac
 
-1. On a Mac with Xcode 27 (iOS 27 SDK):
-   ```sh
-   brew install xcodegen
-   xcodegen generate
-   open Nexus.xcodeproj
-   ```
-2. In the NexusApp and NexusWidgets targets, open Signing & Capabilities and
-   choose your team. A free Apple ID works too.
-3. Connect the iPhone and turn on Developer Mode (Settings → Privacy &
-   Security). Pick the phone as the run destination and run the `NexusApp`
-   scheme.
+One-time setup:
+- Install Xcode 27 or later.
+- Sign in to your Apple ID in Xcode → Settings → Accounts. A free Apple ID
+  works; the app then needs reinstalling every 7 days.
+- Connect the iPhone with a cable, unlock it and tap Trust.
+- Turn on Developer Mode on the phone (Settings → Privacy & Security →
+  Developer Mode). It restarts the phone.
+
+Then, from the repository:
+
+```sh
+scripts/install-on-iphone.sh
+```
+
+The script:
+- finds your team from your Apple Development certificate (or pass the
+  team ID as an argument);
+- installs XcodeGen and generates the project;
+- downloads the Metal toolchain the first time;
+- builds for iOS 27 and registers the phone with automatic signing;
+- installs the app and launches it.
+
+If `com.catsasstrophy.nexus` isn't registered to your team, choose your
+own prefix:
+`BUNDLE_ID_PREFIX=com.yourname.nexus scripts/install-on-iphone.sh`.
+
+The first time the app opens, the phone may say "Untrusted Developer". Go to
+Settings → General → VPN & Device Management, tap your Apple ID, then Trust.
+
+To use Xcode directly instead, run `xcodegen generate` and open
+`Nexus.xcodeproj`. Choose your team in Signing & Capabilities for the
+NexusApp and NexusWidgets targets, pick the phone as the destination, and
+run.
 
 With any of these, launching with `-demo` (in Xcode: Edit Scheme →
 Arguments) gives an in-memory demo world. Without it, the app uses the

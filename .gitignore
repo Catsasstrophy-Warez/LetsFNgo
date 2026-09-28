@@ -5,3 +5,5 @@ DerivedData/
 .DS_Store
 .claude/worktrees/
 Nexus.xcodeproj/
+build/
+project.local.yml
