@@ -26,12 +26,13 @@ Everything below this section is the original audit. This section records what t
 | Simulation | **Partial.** Thermal and mechanical solvers, induction motor and contactor coil adapted from the trainer, events and async runs added. Economic, environment and vehicle-dynamics solvers are missing. |
 | Second domain | **Built (core).** `NexusAutomotive` covers VIN, OBD-II Mode 01/03/07/09, ELM327, CAN/DBC, 48 DTCs, a charging-system solver and an end-to-end diagnosis. It has no UI yet. |
 | Own model | **Partial.** MLX LoRA pipeline (`Training/`), the evaluator, a registry `register` step behind the gate, and the gate proven in CI (`Training/smoke.sh`). No model has been trained; that needs an Apple silicon Mac. |
+| Automation | **Built (runtime), no UI.** `NexusAutomation` stores rules as `automation` objects with triggers on events, measurement thresholds (hysteresis; observed and recorded only by default, never modeled), task status, attributes and schedules. Actions run commands, create tasks, queue agent goals as `agentRequest` objects and notify. Rules follow the change feed with a saved cursor per rule, so they don't fire twice after a reload. Each firing is one batch that rolls back on failure, logged as an `automationRun` event. There is a loop depth limit and a rate limit. P3 actions need a policy grant; P4 and P5 need a grant that names the automation and the action, and otherwise wait for a person to approve. Conditional tasks ("starts when TB-4 voltage > 20 V") start when their condition holds, and `TaskRuntime.conditions(for:)` gives the text. Schedules run from `tick(now:)`. The app doesn't start the runtime or a timer yet, and the Calendar doesn't show conditions yet. |
 | Apple surfaces | **Built.** The Live Activity follows agent runs, speech transcribes in Meetings, nameplate photos search, Writing Tools are on in notes, meetings and artifacts. |
 
 ### Still unbuilt
 
 - **Semantic search:** there are no embeddings; semantic search is only a protocol.
-- **Automation runtime** (`NexusAutomation`: triggers, conditional tasks tied to system states). Calendar "conditional" means task dependencies for now.
+- **Automation in the app:** `NexusAutomation` is built, but the app doesn't start it or tick its schedules. There's no rule editor, the Calendar doesn't show start conditions, and nothing runs queued `agentRequest` goals.
 - **Communications:** no EventKit, email or messages.
 - **Rendering:** no Metal renderer, and no large-scale LOD or instancing in 3D.
 - **Input methods:** no iPad Pencil markup and no iPhone swipe gestures. There's no high-contrast or reduced-motion work and no device accessibility audit.
