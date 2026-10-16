@@ -1,16 +1,19 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import type { DynoPull } from '../lib/dyno';
 
 const SERIES = ['var(--accent)', 'var(--accent-2)', 'var(--ok)', 'var(--warn)', 'var(--muted)'];
 
+import { tr } from '../lib/i18n';
+import { ChartTable, ChartTip, pointProps } from './ChartA11y';
+
 /**
  * Overlay of dyno curves: power solid, torque dashed, one color per pull (max 5).
- * role="img" with a text summary; the data table is in <details>.
+ * A labelled group with a text summary; every power point is keyboard-focusable (roving tabindex, arrow keys) with
+ * a tooltip, and a visually hidden data table per pull can be shown on screen.
  */
-import { tr } from '../lib/i18n';
-
 export function DynoChart({ pulls, label }: { pulls: DynoPull[]; label: (p: DynoPull) => string }) {
   const id = useId();
+  const [hover, setHover] = useState<number | null>(null);
   const ps = pulls.filter((p) => p.curve.length >= 2).slice(0, SERIES.length);
   if (!ps.length) return <p className="muted small">{tr('dynochart.empty')}</p>;
   const W = 640, H = 300, P = { l: 64, r: 16, t: 16, b: 40 };
@@ -27,10 +30,14 @@ export function DynoChart({ pulls, label }: { pulls: DynoPull[]; label: (p: Dyno
     const hp = Math.max(...p.curve.map((c) => c.hp ?? 0)), tq = Math.max(...p.curve.map((c) => c.tq ?? 0));
     return tr('dynochart.peak', { l: label(p), hp: hp.toFixed(0), tq: tq ? `, ${tq.toFixed(0)} lb-ft` : '' });
   }).join('; ');
+  // Focusable points: each pull's power readings (torque where a row has no power), in pull then rpm order.
+  const pts = ps.flatMap((p, pi) => p.curve.filter((c) => c.hp !== null || c.tq !== null).map((c) => ({ pi, rpm: c.rpm, v: (c.hp ?? c.tq)!, kind: c.hp !== null ? 'whp' : 'lb-ft', tq: c.tq, name: label(p) })));
+  const tip = (q: (typeof pts)[number]) => `${q.name} · ${q.rpm} rpm: ${q.v} ${q.kind}${q.kind === 'whp' && q.tq !== null ? `, ${q.tq} lb-ft` : ''}`;
+  const hp = hover !== null ? pts[hover] : null;
   return (
     <figure className="chart">
       <figcaption className="chart-t">{tr('dynochart.title')}</figcaption>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-labelledby={`${id}-d`} className="chart-svg">
+      <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label={tr('dynochart.title')} aria-describedby={`${id}-d`} className="chart-svg" onMouseLeave={() => setHover(null)}>
         <desc id={`${id}-d`}>{tr('dynochart.desc', { n: ps.length, a: r0, b: r1, s: summary })}</desc>
         {ticks.map((t, i) => <g key={i}><line x1={P.l} x2={W - P.r} y1={y(t)} y2={y(t)} className="chart-grid" /><text x={P.l - 8} y={y(t) + 6} textAnchor="end" className="chart-axis">{t.toFixed(0)}</text></g>)}
         <text x={P.l} y={H - 10} className="chart-axis">{r0} rpm</text>
@@ -41,16 +48,22 @@ export function DynoChart({ pulls, label }: { pulls: DynoPull[]; label: (p: Dyno
             <polyline points={line(p, 'tq')} strokeDasharray="7 5" />
           </g>
         ))}
+        {pts.map((q, i) => (
+          <g key={i} {...pointProps(i, pts.length, hover ?? 0, tip(q), setHover)} onBlur={() => setHover(null)}>
+            <circle cx={x(q.rpm)} cy={y(q.v)} r={hover === i ? 6 : 3} className="chart-dot" style={{ fill: SERIES[q.pi] }} />
+          </g>
+        ))}
+        {hp && <ChartTip x={x(hp.rpm)} y={y(hp.v)} W={W} top={P.t} text={tip(hp)} />}
       </svg>
       <ul className="legend-list">
         {ps.map((p, i) => <li key={p.id}><span className="swatch-line" style={{ background: SERIES[i] }} aria-hidden /> {label(p)}</li>)}
       </ul>
-      <details className="small"><summary>{tr('chart.table')}</summary>
+      <ChartTable>
         {ps.map((p) => (
-          <table className="tbl" key={p.id}><caption>{label(p)}</caption><thead><tr><th>rpm</th><th>whp</th><th>lb-ft</th></tr></thead>
+          <table className="tbl chart-tbl" key={p.id}><caption>{label(p)} — {tr('chart.table')}</caption><thead><tr><th scope="col">rpm</th><th scope="col">whp</th><th scope="col">lb-ft</th></tr></thead>
             <tbody>{p.curve.map((c, i) => <tr key={i}><td>{c.rpm}</td><td>{c.hp ?? '—'}</td><td>{c.tq ?? '—'}</td></tr>)}</tbody></table>
         ))}
-      </details>
+      </ChartTable>
     </figure>
   );
 }

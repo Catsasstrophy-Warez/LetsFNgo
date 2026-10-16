@@ -18,7 +18,8 @@ export default function Parts({ fp = fpCatalog }: { fp?: FpCatalogItem[] }) {
   const list = filterParts(q);
   const copy = async (id: string, number: string) => setCopied({ id, ok: await copyText(number) });
   const tab = params.get('tab') === 'fp' ? 'fp' : 'fluids';
-  const setTab = (x: 'fp' | 'fluids') => setParams(x === 'fp' ? { tab: 'fp' } : {}, { replace: true });
+  // Switching tabs keeps the fluids search (q) so coming back does not lose it.
+  const setTab = (x: 'fp' | 'fluids') => setParams({ ...(q ? { q } : {}), ...(x === 'fp' ? { tab: 'fp' } : {}) }, { replace: true });
   const tabBtn = (x: 'fp' | 'fluids', label: string) => (
     <button role="tab" id={`tab-${x}`} aria-controls={`panel-${x}`} aria-selected={tab === x} tabIndex={tab === x ? 0 : -1} className={tab === x ? 'on' : ''}
       onClick={() => setTab(x)} onKeyDown={(e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const n = x === 'fp' ? 'fluids' : 'fp'; setTab(n); document.getElementById(`tab-${n}`)?.focus(); } }}>{label}</button>

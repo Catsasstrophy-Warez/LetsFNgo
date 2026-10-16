@@ -6,6 +6,9 @@ export default defineConfig({
   timeout: 60_000,
   fullyParallel: true,
   reporter: [['list']],
+  // Visual regression baselines (e2e/visual.spec.ts) are platform-independent paths; update with `npm run e2e:update-visual`.
+  snapshotPathTemplate: '{testDir}/__screenshots__/{testFileName}/{arg}{ext}',
+  expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.03, threshold: 0.25, animations: 'disabled', caret: 'hide', scale: 'css' } },
   use: { baseURL: 'http://127.0.0.1:4173/', browserName: 'chromium' },
   projects: [
     { name: 'mobile', use: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } },

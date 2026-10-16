@@ -1,11 +1,11 @@
-:root, :root[data-theme='dark'] {
+:root, [data-theme='dark'] {
   --bg: #0d0f12; --surface: #161a20; --surface-2: #1e232b; --text: #eceff3; --muted: #9aa3ae;
   --border: #2a313b; --accent: #f5675a; --accent-btn: #c62f25; --accent-2: #4f8cff;
   --ok: #3fb672; --warn: #e0a526; --bad: #ef5350;
   --b-confirmed-bg: #12361f; --b-confirmed: #6fdc97; --b-reported-bg: #13284a; --b-reported: #8fb8ff; --b-unverified-bg: #3d2c0b; --b-unverified: #f2c56b;
   color-scheme: dark;
 }
-:root[data-theme='light'] {
+[data-theme='light'] {
   --bg: #f4f5f7; --surface: #ffffff; --surface-2: #eef0f3; --text: #14171c; --muted: #5a6370;
   --border: #d9dde3; --accent: #c8102e; --accent-btn: #c8102e; --accent-2: #1f5fd6;
   --ok: #19803f; --warn: #9a6a00; --bad: #c62828;
@@ -360,3 +360,31 @@ kbd { font: 600 .8rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; border: 
 .help-list > div { padding: .5rem 0; border-bottom: 1px solid var(--border); }
 .help-list dt { font-weight: 600; } .help-list dd { margin: .2rem 0 0; color: var(--text); }
 .fit-note { color: var(--b-unverified); }
+
+/* Data coverage */
+.cov-bar { display: flex; height: 14px; border-radius: 7px; overflow: hidden; border: 1px solid var(--border); margin: .5rem 0; }
+.cov-seg { display: block; height: 100%; }
+.cov-confirmed { background: var(--ok); } .cov-reported { background: var(--warn); } .cov-unverified { background: var(--muted); }
+.cov-list { list-style: none; padding: 0; margin: .5rem 0; display: grid; gap: .5rem; }
+.cov-list > li { overflow-wrap: anywhere; }
+.cov-group { margin: .5rem 0; } .cov-group summary { cursor: pointer; padding: .3rem 0; }
+
+/* Chart accessibility: focusable points and tooltip */
+.chart-pt { cursor: pointer; outline: none; }
+.chart-pt:focus-visible .chart-dot, .chart-pt:focus .chart-dot { stroke: var(--text); stroke-width: 3; }
+.chart-tip rect { fill: var(--surface); stroke: var(--border); }
+.chart-tip text { fill: var(--text); font-size: 18px; font-weight: 700; }
+.chart-tbl { display: table; overflow: visible; }
+.chart-tbl caption { text-align: left; }
+.chart-tbl-btn { margin-top: .25rem; }
+.chart-hit { fill: transparent; }
+
+/* Respect reduced-motion: no transitions, animations or smooth scrolling. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Dev component gallery */
+.gallery { display: grid; gap: 1rem; }
+@media (min-width: 1000px) { .gallery { grid-template-columns: 1fr 1fr; } }
+.gallery-panel { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 16px; padding: 1rem; min-width: 0; }

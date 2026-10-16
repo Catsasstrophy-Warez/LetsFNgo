@@ -24,8 +24,20 @@ function swVersion(): Plugin {
   };
 }
 
+/**
+ * Dev server only: Vite injects CSS as <style> tags (and React refresh as an inline script), which the strict CSP
+ * blocks, so `npm run dev` (and the /dev/gallery page) rendered unstyled. Production builds keep the strict CSP.
+ */
+function devCsp(): Plugin {
+  return {
+    name: 'dev-csp',
+    apply: 'serve',
+    transformIndexHtml: (html) => html.replace("style-src 'self'", "style-src 'self' 'unsafe-inline'").replace("script-src 'self'", "script-src 'self' 'unsafe-inline'").replace("connect-src 'self'", "connect-src 'self' ws: wss:"),
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), swVersion()],
+  plugins: [react(), swVersion(), devCsp()],
   base: './',
   test: { include: ['tests/**/*.test.{ts,tsx}'], setupFiles: ['tests/setup.ts'] },
 });

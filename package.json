@@ -14,7 +14,10 @@
     "cap:sync": "npm run build && npx cap sync",
     "cap:ios": "npx cap open ios",
     "cap:android": "npx cap open android",
-    "lighthouse": "node scripts/lighthouse.mjs"
+    "lighthouse": "node scripts/lighthouse.mjs",
+    "validate:data": "node scripts/validate-data.mjs",
+    "check:links": "node scripts/check-links.mjs",
+    "e2e:update-visual": "playwright test e2e/visual.spec.ts --project=mobile --update-snapshots"
   },
   "repository": {
     "type": "git",

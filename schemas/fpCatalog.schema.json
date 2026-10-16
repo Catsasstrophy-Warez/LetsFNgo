@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Catsasstrophy-Warez/LetsFNgo/schemas/fpCatalog.schema.json",
+  "title": "GT500 Companion — fpCatalog",
+  "description": "Array of fpCatalog records (src/data). Every record cites an https source and a confidence level; unknowns are null with a note.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "number",
+      "name",
+      "msrp",
+      "priceAsOf",
+      "emissions",
+      "fitmentYears",
+      "fitmentExplicit",
+      "category",
+      "research",
+      "source",
+      "confidence"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "number": {
+        "type": "string",
+        "pattern": "^M-[\\w-]+$"
+      },
+      "name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "msrp": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "priceAsOf": {
+        "anyOf": [
+          {
+            "type": "string",
+            "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?$"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "emissions": {
+        "enum": [
+          "carb-eo",
+          "50-state-legal",
+          "not-legal-for-road",
+          null
+        ]
+      },
+      "fitmentYears": {
+        "type": "array",
+        "items": {
+          "enum": [
+            2020,
+            2021,
+            2022
+          ]
+        }
+      },
+      "fitmentExplicit": {
+        "type": "boolean"
+      },
+      "category": {
+        "enum": [
+          "Body & aero",
+          "Engine",
+          "Fuel & cooling",
+          "Driveline",
+          "Appearance"
+        ]
+      },
+      "research": {
+        "enum": [
+          "high",
+          "medium",
+          "low"
+        ]
+      },
+      "source": {
+        "$ref": "#/$defs/source"
+      },
+      "confidence": {
+        "$ref": "#/$defs/confidence"
+      },
+      "note": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "additionalProperties": false
+  },
+  "$defs": {
+    "source": {
+      "type": "string",
+      "pattern": "^https://\\S+$"
+    },
+    "confidence": {
+      "enum": [
+        "confirmed",
+        "reported",
+        "unverified"
+      ]
+    },
+    "conflict": {
+      "type": "object",
+      "required": [
+        "value",
+        "source",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "context": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "numberValue": {
+      "type": "object",
+      "required": [
+        "value",
+        "source",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "context": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "stringValue": {
+      "type": "object",
+      "required": [
+        "value",
+        "source",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "context": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

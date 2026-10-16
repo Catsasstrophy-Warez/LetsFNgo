@@ -6,7 +6,7 @@ import { mkdirSync, readFileSync, existsSync } from 'node:fs';
 
 const chrome = process.env.CHROME_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 if (!existsSync(chrome)) { console.error(`Chromium not found at ${chrome}; set CHROME_PATH.`); process.exit(1); }
-const routes = process.argv.slice(2).length ? process.argv.slice(2) : ['/', '/specs', '/parts', '/guides/track-service', '/sources'];
+const routes = process.argv.slice(2).length ? process.argv.slice(2) : ['/', '/specs', '/parts', '/guides/track-service', '/sources', '/coverage'];
 const port = 4175;
 const server = spawn('npx', ['vite', 'preview', '--port', String(port), '--strictPort', '--host', '127.0.0.1'], { stdio: 'ignore' });
 await new Promise((r) => setTimeout(r, 2500));

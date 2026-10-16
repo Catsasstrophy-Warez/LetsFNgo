@@ -23,10 +23,10 @@ export function isDismissed(s: InstallState, today: string, days = DISMISS_DAYS)
   return Number.isFinite(ms) && ms >= 0 && ms < days * 86_400_000;
 }
 
-/** iPhone/iPad Safari (incl. iPadOS that reports as Mac with touch), not other iOS browsers that cannot install. */
+/** iPhone/iPad Safari (incl. iPadOS that reports as Mac with touch), not other iOS browsers or in-app browsers (Google app, Facebook, Instagram) that cannot add to the Home Screen. */
 export function isIosSafari(ua: string, maxTouchPoints = 0): boolean {
   const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && maxTouchPoints > 1);
-  return ios && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  return ios && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|FBAN|FBAV|Instagram/.test(ua);
 }
 
 /** Already running as an installed app. */

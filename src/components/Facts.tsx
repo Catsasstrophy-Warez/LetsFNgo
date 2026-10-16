@@ -5,9 +5,8 @@ export function Badge({ c }: { c: Confidence }) {
   return <span className={`badge badge-${c}`} title={tr('common.confidence', { c })}>{c}</span>;
 }
 
-export function hostOf(url: string): string {
-  try { return new URL(url).hostname.replace(/^www\d?\.|^www-backend\./, ''); } catch { return url; }
-}
+export { hostOf } from '../lib/coverage';
+import { hostOf } from '../lib/coverage';
 
 export function Src({ url }: { url: string }) {
   return <a className="src" href={url} target="_blank" rel="noopener noreferrer">{hostOf(url)} ↗</a>;

@@ -56,7 +56,10 @@ export const PAGES = {
   Editions: () => import('./pages/Editions'),
   History: () => import('./pages/History'),
   Help: () => import('./pages/Help'),
+  Coverage: () => import('./pages/Coverage'),
 };
+/** Dev-only component gallery: `import.meta.env.DEV` is false in production, so the chunk is never built. */
+const Gallery = import.meta.env.DEV ? lazy(() => import('./pages/Gallery')) : null;
 /** First path segment → chunk, for hover/visible-link prefetch. */
 const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
   '/specs': PAGES.Specs, '/years': PAGES.ModelYears, '/colors': PAGES.Colors, '/packages': PAGES.Packages, '/performance': PAGES.Performance,
@@ -66,7 +69,7 @@ const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
   '/print': PAGES.PrintSheet, '/quiz': PAGES.Quiz, '/timer': PAGES.Timer, '/gps': PAGES.GpsMeter, '/timeline': PAGES.Timeline, '/diff': PAGES.YearCompare,
   '/welcome': PAGES.Welcome, '/dyno': PAGES.Dyno, '/tires': PAGES.Tires, '/share': PAGES.Share, '/parts': PAGES.Parts,
   '/report': PAGES.Report, '/market': PAGES.Market, '/achievements': PAGES.Achievements,
-  '/editions': PAGES.Editions, '/history': PAGES.History, '/help': PAGES.Help,
+  '/editions': PAGES.Editions, '/history': PAGES.History, '/help': PAGES.Help, '/coverage': PAGES.Coverage,
   '/guides': () => Promise.all([PAGES.Guides(), PAGES.Guide()]),
 };
 const L = Object.fromEntries(Object.entries(PAGES).map(([k, f]) => [k, lazy(f as () => Promise<{ default: () => JSX.Element }>)])) as Record<keyof typeof PAGES, React.LazyExoticComponent<() => JSX.Element>>;
@@ -108,6 +111,7 @@ export const NAV = [
   { to: '/quiz', label: 'Trivia Quiz', key: 'nav.quiz' as MsgKey },
   { to: '/print', label: 'Print Spec Sheet', key: 'nav.print' as MsgKey },
   { to: '/sources', label: 'Sources', key: 'nav.sources' as MsgKey },
+  { to: '/coverage', label: 'Data Coverage', key: 'nav.coverage' as MsgKey },
   { to: '/help', label: 'Help & Guide', key: 'nav.help' as MsgKey },
   { to: '/settings', label: 'Settings', key: 'nav.settings' as MsgKey },
 ];
@@ -217,6 +221,8 @@ export default function App() {
           <Route path="/editions" element={<L.Editions />} />
           <Route path="/history" element={<L.History />} />
           <Route path="/help" element={<L.Help />} />
+          <Route path="/coverage" element={<L.Coverage />} />
+          {Gallery && <Route path="/dev/gallery" element={<Gallery />} />}
           <Route path="*" element={<Home />} />
         </Routes>
         </Suspense>

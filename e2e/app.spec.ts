@@ -9,7 +9,7 @@ const shot = async (page: Page, name: string, project: string) => { if (SHOTS) a
 const ROUTES = ['/', '/specs', '/years', '/colors', '/visualizer', '/packages', '/performance', '/vin', '/ownership', '/garage', '/planner',
   '/timeline', '/track', '/timer', '/drag', '/gps', '/fuel', '/gearing', '/tools', '/mods', '/compare', '/diff', '/media', '/community',
   '/quiz', '/print', '/sources', '/settings', '/search', '/welcome', '/dyno', '/tires', '/parts', '/guides', '/guides/track-service', '/guides/dct-fluid',
-  '/report', '/market', '/achievements', '/editions', '/history', '/help', '/parts?tab=fp'];
+  '/report', '/market', '/achievements', '/editions', '/history', '/help', '/parts?tab=fp', '/coverage'];
 
 /** Seed a returning user so Home does not redirect to the intro, with some data so log pages render content. */
 async function seed(page: Page, theme: 'dark' | 'light', lang: 'en' | 'es' = 'en') {
@@ -46,7 +46,7 @@ for (const [theme, lang] of [['dark', 'en'], ['light', 'en'], ['dark', 'es'], ['
       for (const v of res.violations.filter((x) => x.impact === 'serious' || x.impact === 'critical')) {
         failures.push(`${r} [${v.impact}] ${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`);
       }
-      if (['/timer', '/gps', '/timeline', '/diff', '/planner', '/welcome', '/dyno', '/tires', '/', '/parts', '/guides', '/guides/track-service', '/sources', '/settings', '/report', '/market', '/achievements', '/garage', '/editions', '/history', '/help', '/parts?tab=fp'].includes(r)) await shot(page, `${theme}-${lang}${r.replace(/[/?=]/g, '-')}`, info.project.name);
+      if (['/timer', '/gps', '/timeline', '/diff', '/planner', '/welcome', '/dyno', '/tires', '/', '/parts', '/guides', '/guides/track-service', '/sources', '/settings', '/report', '/market', '/achievements', '/garage', '/editions', '/history', '/help', '/parts?tab=fp', '/coverage'].includes(r)) await shot(page, `${theme}-${lang}${r.replace(/[/?=]/g, '-')}`, info.project.name);
     }
     expect(failures, failures.join('\n')).toEqual([]);
   });

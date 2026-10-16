@@ -1,11 +1,13 @@
 import { useId, useState } from 'react';
 import { tr } from '../lib/i18n';
+import { ChartTable, ChartTip, pointProps } from './ChartA11y';
 
 export interface Pt { label: string; value: number }
 
 /**
  * Single-series SVG line chart. Colors come from theme tokens so it works in both themes.
- * Accessible: role="img" with a summary, per-point hover/focus readout, and a data table in <details>.
+ * Accessible: a labelled group with a text summary, keyboard-focusable points (roving tabindex, arrow keys) with a
+ * tooltip and live readout, and a visually hidden data table that can be shown on screen.
  */
 export function LineChart({ title, points, format, unit, lowerIsBetter = false, refLine }: {
   title: string; points: Pt[]; format: (v: number) => string; unit: string; lowerIsBetter?: boolean; refLine?: { value: number; label: string };
@@ -30,7 +32,7 @@ export function LineChart({ title, points, format, unit, lowerIsBetter = false, 
     <figure className="chart">
       <figcaption className="chart-t">{title}</figcaption>
       <p className="chart-readout" aria-live="polite">{points[h].label}: <strong>{format(points[h].value)} {unit}</strong></p>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-labelledby={`${id}-d`} className="chart-svg" onMouseLeave={() => setHover(null)}>
+      <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label={title} aria-describedby={`${id}-d`} className="chart-svg" onMouseLeave={() => setHover(null)}>
         <desc id={`${id}-d`}>{summary}</desc>
         {ticks.map((t, i) => (
           <g key={i}>
@@ -44,18 +46,17 @@ export function LineChart({ title, points, format, unit, lowerIsBetter = false, 
         <polyline points={points.map((p, i) => `${x(i)},${y(p.value)}`).join(' ')} className="chart-line" />
         {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={P.t} y2={H - P.b} className="chart-grid" />}
         {points.map((p, i) => (
-          <g key={i}>
+          <g key={i} {...pointProps(i, points.length, h, `${p.label}: ${format(p.value)} ${unit}${i === bestI ? tr('chart.best') : ''}`, setHover)} onBlur={() => setHover(null)}>
+            <rect x={x(i) - 14} y={P.t} width={28} height={H - P.t - P.b} className="chart-hit" />
             <circle cx={x(i)} cy={y(p.value)} r={i === bestI ? 6 : 4} className={i === bestI ? 'chart-dot best' : 'chart-dot'} />
-            <rect x={x(i) - 14} y={P.t} width={28} height={H - P.t - P.b} fill="transparent" onMouseEnter={() => setHover(i)} onTouchStart={() => setHover(i)}>
-              <title>{`${p.label}: ${format(p.value)} ${unit}`}</title>
-            </rect>
           </g>
         ))}
+        {hover !== null && <ChartTip x={x(hover)} y={y(points[hover].value)} W={W} top={P.t} text={`${points[hover].label}: ${format(points[hover].value)} ${unit}`} />}
       </svg>
-      <details className="small"><summary>{tr('chart.table')}</summary>
-        <table className="tbl"><thead><tr><th>{tr('chart.entry')}</th><th>{unit}</th></tr></thead>
+      <ChartTable>
+        <table className="tbl chart-tbl"><caption>{title} — {tr('chart.table')}</caption><thead><tr><th scope="col">{tr('chart.entry')}</th><th scope="col">{unit}</th></tr></thead>
           <tbody>{points.map((p, i) => <tr key={i}><td>{p.label}</td><td>{format(p.value)}{i === bestI ? tr('chart.best') : ''}</td></tr>)}</tbody></table>
-      </details>
+      </ChartTable>
     </figure>
   );
 }

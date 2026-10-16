@@ -13,6 +13,8 @@ export const usdRange = (min: number, max: number) => (min === max ? usdWhole(mi
 
 /** Parse a typed amount ("$1,200", " 950 "). Empty, blank or unparseable → null. */
 export function parseMoney(s: string | undefined): number | null {
-  const n = Number(String(s ?? '').replace(/[$,\s]/g, ''));
-  return s && s.trim() && Number.isFinite(n) ? n : null;
+  // A bare "$" or "," strips to "" (Number("") is 0), so require something left after stripping.
+  const t = String(s ?? '').replace(/[$,\s]/g, '');
+  const n = Number(t);
+  return t && Number.isFinite(n) ? n : null;
 }

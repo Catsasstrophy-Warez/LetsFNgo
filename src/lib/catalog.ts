@@ -29,5 +29,5 @@ export function historyTimeline(events: HistoryEvent[], milestones: Milestone[],
     ...(show === 'event' ? [] : milestones.map((m) => ({ kind: 'milestone' as const, id: m.id, date: m.date, item: m }))),
     ...(show === 'milestone' ? [] : events.map((e) => ({ kind: 'event' as const, id: e.id, date: e.date, item: e }))),
   ];
-  return items.sort((a, b) => (a.date === null ? (b.date === null ? 0 : 1) : b.date === null ? -1 : a.date.localeCompare(b.date)));
+  return items.sort((a, b) => (a.date === null ? (b.date === null ? 0 : 1) : b.date === null ? -1 : a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
