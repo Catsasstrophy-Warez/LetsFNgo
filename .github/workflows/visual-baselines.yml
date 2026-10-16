@@ -5,6 +5,12 @@ name: Update visual baselines
 # PNGs back to the selected branch.
 on:
   workflow_dispatch:
+  # workflow_dispatch only works once this file is on the default branch, so a
+  # push that adds e2e/.update-baselines also triggers it (the marker is removed
+  # in the bot commit).
+  push:
+    paths:
+      - e2e/.update-baselines
 
 permissions:
   contents: write
@@ -28,6 +34,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm -q --ignore-unmatch e2e/.update-baselines
           git add e2e/__screenshots__
           if git diff --cached --quiet; then
             echo "Baselines unchanged."
