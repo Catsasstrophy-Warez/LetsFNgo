@@ -1,0 +1,24 @@
+{
+ "modPricing": [
+  {"mod":"VMP Stage 2 Pulley Pack (2.75in pulley, hub, tuning, HP credits)","price":1399.99,"url":"https://shop.speedhaus405.com/products/vmp-performance-20-shelby-gt500-stage-2-pulley-pack","confidence":"low","note":"Price from search snippet; page returned 429 when fetched"},
+  {"mod":"VMP Predator EO Drag Pack (2.75in pulley + intake, CARB EO)","price":2339.99,"url":"https://mgmt-www.americanmuscle.com/vmp-performance-mustang-predator-eo-drag-pack-275-inch-pulley-vmp-drag52l-eo-81-275.html","confidence":"low","note":"Search snippet only"},
+  {"mod":"JLT Big Air intake CAI-GT500-20","price":399.00,"url":"https://tamelessperformance.com/products/jlt-cold-air-intake-2020-2021-gt500-no-tuning-required","confidence":"medium","note":"Retailers list $399.00-$399.99; snippet"}
+ ],
+ "modGains": [
+  {"mod":"JLT Big Air intake CAI-GT500-20","gain":"+25-30 rwhp, +20-30 lb-ft (stock car, no tune)","dyno":null,"fuel":null,"url":"https://tamelessperformance.com/products/jlt-cold-air-intake-2020-2021-gt500-no-tuning-required","confidence":"low","note":"Vendor claim, no dyno sheet"},
+  {"mod":"Bolt-on combo: ZPE Griptec 2.65 pulley + FIC 1000cc injectors + JMS FuelMAX + FP oil separator M-6766-A52 + JLT intake + Brisk RR14S plugs + Lund tune + E85","gain":"674 -> 828 rwhp (+154), 561 -> 666 lb-ft","dyno":"not stated","fuel":"E85 after (baseline likely CA 91)","url":"https://www.fordmuscle.com/tech-stories/our-2020-mustang-gt500-has-a-bolt-on-affair","confidence":"medium","note":"Fetched; no prices, no per-step numbers"},
+  {"mod":"Pulley sequence 2.7 / 2.5 / 2.27 (heavily modded car, PBD)","gain":"1038 / 1046 / 1094 rwhp","dyno":null,"fuel":null,"url":"https://themustangsource.com/wicked-2020-shelby-gt500-produces-1094-rwhp-37683","confidence":"low","note":"Not pulley-only; snippet"}
+ ],
+ "partNumbers": [
+  {"item":"Oil filter","pn":"FL-500-S (OE AA5Z-6714-A)","url":"https://www.mustang7g.com/forums/threads/gt-oil-filter-part-number.158400/","confidence":"low","note":"Not confirmed for 2020 GT500 specifically"},
+  {"item":"Ford Performance oil separator (2020 GT500)","pn":"M-6766-A52","url":"https://lmr.com/item/M6766A52/2020-gt500-ford-performance-oil-separator","confidence":"medium"},
+  {"item":"Ford Performance carbon fiber front splitter kit 2020-22 GT500","pn":"M-16601-MCF","url":"https://performanceparts.ford.com/part/M-16601-MCF","confidence":"medium"},
+  {"item":"Air filter, cabin filter, spark plugs, DCT fluid, coolant, brake fluid, wipers, pads/rotors","pn":null,"url":null,"confidence":"none","note":"Not found this round"}
+ ],
+ "guides": [
+  {"topic":"Track alignment (CFTP supplement, user transcription)","value":"Front camber -2.25, caster 8.08, total toe -0.10 (out); rear camber -2.20, total toe 0.30 (in)","url":"https://www.mustang6g.com/forums/threads/road-course-thoughts.137294/post-2822069","confidence":"low"},
+  {"topic":"Break-in","value":"2014 GT500 supplement: 100 mi before extended WOT, 1,000 mi before competition; 2020 text not obtained","url":"https://www.mustangspecs.com/wp-content/uploads/2020/05/2014-Ford-Shelby-GT500-Supplement.pdf","confidence":"low","note":"Different model year; do not apply as 2020 Ford guidance"},
+  {"topic":"Tire placard / Cup 2 track pressures","value":null,"url":null,"confidence":"none","note":"Only generic site (32 psi) found; not Ford-sourced"}
+ ],
+ "gapFills": []
+}
