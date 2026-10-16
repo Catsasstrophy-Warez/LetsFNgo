@@ -47,7 +47,6 @@ export const specs: SpecFact[] = [
     note: 'Sources conflict. 4,225 lb has the most authoritative origin; shown as a range until a Ford spec sheet confirms one number.',
     conflicts: [
       { value: 4225, source: MA_DEEP, confidence: 'reported', context: 'Dealer training manual' },
-      { value: 4170, source: 'https://en.wikipedia.org/wiki/Ford_Mustang_(sixth_generation)', confidence: 'unverified', context: 'Round-2 competitor table (written from memory)' },
       { value: 4182, source: ENCY, confidence: 'reported', context: 'Spec databases' },
       { value: 4006, source: ENCY, confidence: 'unverified', context: 'Some listings' },
     ],
