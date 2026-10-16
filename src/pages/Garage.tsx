@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { decodeVin } from '../lib/vin';
 import { colors } from '../data/colors';
 import { CarArt } from '../components/CarArt';

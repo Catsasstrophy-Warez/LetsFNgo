@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Cite, Note } from '../components/Facts';
 import { save } from '../lib/storage';
 import { KEYS, addModsToGarage, loadPlans, today, uid, type Plan } from '../lib/garage';
 import { plannable, summarizePlan } from '../lib/planner';
+import { checkPlan, orderOfOps } from '../lib/compat';
 import { warrantyNote } from '../data/mods';
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('en-US')}`;
@@ -15,6 +16,8 @@ export default function Planner() {
   useEffect(() => { save(KEYS.plans, plans); }, [plans]);
   const active = plans.find((p) => p.id === activeId) ?? null;
   const sum = summarizePlan(active?.modIds ?? []);
+  const warnings = checkPlan(sum.mods);
+  const ordered = orderOfOps(sum.mods);
 
   const newPlan = () => {
     const p: Plan = { id: uid(), name: `Plan ${plans.length + 1}`, modIds: [], created: today() };
@@ -57,6 +60,25 @@ export default function Planner() {
               ))}
             </ul>
           </section>
+          {sum.mods.length > 0 && (
+            <section className="card" aria-labelledby="compat-h">
+              <h2 id="compat-h">Compatibility &amp; order of operations</h2>
+              {warnings.length === 0 ? <p className="muted">No sourced compatibility notes for this selection.</p> : (
+                <ul className="rows">
+                  {warnings.map((w) => (
+                    <li key={w.id} className={`compat compat-${w.severity}`}>
+                      <p><strong>{w.severity === 'warn' ? '⚠ ' : 'ℹ '}{w.title}</strong></p>
+                      <p>{w.text}</p>
+                      <div className="row-meta">{w.basis.map((b) => <span key={b.label + b.source} className="small">{b.label} <Cite c={b.confidence} url={b.source} /></span>)}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="sub">Suggested order (by the stage the sourced data assigns)</div>
+              <ol className="rows">{ordered.map((m) => <li key={m.id}>{m.stage}</li>)}</ol>
+              <Note>Rules come only from records already in this app; an empty list does not mean a combination is safe. Ask your tuner.</Note>
+            </section>
+          )}
           <section className="card hl" aria-live="polite">
             <h2>{active.name}: {sum.mods.length} mod{sum.mods.length === 1 ? '' : 's'}</h2>
             <p className="stat-v">{sum.pricedCount ? (sum.costMin === sum.costMax ? money(sum.costMin) : `${money(sum.costMin)}–${money(sum.costMax)}`) : '—'}<small>parts, sourced prices</small></p>

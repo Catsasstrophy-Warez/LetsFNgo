@@ -6,7 +6,7 @@ Every fact carries a source URL and a confidence level (`confirmed` / `reported`
 
 ## Run
 
-Requires Node 18+.
+Requires Node 20+ (react-router 7).
 
 ```sh
 npm install
@@ -16,7 +16,10 @@ npm run preview    # serve the build
 npm test           # Vitest: VIN decoder, data integrity, tool math, DA/fuel/quiz/units, backup validation & migration, SW update flow, page render tests
 npm run typecheck
 npm run lint
+npm run e2e        # Playwright (Chromium) + axe-core: every route in dark and light themes, onboarding, timer, GPS meter (mocked geolocation), timeline, planner; needs `npm run build` first
 ```
+
+CI (`.github/workflows/ci.yml`, Node 20) runs `npm ci`, typecheck, lint, unit tests and build on every push and pull request. Routing uses `react-router` 7 (`HashRouter`); `npm audit` reports 0 vulnerabilities.
 
 ## Layout
 
@@ -27,7 +30,13 @@ npm run lint
 - `src/lib/laptime.ts` — `m:ss.sss` lap parsing, best/average/theoretical-best (sum of best sectors); `refLaps.ts` matches Laguna Seca / VIR to sourced reference laps
 - `src/lib/planner.ts` — build-plan totals; sums only price ranges a source lists (`cost` on `ModStage`) and never combines horsepower
 - `src/lib/garage.ts` — Garage, plans, track and reminder types, localStorage keys, due-soon/overdue logic
-- `src/lib/backup.ts` — JSON export/import (`app: "gt500-companion"`, `schema: 2`; v1 files migrate with empty drag/fuel and default settings), 2 MB import cap, reset-all
+- `src/lib/backup.ts` — JSON export/import (`app: "gt500-companion"`, `schema: 3`; v1 files migrate with empty drag/fuel and default settings; v2 files gain `onboarding` marked done), 2 MB import cap, reset-all
+- `src/lib/timer.ts` — pure stopwatch (start/pause/lap with a 1 s double-tap guard), laps written as Track-log text
+- `src/lib/gps.ts` — GPS meter math: haversine, Doppler-or-derived speed, launch detection, interpolated 0–60 / 60–130 / ¼-mile timing, accuracy (±10 m) and gap (2.5 s) refusal; synthetic traces for tests
+- `src/lib/compat.ts` — Build-planner compatibility rules derived only from sourced records (DCT clutch rating vs sourced wheel torque, E85 fuel parts each source lists, one blower/turbo replacement, race-fuel results) and order-of-ops by sourced stage
+- `src/lib/timeline.ts` — combined chronological events from Garage service/mods, track, drag and fuel; filters and yearly counts/spend
+- `src/lib/yearDiff.ts` — 2020/2021/2022 color, package and price presence generated from data; GT500-vs-rival head-to-head with sourced-only values
+- `src/lib/onboarding.ts` — first-run intro state (`gt500.onboarding.v1`), Garage seeding
 - `src/lib/validate.ts` — strict allow-list normalizers used by both import and every localStorage loader, so corrupt or legacy data falls back instead of crashing
 - `src/lib/units.ts` — settings (`gt500.settings.v1`: units, theme incl. "match device"), imperial↔metric conversion; data is stored imperial and converted for display/entry
 - `src/lib/drag.ts` — timeslips (`gt500.drag.v1`), density altitude (humidity → virtual temperature → density from station pressure → ISA altitude), DA-corrected ET **estimate**, best/consistency stats, sourced stock passes
@@ -49,13 +58,20 @@ npm run lint
 - **Color Visualizer** (`/visualizer`), **Trivia Quiz** (`/quiz`), **Print Spec Sheet** (`/print`, uses `@media print`).
 - **Settings** (`/settings`): units, theme, and data management (export / import / reset all). Garage links there.
 - **Garage** adds maintenance reminders (miles and/or months, due soon within 500 mi / 30 days). Default intervals are user-set placeholders — Ford's 2020–22 GT500 schedule is not sourced here. It also has the share-card PNG and backup/restore.
+- **Session Timer** (`/timer`): big touch buttons, lap splits, Screen Wake Lock while running (falls back with a note where unsupported); saves laps straight into the Track log.
+- **GPS Meter** (`/gps`, approximate): permission-gated, only starts when you tap **Arm GPS**; shows live accuracy and refuses to report when any fix in the run is worse than ±10 m or fixes are > 2.5 s apart; handles permission denied. Results save to the Drag log labelled "GPS estimate" and are excluded from strip stats. No CSP change is needed for geolocation.
+- **Ownership Timeline** (`/timeline`): every dated entry from Garage service and mods, Track, Drag and Fuel logs with type/year filters and a yearly summary.
+- **Year & Rival Compare** (`/diff`): 2020 vs 2021 vs 2022 colors, packages and prices (conflicts kept), and a GT500-vs-any-rival head-to-head using only sourced values; hidden unverified sheets stay hidden unless requested.
+- **Build Planner** shows sourced compatibility warnings and a suggested order.
+- **Welcome** (`/welcome`): a skippable 3-step first-run intro (year/color, optional VIN, units) that seeds the Garage; shown only when the intro was never completed and the Garage is empty; re-run from Settings.
+- Accessibility: the e2e suite runs axe-core (WCAG 2.1 A/AA) on every route in both themes and requires 0 serious/critical violations. Fixes from the audit: dark-theme button/active-link contrast (`--accent-btn`), video placeholder accessible names, focusable scrollable tables.
 - Home shows a Garage summary and the next maintenance due. All tools appear in the menu and in Search.
 - Every route except Home is lazy-loaded. After the service worker registers, the app fetches each route chunk once so it is cached for offline use.
 - The build stamps `dist/sw.js` with a per-build cache name and the list of emitted assets; old caches are deleted on activate. Only `ok`, same-origin, non-redirected responses are cached. A new version waits until you tap **Reload** in the "Update ready" banner (the page posts `SKIP_WAITING`, then reloads on `controllerchange`). An "Offline" banner shows when the connection drops, and a warning appears if the browser refuses to save data.
 - `index.html` sets a Content-Security-Policy (self, Wikimedia images, youtube-nocookie and freesound frames). YouTube embeds are sandboxed and ids are validated.
 - Ownership groups Mustang NHTSA recalls by GT500 applicability (applies / likely / depends on VIN / not applicable) from round-4 review of the recall documents, with build windows. Fluids added from a 2021 GT500 supplement are marked `reported`; its service-interval table is `unverified` because the PDF columns were misaligned.
 
-Garage, plans (`gt500.plans.v1`), track sessions (`gt500.track.v1`), timeslips, fill-ups, settings and quiz score are kept only in the browser's `localStorage`. Videos are embedded from youtube-nocookie.com and load only on tap; no copyrighted images are re-hosted, and the car art is generic CSS/SVG.
+Garage, plans (`gt500.plans.v1`), track sessions (`gt500.track.v1`), timeslips (incl. GPS estimates), fill-ups, settings, intro state and quiz score are kept only in the browser's `localStorage`. Videos are embedded from youtube-nocookie.com and load only on tap; no copyrighted images are re-hosted, and the car art is generic CSS/SVG.
 
 ## Disclaimer
 

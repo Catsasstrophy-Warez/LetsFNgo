@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { CarArt } from '../components/CarArt';
 import { Cite } from '../components/Facts';
 import { specs } from '../data/specs';
@@ -14,6 +14,10 @@ const TOOLS = [
   { to: '/track', label: 'Track day log', d: 'Laps, best, theoretical' },
   { to: '/drag', label: 'Drag strip log', d: 'Timeslips, DA, consistency' },
   { to: '/fuel', label: 'Fuel & cost', d: 'mpg, cost per mile, ownership' },
+  { to: '/timer', label: 'Session timer', d: 'Stopwatch, laps → Track log' },
+  { to: '/gps', label: 'GPS meter', d: '0–60, 60–130, ¼ mi (approximate)' },
+  { to: '/timeline', label: 'Ownership timeline', d: 'Everything you logged, by year' },
+  { to: '/diff', label: 'Year & rival compare', d: '2020 vs 21 vs 22, head-to-head' },
   { to: '/visualizer', label: 'Color visualizer', d: 'Every sourced paint' },
   { to: '/quiz', label: 'Trivia quiz', d: 'Sourced facts only' },
 ];

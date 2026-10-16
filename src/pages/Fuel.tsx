@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Note } from '../components/Facts';
 import { UnitInput } from '../components/UnitInput';
 import { LineChart } from '../components/LineChart';

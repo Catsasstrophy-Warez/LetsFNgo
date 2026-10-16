@@ -23,8 +23,9 @@ export function YouTube({ id, title }: { id: string; title: string }) {
     );
   }
   return (
-    <button className="yt yt-placeholder" onClick={() => setOn(true)} aria-label={`Play video: ${title}`}>
-      <span className="yt-play">▶</span>
+    <button className="yt yt-placeholder" onClick={() => setOn(true)}>
+      <span className="sr-only">Play video: {title}. </span>
+      <span className="yt-play" aria-hidden>▶</span>
       <span className="yt-hint">Loads from youtube-nocookie.com</span>
     </button>
   );

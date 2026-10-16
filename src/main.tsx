@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { HashRouter } from 'react-router-dom';
+import { HashRouter } from 'react-router';
 import App, { PAGES } from './App';
 import { watchRegistration } from './lib/sw';
 import './styles.css';

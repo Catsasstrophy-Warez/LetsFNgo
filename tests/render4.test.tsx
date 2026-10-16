@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { renderToString } from 'react-dom/server';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { SettingsContext } from '../src/components/SettingsContext';
 import { LineChart } from '../src/components/LineChart';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
@@ -55,7 +55,7 @@ describe('new pages render with data', () => {
   });
   it('Settings has units, theme and data management', async () => {
     const h = await render('Settings');
-    for (const t of ['Imperial', 'Metric', 'Match device', 'Export JSON', 'Import JSON', 'Reset all data', 'schema v2']) expect(h).toContain(t);
+    for (const t of ['Imperial', 'Metric', 'Match device', 'Export JSON', 'Import JSON', 'Reset all data', 'schema v3']) expect(h).toContain(t);
   });
   it('Visualizer, print sheet and quiz', async () => {
     const v = await render('Visualizer');

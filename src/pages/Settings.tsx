@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router';
+import { saveOnboarding } from '../lib/onboarding';
 import { useSettings } from '../components/SettingsContext';
 import { Note } from '../components/Facts';
 import { MAX_IMPORT_BYTES, SCHEMA_VERSION, currentBackup, parseBackup, resetAll, restoreBackup } from '../lib/backup';
@@ -38,7 +39,7 @@ export function DataManagement() {
   return (
     <section className="card" id="data">
       <h2>Data management</h2>
-      <p className="muted">Everything is stored only on this device. Export writes one JSON file (schema v{SCHEMA_VERSION}) with Garage, reminders, build plans, track sessions, drag timeslips, fuel log and settings. Older v1 backups still import.</p>
+      <p className="muted">Everything is stored only on this device. Export writes one JSON file (schema v{SCHEMA_VERSION}) with Garage, reminders, build plans, track sessions, drag timeslips (including GPS estimates), fuel log, settings and intro state. Older v1 and v2 backups still import.</p>
       <div className="btn-row">
         <button className="btn" onClick={exportAll}>Export JSON</button>
         <label className="btn ghost file-btn">Import JSON<input type="file" accept="application/json,.json" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ''; }} /></label>
@@ -52,6 +53,7 @@ export function DataManagement() {
 export default function Settings() {
   const { settings, setSettings } = useSettings();
   const { hash } = useLocation();
+  const nav = useNavigate();
   useEffect(() => { if (hash) document.getElementById(hash.slice(1))?.scrollIntoView(); }, [hash]);
   return (
     <>
@@ -64,6 +66,11 @@ export default function Settings() {
       <section className="card">
         <h2>Theme</h2>
         <Seg<ThemePref> label="Theme" value={settings.theme} options={[['dark', 'Dark'], ['light', 'Light'], ['system', 'Match device']]} onChange={(theme) => setSettings({ ...settings, theme })} />
+      </section>
+      <section className="card">
+        <h2>Intro</h2>
+        <p className="muted">Run the 3-step first-run intro again (year, color, VIN, units). It only fills values you choose.</p>
+        <button className="btn ghost" onClick={() => { saveOnboarding({ done: false, completed: '' }); nav('/welcome'); }}>Run intro again</button>
       </section>
       <DataManagement />
       <p className="muted small">Looking for your car? <Link to="/garage">Garage →</Link></p>

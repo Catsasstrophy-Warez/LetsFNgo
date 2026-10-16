@@ -4,7 +4,7 @@
  * has the wrong type, so nothing unexpected can reach React as a child or be re-exported.
  */
 import { DEFAULT_REMINDERS, EMPTY_GARAGE, type GarageState, type LogEntry, type Plan, type Reminder, type TrackSession } from './garage';
-import type { Timeslip } from './drag';
+import type { GpsRun, Timeslip } from './drag';
 import type { FillUp } from './fuel';
 
 type Obj = Record<string, unknown>;
@@ -75,7 +75,15 @@ export function normSlip(v: unknown): Timeslip | null {
     id: req(v.id), date: req(v.date), track: str(v.track), rt: num(v.rt), sixty: num(v.sixty), threeThirty: num(v.threeThirty),
     eighthEt: num(v.eighthEt), eighthMph: num(v.eighthMph), quarterEt: num(v.quarterEt), quarterMph: num(v.quarterMph), da: num(v.da), notes: str(v.notes),
   });
-  return s && weather ? { ...s, weather: { ...weather, pressureIsStation: w.pressureIsStation === true }, mods: [...((v.mods as string[] | undefined) ?? [])] } : null;
+  let gps: Timeslip['gps'];
+  if (v.gps !== undefined) {
+    const g = v.gps;
+    if (!isObj(g) || (g.kind !== '0-60' && g.kind !== '60-130' && g.kind !== 'quarter')) return null;
+    const b = build<Omit<GpsRun, 'kind'>>({ seconds: reqNum(g.seconds), trapMph: num(g.trapMph), accuracyM: reqNum(g.accuracyM) });
+    if (!b || b.seconds <= 0) return null;
+    gps = { kind: g.kind, ...b };
+  }
+  return s && weather ? { ...s, weather: { ...weather, pressureIsStation: w.pressureIsStation === true }, mods: [...((v.mods as string[] | undefined) ?? [])], ...(gps ? { gps } : {}) } : null;
 }
 
 export function normFill(v: unknown): FillUp | null {
@@ -92,4 +100,13 @@ export function normScore(v: unknown): QuizScore {
   const n = (x: unknown) => (typeof x === 'number' && Number.isInteger(x) && x >= 0 ? x : 0);
   const s = { answered: n(v.answered), correct: n(v.correct), bestStreak: n(v.bestStreak), streak: n(v.streak) };
   return s.correct > s.answered ? { ...EMPTY_SCORE } : s;
+}
+
+/** First-run intro state. */
+export interface Onboarding { done: boolean; completed: string }
+export const DEFAULT_ONBOARDING: Onboarding = { done: false, completed: '' };
+export function normOnboarding(v: unknown): Onboarding | null {
+  if (!isObj(v) || typeof v.done !== 'boolean') return null;
+  const c = str(v.completed);
+  return c === BAD ? null : { done: v.done, completed: c };
 }

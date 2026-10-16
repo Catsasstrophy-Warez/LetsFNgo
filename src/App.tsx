@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
-import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
+import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router';
+import { needsOnboarding } from './lib/onboarding';
 import { loadSettings, resolveTheme, saveSettings, type Settings } from './lib/units';
 import { SettingsContext } from './components/SettingsContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -32,6 +33,11 @@ export const PAGES = {
   Visualizer: () => import('./pages/Visualizer'),
   PrintSheet: () => import('./pages/PrintSheet'),
   Quiz: () => import('./pages/Quiz'),
+  Timer: () => import('./pages/Timer'),
+  GpsMeter: () => import('./pages/GpsMeter'),
+  Timeline: () => import('./pages/Timeline'),
+  YearCompare: () => import('./pages/YearCompare'),
+  Welcome: () => import('./pages/Welcome'),
 };
 const L = Object.fromEntries(Object.entries(PAGES).map(([k, f]) => [k, lazy(f)])) as Record<keyof typeof PAGES, React.LazyExoticComponent<() => JSX.Element>>;
 
@@ -47,13 +53,17 @@ export const NAV = [
   { to: '/ownership', label: 'Ownership' },
   { to: '/garage', label: 'Garage' },
   { to: '/planner', label: 'Build Planner' },
+  { to: '/timeline', label: 'Ownership Timeline' },
   { to: '/track', label: 'Track Day Log' },
+  { to: '/timer', label: 'Session Timer' },
   { to: '/drag', label: 'Drag Strip Log' },
+  { to: '/gps', label: 'GPS Meter (approx.)' },
   { to: '/fuel', label: 'Fuel & Cost' },
   { to: '/gearing', label: 'Gear & Speed Calc' },
   { to: '/tools', label: 'Performance Tools' },
   { to: '/mods', label: 'Mods & Tuning' },
   { to: '/compare', label: 'Compare' },
+  { to: '/diff', label: 'Year & Rival Compare' },
   { to: '/media', label: 'Media' },
   { to: '/community', label: 'Community' },
   { to: '/quiz', label: 'Trivia Quiz' },
@@ -75,6 +85,7 @@ export default function App() {
   const [prefersDark, setPrefersDark] = useState(() => typeof matchMedia === 'undefined' || matchMedia('(prefers-color-scheme: dark)').matches);
   const [menu, setMenu] = useState(false);
   const loc = useLocation();
+  const navigate = useNavigate();
   const theme = resolveTheme(settings.theme, prefersDark);
 
   useEffect(() => {
@@ -84,6 +95,8 @@ export default function App() {
     mq.addEventListener?.('change', f);
     return () => mq.removeEventListener?.('change', f);
   }, []);
+  // First run only: send a brand-new user (no intro done, empty Garage) from Home to the intro.
+  useEffect(() => { if (loc.pathname === '/' && needsOnboarding()) navigate('/welcome', { replace: true }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   useEffect(() => { saveSettings(settings); }, [settings]);
   useEffect(() => { setMenu(false); window.scrollTo(0, 0); }, [loc.pathname]);
@@ -131,6 +144,11 @@ export default function App() {
           <Route path="/visualizer" element={<L.Visualizer />} />
           <Route path="/print" element={<L.PrintSheet />} />
           <Route path="/quiz" element={<L.Quiz />} />
+          <Route path="/timer" element={<L.Timer />} />
+          <Route path="/gps" element={<L.GpsMeter />} />
+          <Route path="/timeline" element={<L.Timeline />} />
+          <Route path="/diff" element={<L.YearCompare />} />
+          <Route path="/welcome" element={<L.Welcome />} />
           <Route path="*" element={<Home />} />
         </Routes>
         </Suspense>

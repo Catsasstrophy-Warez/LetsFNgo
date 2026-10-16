@@ -26,6 +26,11 @@ const index = Object.entries(collections).flatMap(([collection, recs]) =>
 const TOOL = 'https://github.com/Catsasstrophy-Warez/LetsFNgo';
 /** App tools are searchable too; they are not sourced records, so they link back to the project. */
 const tools: SearchHit[] = [
+  { title: 'Session Timer', text: 'stopwatch lap timer split track day drag day wake lock laps', route: '/timer' },
+  { title: 'GPS Performance Meter', text: 'gps 0-60 60-130 quarter mile accelerometer performance meter estimate geolocation', route: '/gps' },
+  { title: 'Ownership Timeline', text: 'timeline history service mods track drag fuel yearly summary spend', route: '/timeline' },
+  { title: 'Year & Rival Compare', text: '2020 2021 2022 difference diff colors packages prices head-to-head rival competitor', route: '/diff' },
+  { title: 'Welcome intro', text: 'onboarding intro setup first run year color vin units', route: '/welcome' },
   { title: 'Gear & Speed Calculator', text: 'gearing mph per gear rpm at speed final drive 3.73 tire size TR-9070 ratios calculator', route: '/gearing' },
   { title: 'Performance Tools', text: 'quarter mile ET trap speed estimator Hale Fox formula power to weight hp per ton calculator', route: '/tools' },
   { title: 'Build Planner', text: 'build plan mods cost total tune pulley Whipple exhaust planner', route: '/planner' },

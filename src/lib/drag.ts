@@ -14,7 +14,12 @@ export interface Timeslip {
   /** Garage mods at the time of the pass. */
   mods: string[];
   notes: string;
+  /** Present only for runs timed by the GPS meter. These are approximate and excluded from strip stats. */
+  gps?: GpsRun;
 }
+
+/** A GPS-meter result saved to the Drag log ("GPS estimate"). */
+export interface GpsRun { kind: '0-60' | '60-130' | 'quarter'; seconds: number; trapMph: number | null; accuracyM: number }
 
 export const DRAG_KEY = 'gt500.drag.v1';
 export const loadDrag = (): Timeslip[] => normList(load<unknown>(DRAG_KEY, []), normSlip);
@@ -84,7 +89,8 @@ export interface DragStats {
 const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
 /** Best values and consistency (sample standard deviation and spread of ¼-mile ET). */
-export function dragStats(slips: Timeslip[]): DragStats {
+export function dragStats(all: Timeslip[]): DragStats {
+  const slips = all.filter((s) => !s.gps);
   const pick = (f: (s: Timeslip) => number | null) => slips.map(f).filter((x): x is number => x !== null && x > 0);
   const ets = pick((s) => s.quarterEt);
   const min = (xs: number[]) => (xs.length ? Math.min(...xs) : null);

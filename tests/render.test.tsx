@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderToString } from 'react-dom/server';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import App, { NAV, PAGES } from '../src/App';
 
 describe('every route renders without throwing', () => {

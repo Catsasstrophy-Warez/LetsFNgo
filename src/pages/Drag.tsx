@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Cite, Note } from '../components/Facts';
 import { UnitInput } from '../components/UnitInput';
 import { EtTrend } from '../components/Trends';
@@ -13,6 +13,7 @@ const blank = (): Omit<Timeslip, 'id' | 'mods'> => ({
   date: today(), track: '', rt: null, sixty: null, threeThirty: null, eighthEt: null, eighthMph: null, quarterEt: null, quarterMph: null, da: null,
   weather: { tempF: null, pressureInHg: null, humidity: null, elevationFt: null, pressureIsStation: false }, notes: '',
 });
+const GPS_LABEL = { '0-60': '0–60 mph', '60-130': '60–130 mph', quarter: '¼ mile' } as const;
 const s3 = (v: number | null) => (v === null ? '—' : v.toFixed(3));
 const s2 = (v: number | null) => (v === null ? '—' : v.toFixed(2));
 
@@ -72,7 +73,7 @@ export default function Drag() {
   return (
     <>
       <h1>Drag Strip Log</h1>
-      <p className="lede">Log timeslips on this device. Times are seconds; speeds and weather follow your <Link to="/settings">units setting</Link>. Your Garage mods list is saved with each pass.</p>
+      <p className="lede">Log timeslips on this device. Times are seconds; speeds and weather follow your <Link to="/settings">units setting</Link>. Your Garage mods list is saved with each pass. Runs from the <Link to="/gps">GPS meter</Link> appear as "GPS estimate" and are kept out of the stats.</p>
       <form className="card form" onSubmit={submit} noValidate>
         <h2>New timeslip</h2>
         <div className="form two">
@@ -133,6 +134,14 @@ export default function Drag() {
 
       {sorted.length === 0 ? <p className="muted">No timeslips logged yet.</p> : [...sorted].reverse().map((s) => {
         const corr = s.quarterEt !== null && s.da !== null ? correctToSeaLevel(s.quarterEt, s.quarterMph, s.da) : null;
+        if (s.gps) return (
+          <section className="card" key={s.id}>
+            <div className="row-main"><h2>{GPS_LABEL[s.gps.kind]} <span className="badge badge-unverified">GPS estimate</span> <span className="muted small">{s.date}</span></h2>
+              <button className="link-btn danger" onClick={() => { if (confirm('Delete this GPS run?')) setSlips(slips.filter((x) => x.id !== s.id)); }} aria-label={`Delete GPS run ${s.date}`}>Delete</button></div>
+            <p><strong>{s.gps.seconds.toFixed(2)} s</strong>{s.gps.trapMph !== null && <> @ {fmtQty('speed', s.gps.trapMph, u, 1)}</>} <span className="muted">· worst accuracy ±{s.gps.accuracyM} m · not included in strip stats</span></p>
+            <p className="muted small">Mods: {s.mods.length ? s.mods.join(', ') : 'stock'}</p>
+          </section>
+        );
         return (
           <section className="card" key={s.id}>
             <div className="row-main"><h2>{s.track || 'Drag strip'} <span className="muted small">{s.date}</span></h2>

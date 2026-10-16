@@ -119,7 +119,7 @@ describe('backup', () => {
       [{ id: 't', date: '2026-01-01', track: 'VIR', conditions: '', airTemp: '', pressures: { fl: '32', fr: '32', rl: '30', rr: '30' }, laps: '2:50.1', notes: '' }]);
     const r = parseBackup(JSON.stringify(b));
     expect(r.ok).toBe(true);
-    if (r.ok) { expect(r.data.garage.nickname).toBe('Snake'); expect(r.data.schema).toBe(2); expect(r.data.track[0].pressures.rr).toBe('30'); }
+    if (r.ok) { expect(r.data.garage.nickname).toBe('Snake'); expect(r.data.schema).toBe(3); expect(r.data.track[0].pressures.rr).toBe('30'); }
   });
   it('fills defaults for older garage data', () => {
     const r = validateBackup({ app: 'gt500-companion', schema: 1, garage: { vin: '', mods: [] }, plans: [], track: [{ id: 'a', date: 'd', track: 'x', laps: '', pressures: {} }] });
