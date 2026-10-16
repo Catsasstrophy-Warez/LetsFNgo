@@ -1,0 +1,44 @@
+# Round 4: 2020-2022 Shelby GT500 recall applicability and gap fills
+
+## Which listed Mustang recall campaigns apply to the GT500?
+
+### Takeaway
+Only 20V573 (brake pedal bracket, explicitly adds GT500 DCT cars) is documented as applying; 23V727 (BCM brake-fluid warning) covers the full 2020-2023 build span with no exclusions and very likely applies. 23V070 (10R80) and 22V382 (5.0L MT82) do NOT apply. The rest name no trim/engine limits and are narrow build windows or VIN-specific - mark unknown and check by VIN (Ford OASIS / nhtsa.gov/recalls). No document reviewed mentions GT500 except 20V573.
+
+### Cited Findings
+- **20V306000** - Forward collision avoidance camera (IPMA) misaligned. 2020 Mustang IPMA misaligned at plant; Ford 20S26. **Applies: unknown** (medium). Part 573 & dealer letter: 2020 Mustang, Flat Rock builds Feb 10-11 2020 only; no trim/engine restriction stated. GT500 in production then, so VIN-dependent. — [Source](https://static.nhtsa.gov/odi/rcl/2020/RCLRPT-20V306-2648.PDF)
+- **20V573000** - Brake pedal bracket fracture (auto trans). 2020 Mustang w/ automatic transmissions; Ford 20S52. **Applies: yes** (high). Dealer supplement (Safety Recall 20S52, Oct 14 2020): 'GT500 vehicles equipped with a 7-speed dual clutch auto/manual transmission have been added to this program.' Builds Feb 28 2019-Aug 13 2020. All 2020 GT500 are DCT; still VIN-specific. — [Source](https://static.nhtsa.gov/odi/rcl/2020/RCMN-20V573-7460.pdf)
+- **20V263000** - Transmission Not In Park warning/chime too short. 2019-2020 Mustang; Ford 20S21. **Applies: unknown** (low). Mustang builds Apr 26-Oct 10 2019; no trim/transmission restriction stated; repair part KR3Z-10849-A (cluster). GT500 DCT applicability not stated. — [Source](https://static.nhtsa.gov/odi/rcl/2020/RCLRPT-20V263-1830.PDF)
+- **20V575000** - Rearview camera intermittent (FMVSS 111). 2020 multi-line; Ford 20C19, Mustang camera FR3Z-19G490-A. **Applies: unknown** (medium). Mustang Flat Rock builds Nov 18 2019-May 26 2020; no trim restriction; VIN-dependent. — [Source](https://static.nhtsa.gov/odi/rcl/2020/RCLRPT-20V575-6708.PDF)
+- **21V980000** - Side curtain airbag inflator gas mass (FMVSS 226/214). 2021 Mustang; 93 vehicles; Ford 21C37. **Applies: unknown** (medium). Builds Feb 9-Nov 12 2021, body style ALL, no trim restriction; 93 units, VIN-dependent. — [Source](https://static.nhtsa.gov/odi/rcl/2021/RCLRPT-21V980-9163.PDF)
+- **22V334000** - Forward camera (IPMA) misaligned. 2022 Mustang; Ford 22S34. **Applies: unknown** (medium). Builds Feb 2-18 2022, body style ALL; no trim restriction; VIN-dependent. — [Source](https://static.nhtsa.gov/odi/rcl/2022/RCLRPT-22V334-9216.PDF)
+- **23V070000** - Loose bolt in 10-speed automatic (park may not engage). 2022-2023 multi-line w/ 10R80; Ford 23S06. **Applies: no** (high). Dealer letter titled 'Equipped With 10 Speed Automatic Transmission'; Mustang labor ops only for 2.3L and 5.0L (23S06E/F). GT500 uses 7-speed DCT. — [Source](https://static.nhtsa.gov/odi/rcl/2023/RCMN-23V070-2388.pdf)
+- **24V493000** - EPAS secondary steering torque sensor calibration. 2022-2023 Mustang; 30,735 units; Ford 24S44. **Applies: unknown** (low). Builds Sep 15 2022-Apr 5 2023 (late 2022MY); no trim restriction stated. Only late-built 2022 GT500 could be in range. — [Source](https://static.nhtsa.gov/odi/rcl/2024/RCLRPT-24V493-4480.PDF)
+- **25V096000** - Re-recall of 24V493 incorrect remedy. 2022-2023 Mustang; 332 units; Ford 25S11. **Applies: unknown** (low). Follows 24V493 population. — [Source](https://static.nhtsa.gov/odi/rcl/2025/RCLRPT-25V096-4378.PDF)
+- **23V727000** - BCM config: low brake fluid warning not shown (FMVSS 135). 2020-2023 Mustang; Ford 23C35. **Applies: yes** (medium). Builds Feb 28 2019-Apr 5 2023 covers all 2020-2022 GT500 production; no trim exclusion; 2020 repair via IDS, 2021-23 via FDRS. Applicability still VIN-confirmed via OASIS; treat as likely. — [Source](https://static.nhtsa.gov/odi/rcl/2023/RCLRPT-23V727-9504.PDF)
+- **25V689000** - Re-recall of 23V727 (BCM remedy missing). 2021-2023 Mustang; 3 vehicles; Ford 25C55. **Applies: unknown** (medium). Only 3 vehicles, builds Jun 23 2021-Feb 13 2023. — [Source](https://static.nhtsa.gov/odi/rcl/2025/RCLRPT-25V689-4022.pdf)
+- **22V083000** - Passenger knee airbag weld. 2021-2022 Mustang; 327 units; Ford 22S07. **Applies: unknown** (medium). Builds Aug 23-Sep 21 2021, body ALL; no trim restriction. — [Source](https://static.nhtsa.gov/odi/rcl/2022/RCLRPT-22V083-6677.PDF)
+- **25V442000** - SYNC 3.2 R10 RC1 software rearview camera. 2018-2024 multi-line; Mustang 2019-2023; Ford 25S72. **Applies: unknown** (medium). Affects Mustangs with SYNC 3.2 R10 RC1 software (4,364 Mustangs), builds May 14 2018-Apr 5 2023; depends on software state, not trim. — [Source](https://static.nhtsa.gov/odi/rcl/2025/RCLRPT-25V442-7250.pdf)
+- **25V455000** - Low-pressure fuel pump failure / stall. 2021-2023 multi-line incl 2021-2022 Mustang (24,790); Ford 25S75. **Applies: unknown** (low). Mustang FDM builds Jul 1 2021-Jul 31 2022; no engine/trim restriction stated in docs reviewed. Confirm by VIN. — [Source](https://static.nhtsa.gov/odi/rcl/2025/RCLRPT-25V455-7716.pdf)
+- **25V695000** - Rearview camera distorted/blank. 2015-2020 multi-line incl 2020 Mustang (73,745). **Applies: unknown** (medium). Mustang builds Feb 28 2019-Dec 16 2020, camera FR3Z-19G490-A; no trim restriction; broad 2020 population likely includes GT500 but VIN-dependent. — [Source](https://static.nhtsa.gov/odi/rcl/2025/RCLRPT-25V695-4297.pdf)
+- **22V382000** - PCM fault signal disables camera/reverse lamp (5.0L MT82). 2019-2020 Mustang 5.0L manual; Ford 22S37. **Applies: no** (high). Part 573: 'Affected vehicles are equipped with 5.0L engines and manual transmissions' (MT82). GT500 is 5.2L DCT. — [Source](https://static.nhtsa.gov/odi/rcl/2022/RCLRPT-22V382-6344.PDF)
+
+## Gap fills: CSP/TSB numbers and owner-manual specs
+
+### Takeaway
+Timing tensioner = CSP 21B26; C105 = SSM 49440. Only a 2021 GT500 supplement (third-party host) was found; specs below are from it and may not match 2020/2022. Paint codes not found.
+
+### Cited Findings
+- **2020 secondary timing chain tensioner program**: Customer Satisfaction Program 21B26 (Apr 26 2021; 2020 Mustang GT500/GT350 5.2L, Flat Rock builds Dec 2 2019-Dec 16 2020; expired Apr 30 2022). Not an NHTSA recall. — [Source](https://static.nhtsa.gov/odi/tsbs/2021/MC-10191520-0001.pdf)
+- **C105 connector bulletin**: SSM 49440 - 2020 Mustang GT500 various transmission concerns/DTCs; inspect C105 inline connector by RH valve cover. (SSM, not a numbered TSB; forum claims another number exists - unverified) — [Source](https://static.nhtsa.gov/odi/tsbs/2021/MC-10186595-0001.pdf)
+- **Owner manual source**: 2021 Mustang (CZG) GT500 supplement, edition 202012 (third-party host; no 2020 or 2022 official PDF found on owner.ford.com/fordservicecontent.com in this round) — [Source](https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf)
+- **Coolant**: Motorcraft Yellow Prediluted Antifreeze/Coolant VC-13DL-G, WSS-M97B57-A2; engine 15.2 qt (14.4 L), intercooler 2.5 qt (2.4 L) [2021 supplement] — [Source](https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf)
+- **Brake fluid**: Motorcraft DOT 4 LV High Performance, WSS-M6C65-A2 / ISO 4925; change every 3 years; replace before track use (dry boiling point >500F) [2021 supplement] — [Source](https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf)
+- **Spark plugs**: SP-581, gap 0.037 +/- 0.002 in (0.95 +/- 0.05 mm) [2021 supplement]. Replacement interval: text extraction ambiguous between 50,000 and 100,000 mi rows - verify visually — [Source](https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf)
+- **Other intervals (2021 supplement, extraction layout-ambiguous)**: Oil: IOLM, 5,000 mi/annual normal, 3,000 mi severe, max 1 yr/10,000 mi; 5W-50 WSS-M2C931-C; filter FL-2087. Cabin filter + DCT side filter/top-off ~20k; engine air filter 30k; DCT fluid+side filter 40k; coolant initial 10 yr/200k then 5 yr/100k; rear axle fluid every 500 mi track use; oil change every 4 hrs track time. Exact row alignment of fuel filter/spark plugs/differential should be checked in PDF. — [Source](https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf)
+- **Paint codes (Wimbledon White, Dark Matter Gray, Eruption Green, Brittany Blue)**: NOT FOUND - supplement contains no paint codes; no reliable source located this round
+
+## Gaps and caveats
+- Ford recall docs rarely list trim; 'unknown' means not excluded by documents and VIN check needed.
+- 25V455: no document states whether the GT500 fuel delivery module is in the population.
+- No official 2020 or 2022 GT500 supplement PDF located; paint codes for the four colors remain unfilled.
