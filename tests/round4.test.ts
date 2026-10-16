@@ -166,7 +166,7 @@ describe('paint visualizer', () => {
 
 describe('backup schema 2', () => {
   it('migrates v1 and round-trips v2 stores', () => {
-    expect(migrate({ schema: 1 })).toMatchObject({ schema: 4, drag: [], fuel: [], dyno: [] });
+    expect(migrate({ schema: 1 })).toMatchObject({ schema: 6, drag: [], fuel: [], dyno: [] });
     const v1 = validateBackup({ app: 'gt500-companion', schema: 1, garage: {}, plans: [], track: [] });
     expect(v1.ok && v1.migratedFrom).toBe(1);
     const b = makeBackup(EMPTY_GARAGE, [], [], [slip({ id: 'x', quarterEt: 11 })], [fill(10, 5)], { units: 'metric', theme: 'light', lang: 'en' });
@@ -190,7 +190,7 @@ describe('backup schema 2', () => {
   it('drops unknown keys', () => {
     const r = validateBackup({ app: 'gt500-companion', schema: 2, garage: { evil: 1 }, plans: [], track: [{ id: 'a', date: 'd', track: 'x', laps: '', pressures: {}, extra: 'x' }], drag: [], fuel: [], settings: {} });
     expect(r.ok).toBe(true);
-    if (r.ok) { expect('evil' in r.data.garage).toBe(false); expect('extra' in r.data.track[0]).toBe(false); }
+    if (r.ok) { expect('evil' in r.data.cars.cars[0]).toBe(false); expect('extra' in r.data.track[0]).toBe(false); }
   });
   it('rejects oversized imports', () => {
     const r = parseBackup(' '.repeat(MAX_IMPORT_BYTES + 1));
@@ -282,7 +282,7 @@ describe('round 4 data', () => {
     expect(String(m('oil-spec-supp').value)).toContain('WSS-M2C931-C');
     for (const id of ['coolant', 'ic-coolant', 'brake-fluid', 'plugs', 'oil-spec-supp']) { expect(m(id).confidence).toBe('reported'); expect(m(id).note).toMatch(/2021/); }
     expect(m('supp-intervals').confidence).toBe('reported'); expect(String(m('supp-intervals').value)).toContain('spark plugs 100k');
-    expect(colors.find((c) => c.id === 'wimbledon-white')!.code).toBeNull();
+    expect(colors.find((c) => c.id === 'wimbledon-white')!.code).toBe('N4'); // round 7: unverified for 2020–22
     expect(['dark-matter-gray', 'eruption-green', 'brittany-blue'].map((id) => colors.find((c) => c.id === id)!.code)).toEqual(['HY', 'FA', 'EB']);
   });
 });

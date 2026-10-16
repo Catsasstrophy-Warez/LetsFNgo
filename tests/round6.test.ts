@@ -178,7 +178,7 @@ describe('maintenance notifications', () => {
 
 describe('backup schema 4', () => {
   it('round-trips new stores and migrates v3', () => {
-    expect(SCHEMA_VERSION).toBe(4);
+    expect(SCHEMA_VERSION).toBe(6);
     const b = JSON.parse(JSON.stringify(makeBackup(EMPTY_GARAGE, [], [], [], [], undefined, 'x', undefined, { dyno: [pull({ curve: [{ rpm: 5000, hp: 500, tq: 520 }] })], notify: { enabled: true, sent: {} }, dashboard: { order: ['tools', ...DASH_IDS.filter((x) => x !== 'tools')], hidden: ['legend'] } })));
     const r = validateBackup(b);
     expect(r.ok).toBe(true);
@@ -187,7 +187,7 @@ describe('backup schema 4', () => {
     const m = validateBackup({ ...v3, schema: 3 });
     expect(m.ok && m.migratedFrom).toBe(3);
     if (m.ok) { expect(m.data.dyno).toEqual([]); expect(m.data.notify.enabled).toBe(false); expect(m.data.dashboard.order).toEqual([...DASH_IDS]); }
-    expect(migrate({ schema: 3 })).toMatchObject({ schema: 4, dyno: [] });
+    expect(migrate({ schema: 3 })).toMatchObject({ schema: 6, dyno: [] });
     expect(validateBackup({ ...b, dyno: [{ ...pull(), whp: -1 }] }).ok).toBe(false);
     expect(validateBackup({ ...b, notify: { enabled: 1 } }).ok).toBe(false);
   });

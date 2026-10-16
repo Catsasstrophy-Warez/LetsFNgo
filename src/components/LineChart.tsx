@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { tr } from '../lib/i18n';
 
 export interface Pt { label: string; value: number }
 
@@ -11,7 +12,7 @@ export function LineChart({ title, points, format, unit, lowerIsBetter = false, 
 }) {
   const id = useId();
   const [hover, setHover] = useState<number | null>(null);
-  if (points.length < 2) return <p className="muted small">{title}: log at least two entries to see a trend.</p>;
+  if (points.length < 2) return <p className="muted small">{tr('chart.needTwo', { t: title })}</p>;
   const W = 640, H = 260, P = { l: 78, r: 16, t: 20, b: 36 };
   const vals = points.map((p) => p.value).concat(refLine ? [refLine.value] : []);
   let lo = Math.min(...vals), hi = Math.max(...vals);
@@ -23,7 +24,7 @@ export function LineChart({ title, points, format, unit, lowerIsBetter = false, 
   const best = lowerIsBetter ? Math.min(...points.map((p) => p.value)) : Math.max(...points.map((p) => p.value));
   const bestI = points.findIndex((p) => p.value === best);
   const first = points[0].value, last = points[points.length - 1].value;
-  const summary = `${title}: ${points.length} points from ${points[0].label} to ${points[points.length - 1].label}. First ${format(first)} ${unit}, latest ${format(last)} ${unit}, best ${format(best)} ${unit}.`;
+  const summary = tr('chart.summary', { t: title, n: points.length, a: points[0].label, b: points[points.length - 1].label, f: `${format(first)} ${unit}`, l: `${format(last)} ${unit}`, best: `${format(best)} ${unit}` });
   const h = hover ?? points.length - 1;
   return (
     <figure className="chart">
@@ -51,9 +52,9 @@ export function LineChart({ title, points, format, unit, lowerIsBetter = false, 
           </g>
         ))}
       </svg>
-      <details className="small"><summary>Data table</summary>
-        <table className="tbl"><thead><tr><th>Entry</th><th>{unit}</th></tr></thead>
-          <tbody>{points.map((p, i) => <tr key={i}><td>{p.label}</td><td>{format(p.value)}{i === bestI ? ' (best)' : ''}</td></tr>)}</tbody></table>
+      <details className="small"><summary>{tr('chart.table')}</summary>
+        <table className="tbl"><thead><tr><th>{tr('chart.entry')}</th><th>{unit}</th></tr></thead>
+          <tbody>{points.map((p, i) => <tr key={i}><td>{p.label}</td><td>{format(p.value)}{i === bestI ? tr('chart.best') : ''}</td></tr>)}</tbody></table>
       </details>
     </figure>
   );

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { applyUpdate, onUpdateReady } from '../lib/sw';
 import { onSaveError } from '../lib/storage';
+import { useT } from './SettingsContext';
 
 /** Offline notice, "update ready" prompt and storage-failure warning. */
 export function StatusBar() {
@@ -15,11 +16,16 @@ export function StatusBar() {
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); u1(); u2(); };
   }, []);
   if (online && !update && !saveErr) return null;
+  return <StatusView online={online} update={update} saveErr={saveErr} setSaveErr={setSaveErr} />;
+}
+
+function StatusView({ online, update, saveErr, setSaveErr }: { online: boolean; update: boolean; saveErr: boolean; setSaveErr: (v: boolean) => void }) {
+  const t = useT();
   return (
     <div className="statusbar" role="status" aria-live="polite">
-      {!online && <p><span className="pill-off">Offline</span> Saved pages and your data still work; videos and source links need a connection.</p>}
-      {update && <p><strong>Update ready.</strong> <button className="btn small-btn" onClick={() => applyUpdate()}>Reload</button></p>}
-      {saveErr && <p className="err">Could not save to this device (storage full or blocked). Export a backup from Settings. <button className="link-btn" onClick={() => setSaveErr(false)}>Dismiss</button></p>}
+      {!online && <p><span className="pill-off">{t('status.offline')}</span> {t('status.offlineText')}</p>}
+      {update && <p><strong>{t('status.update')}</strong> <button className="btn small-btn" onClick={() => applyUpdate()}>{t('status.reload')}</button></p>}
+      {saveErr && <p className="err">{t('status.saveErr')} <button className="link-btn" onClick={() => setSaveErr(false)}>{t('status.dismiss')}</button></p>}
     </div>
   );
 }

@@ -1,9 +1,10 @@
+import { appendForActiveCar } from '../lib/carlog';
 import { useCallback, useEffect, useState } from 'react';
 import { createWakeLock, type Sentinel, type WakeState } from '../lib/wakelock';
 import { Link } from 'react-router';
 import { Note } from '../components/Facts';
+import { useT } from '../components/SettingsContext';
 import { KEYS, loadTrack, today, uid } from '../lib/garage';
-import { save } from '../lib/storage';
 import { formatLapTime } from '../lib/laptime';
 import { bestLap, clock, currentLap, elapsed, lap, lapsToText, newWatch, pause, running, start, type Stopwatch } from '../lib/timer';
 
@@ -25,14 +26,9 @@ function useWakeLock(active: boolean): WakeState {
   return state;
 }
 
-const WAKE_TEXT: Record<WakeState, string> = {
-  unsupported: 'Screen wake lock is not available in this browser — keep the screen on manually.',
-  off: 'Screen will be kept on while the timer runs.',
-  on: 'Screen is being kept on.',
-  failed: 'Could not keep the screen on (battery saver or permission). Keep it on manually.',
-};
 
 export default function Timer() {
+  const tt = useT();
   const [w, setW] = useState<Stopwatch>(newWatch);
   const [t, setT] = useState(now);
   const [track, setTrack] = useState('');
@@ -48,48 +44,48 @@ export default function Timer() {
 
   const toggle = () => { const n = now(); setT(n); setW((x) => (running(x) ? pause(x, n) : start(x, n))); };
   const doLap = useCallback(() => { const n = now(); setT(n); setW((x) => lap(x, n)); }, []);
-  const doReset = () => { if (!w.laps.length || confirm('Clear the timer and its laps?')) { setW(newWatch()); setMsg(null); } };
+  const doReset = () => { if (!w.laps.length || confirm(tt('timer.confirmReset'))) { setW(newWatch()); setMsg(null); } };
   const doSave = () => {
-    if (!w.laps.length) return setMsg({ ok: false, text: 'Record at least one lap first.' });
-    if (!track.trim()) return setMsg({ ok: false, text: 'Enter a track name.' });
-    const ok = save(KEYS.track, [...loadTrack(), { id: uid(), date: today(), track: track.trim(), conditions: '', airTemp: '', pressures: { fl: '', fr: '', rl: '', rr: '' }, laps: lapsToText(w.laps), notes: `Timed with the session timer (${w.laps.length} laps, session ${clock(elapsed(w, t))}). Hand-timed — expect a few tenths of error.` }]);
-    setMsg(ok ? { ok: true, text: `Saved ${w.laps.length} lap${w.laps.length === 1 ? '' : 's'} to the Track log.` } : { ok: false, text: 'This device refused to save (storage full or blocked).' });
+    if (!w.laps.length) return setMsg({ ok: false, text: tt('timer.needLap') });
+    if (!track.trim()) return setMsg({ ok: false, text: tt('track.errName') });
+    const ok = appendForActiveCar(KEYS.track, loadTrack(), { id: uid(), date: today(), track: track.trim(), conditions: '', airTemp: '', pressures: { fl: '', fr: '', rl: '', rr: '' }, laps: lapsToText(w.laps), notes: `Timed with the session timer (${w.laps.length} laps, session ${clock(elapsed(w, t))}). Hand-timed — expect a few tenths of error.` });
+    setMsg(ok ? { ok: true, text: tt('timer.saved', { n: w.laps.length }) } : { ok: false, text: tt('common.saveFailed') });
   };
 
   const best = bestLap(w.laps);
   return (
     <>
-      <h1>Session Timer</h1>
-      <p className="lede">A stopwatch with lap splits for track and drag days. Tap <strong>Lap</strong> as you cross your marker; laps save straight into the <Link to="/track">Track log</Link>. Do not operate your phone while driving — have a passenger or crew member time.</p>
+      <h1>{tt('nav.timer')}</h1>
+      <p className="lede">{tt('timer.lede')}</p>
       <section className="card timer" aria-labelledby="timer-h">
-        <h2 id="timer-h" className="sr-only">Stopwatch</h2>
-        <div className="timer-clock" aria-label={`Session time ${clock(elapsed(w, t))}`}>{clock(elapsed(w, t))}</div>
-        <div className="timer-lap muted">Lap {w.laps.length + 1}: <span className="mono">{clock(currentLap(w, t))}</span></div>
+        <h2 id="timer-h" className="sr-only">{tt('timer.sw')}</h2>
+        <div className="timer-clock" aria-label={tt('timer.session', { t: clock(elapsed(w, t)) })}>{clock(elapsed(w, t))}</div>
+        <div className="timer-lap muted">{tt('timer.lapN', { n: w.laps.length + 1 })} <span className="mono">{clock(currentLap(w, t))}</span></div>
         <div className="timer-btns">
-          <button className={`big-btn ${isRunning ? 'stop' : 'go'}`} onClick={toggle}>{isRunning ? 'Pause' : elapsed(w, t) > 0 ? 'Resume' : 'Start'}</button>
-          <button className="big-btn" onClick={doLap} disabled={!isRunning}>Lap</button>
+          <button className={`big-btn ${isRunning ? 'stop' : 'go'}`} onClick={toggle}>{isRunning ? tt('timer.pause') : elapsed(w, t) > 0 ? tt('timer.resume') : tt('timer.start')}</button>
+          <button className="big-btn" onClick={doLap} disabled={!isRunning}>{tt('timer.lap')}</button>
         </div>
         <div className="btn-row">
-          <button className="btn ghost" onClick={doReset} disabled={isRunning || elapsed(w, t) === 0}>Reset</button>
+          <button className="btn ghost" onClick={doReset} disabled={isRunning || elapsed(w, t) === 0}>{tt('timer.reset')}</button>
         </div>
-        <p className="muted small" role="status">{WAKE_TEXT[wake]}</p>
+        <p className="muted small" role="status">{tt(`timer.wake.${wake}`)}</p>
       </section>
       <section className="card" aria-live="polite">
-        <h2>Laps</h2>
-        {w.laps.length === 0 ? <p className="muted">No laps yet.</p> : (
+        <h2>{tt('timer.laps')}</h2>
+        {w.laps.length === 0 ? <p className="muted">{tt('timer.noLaps')}</p> : (
           <ol className="rows lap-list">
             {w.laps.map((ms, i) => (
-              <li key={i} className={ms === best ? 'best' : ''}><span>Lap {i + 1}</span> <strong className="mono">{formatLapTime(ms / 1000, 3)}</strong>{ms === best && <span className="tag">best</span>}</li>
+              <li key={i} className={ms === best ? 'best' : ''}><span>{tt('timer.lapI', { n: i + 1 })}</span> <strong className="mono">{formatLapTime(ms / 1000, 3)}</strong>{ms === best && <span className="tag">{tt('timer.best')}</span>}</li>
             ))}
           </ol>
         )}
         <div className="form">
-          <label>Track<input className="input" list="timer-tracks" value={track} onChange={(e) => setTrack(e.target.value)} placeholder="e.g. Laguna Seca" /></label>
+          <label>{tt('track.track')}<input className="input" list="timer-tracks" value={track} onChange={(e) => setTrack(e.target.value)} placeholder={tt('track.trackPh')} /></label>
           <datalist id="timer-tracks"><option value="Laguna Seca" /><option value="VIR Grand Course" /></datalist>
         </div>
-        <button className="btn" onClick={doSave}>Save to Track log</button>
-        {msg && <p className={msg.ok ? 'ok-t' : 'err'} role="status">{msg.text} {msg.ok && <Link to="/track">Open Track log →</Link>}</p>}
-        <Note>Laps shorter than 1 s are ignored so a double tap cannot add a phantom lap. Hand timing is less accurate than a transponder.</Note>
+        <button className="btn" onClick={doSave}>{tt('timer.save')}</button>
+        {msg && <p className={msg.ok ? 'ok-t' : 'err'} role="status">{msg.text} {msg.ok && <Link to="/track">{tt('timer.open')}</Link>}</p>}
+        <Note>{tt('timer.note')}</Note>
       </section>
     </>
   );

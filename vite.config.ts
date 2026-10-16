@@ -27,5 +27,5 @@ function swVersion(): Plugin {
 export default defineConfig({
   plugins: [react(), swVersion()],
   base: './',
-  test: { include: ['tests/**/*.test.{ts,tsx}'] },
+  test: { include: ['tests/**/*.test.{ts,tsx}'], setupFiles: ['tests/setup.ts'] },
 });

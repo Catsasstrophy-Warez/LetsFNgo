@@ -3,7 +3,7 @@
  * Each rebuilds the object from an allow-list of known keys and returns null if any present field
  * has the wrong type, so nothing unexpected can reach React as a child or be re-exported.
  */
-import { DEFAULT_REMINDERS, EMPTY_GARAGE, type GarageState, type LogEntry, type Plan, type Reminder, type TrackSession } from './garage';
+import { DEFAULT_REMINDERS, EMPTY_GARAGE, MAX_CARS, type Car, type CarStore, type GarageState, type LogEntry, type Plan, type Reminder, type TrackSession } from './garage';
 import type { GpsRun, Timeslip } from './drag';
 import type { FillUp } from './fuel';
 import { MAX_CURVE_POINTS, type CurvePoint, type DynoPull } from './dyno';
@@ -17,6 +17,12 @@ const req = (v: unknown): string | typeof BAD => (typeof v === 'string' ? v : BA
 /** Optional finite number or null. */
 const num = (v: unknown): number | null | typeof BAD => (v === undefined || v === null ? null : typeof v === 'number' && Number.isFinite(v) ? v : BAD);
 const reqNum = (v: unknown): number | typeof BAD => (typeof v === 'number' && Number.isFinite(v) ? v : BAD);
+
+/** Optional owning-car id: absent → {}, valid → { carId }, anything else → null. */
+function carField(v: Obj): { carId?: string } | null {
+  if (v.carId === undefined || v.carId === null || v.carId === '') return {};
+  return typeof v.carId === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(v.carId) ? { carId: v.carId } : null;
+}
 
 function build<T>(fields: Record<string, unknown>): T | null {
   return Object.values(fields).some((x) => x === BAD) ? null : (fields as T);
@@ -50,6 +56,20 @@ export function normGarage(v: unknown): GarageState | null {
   return g ? { ...g, mods: mods as LogEntry[], service: service as LogEntry[], reminders: reminders as Reminder[] } : null;
 }
 
+/** Multi-car store: 1–MAX_CARS cars with unique ids; an unknown active id falls back to the first car. */
+export function normCarStore(v: unknown): CarStore | null {
+  if (!isObj(v) || !Array.isArray(v.cars) || v.cars.length < 1 || v.cars.length > MAX_CARS) return null;
+  const cars: Car[] = [];
+  for (const x of v.cars) {
+    if (!isObj(x) || typeof x.id !== 'string' || !/^[A-Za-z0-9_-]{1,40}$/.test(x.id) || cars.some((c) => c.id === x.id)) return null;
+    const g = normGarage(x);
+    if (!g) return null;
+    cars.push({ ...g, id: x.id });
+  }
+  const active = typeof v.active === 'string' && cars.some((c) => c.id === v.active) ? v.active : cars[0].id;
+  return { active, cars };
+}
+
 export function normPlan(v: unknown): Plan | null {
   if (!isObj(v) || !Array.isArray(v.modIds) || !v.modIds.every((x) => typeof x === 'string')) return null;
   const p = build<Omit<Plan, 'modIds'>>({ id: req(v.id), name: req(v.name), created: str(v.created) });
@@ -62,7 +82,8 @@ export function normTrack(v: unknown): TrackSession | null {
   if (!isObj(pr)) return null;
   const pressures = build<TrackSession['pressures']>({ fl: str(pr.fl), fr: str(pr.fr), rl: str(pr.rl), rr: str(pr.rr) });
   const t = build<Omit<TrackSession, 'pressures'>>({ id: req(v.id), date: req(v.date), track: req(v.track), conditions: str(v.conditions), airTemp: str(v.airTemp), laps: req(v.laps), notes: str(v.notes) });
-  return t && pressures ? { ...t, pressures } : null;
+  const c = carField(v);
+  return t && pressures && c ? { ...t, pressures, ...c } : null;
 }
 
 export function normSlip(v: unknown): Timeslip | null {
@@ -84,14 +105,17 @@ export function normSlip(v: unknown): Timeslip | null {
     if (!b || b.seconds <= 0) return null;
     gps = { kind: g.kind, ...b };
   }
-  return s && weather ? { ...s, weather: { ...weather, pressureIsStation: w.pressureIsStation === true }, mods: [...((v.mods as string[] | undefined) ?? [])], ...(gps ? { gps } : {}) } : null;
+  const c = carField(v);
+  return s && weather && c ? { ...s, ...c, weather: { ...weather, pressureIsStation: w.pressureIsStation === true }, mods: [...((v.mods as string[] | undefined) ?? [])], ...(gps ? { gps } : {}) } : null;
 }
 
 export function normFill(v: unknown): FillUp | null {
   if (!isObj(v)) return null;
   if (v.fuel !== '93' && v.fuel !== 'E85' && v.fuel !== 'blend') return null;
   if (typeof v.full !== 'boolean') return null;
-  return build<FillUp>({ id: req(v.id), date: req(v.date), odometer: reqNum(v.odometer), gallons: reqNum(v.gallons), price: reqNum(v.price), fuel: v.fuel, blend: num(v.blend), full: v.full, notes: str(v.notes) });
+  const c = carField(v);
+  const f = build<FillUp>({ id: req(v.id), date: req(v.date), odometer: reqNum(v.odometer), gallons: reqNum(v.gallons), price: reqNum(v.price), fuel: v.fuel, blend: num(v.blend), full: v.full, notes: str(v.notes) });
+  return f && c ? { ...f, ...c } : null;
 }
 
 export interface QuizScore { answered: number; correct: number; bestStreak: number; streak: number }
@@ -138,8 +162,9 @@ export function normDyno(v: unknown): DynoPull | null {
   const d = build<Omit<DynoPull, 'weather' | 'mods' | 'curve' | 'dynoType' | 'correction'>>({
     id: req(v.id), date: req(v.date), shop: str(v.shop), whp: reqNum(v.whp), wtq: num(v.wtq), notes: str(v.notes),
   });
-  if (!d || !weather || d.whp <= 0 || d.whp > 5000 || !inRange(d.wtq, 0, 5000)) return null;
-  return { ...d, dynoType: v.dynoType as DynoPull['dynoType'], correction: v.correction as DynoPull['correction'], weather: { ...weather, pressureIsStation: w.pressureIsStation === true }, mods: [...((v.mods as string[] | undefined) ?? [])], curve: curve.sort((a, b) => a.rpm - b.rpm) };
+  const c = carField(v);
+  if (!c || !d || !weather || d.whp <= 0 || d.whp > 5000 || !inRange(d.wtq, 0, 5000)) return null;
+  return { ...d, ...c, dynoType: v.dynoType as DynoPull['dynoType'], correction: v.correction as DynoPull['correction'], weather: { ...weather, pressureIsStation: w.pressureIsStation === true }, mods: [...((v.mods as string[] | undefined) ?? [])], curve: curve.sort((a, b) => a.rpm - b.rpm) };
 }
 
 /** Local notification preference and which reminder due-keys were already announced. */

@@ -314,3 +314,34 @@ fieldset.plain { border: 0; padding: 0; margin: 0 0 .5rem; }
 .srclist li { padding: 3px 0; }
 .srclist a { display: inline-block; min-height: 24px; line-height: 24px; }
 .route-loading { min-height: 100vh; }
+
+/* Multi-car switcher (header) */
+.car-switch { width: auto; max-width: 42vw; min-height: 40px; padding: .3rem .5rem; font-size: .85rem; }
+.brand { min-width: 0; }
+
+/* Keyboard shortcuts dialog */
+.keys-dlg { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 14px; padding: 0; width: min(480px, calc(100vw - 32px)); max-height: 85vh; }
+.keys-in { padding: 1rem 1.25rem; }
+.keys-dlg::backdrop { background: rgba(0,0,0,.55); }
+kbd { font: 600 .8rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; padding: .15rem .4rem; background: var(--surface-2); color: var(--text); }
+
+/* Achievements */
+.ach-grid { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .75rem; }
+.ach { display: flex; gap: .75rem; align-items: flex-start; margin: 0; border-style: dashed; }
+.ach-done { border-style: solid; border-color: var(--ok); }
+.ach-icon { font-size: 1.6rem; line-height: 1; filter: grayscale(1); }
+.ach-done .ach-icon { filter: none; }
+.ach-t { font-size: 1rem; margin: 0 0 .15rem; display: flex; gap: .4rem; align-items: center; flex-wrap: wrap; }
+.ach progress { width: 100%; height: 8px; accent-color: var(--accent-2); }
+
+/* Report */
+.disclaimer { border: 2px solid var(--text); border-radius: 8px; padding: .6rem .8rem; font-weight: 600; }
+.recall-check .box { font-size: 1.15rem; }
+.chart-mark { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 6 4; }
+.chart-mark-t { fill: var(--text); font-weight: 700; }
+@media print {
+  .keys-dlg { display: none !important; }
+  .report .card { border: none; padding: 0; box-shadow: none; break-inside: auto; }
+  .report .tbl-wrap { overflow: visible; }
+  .report tr { break-inside: avoid; }
+}

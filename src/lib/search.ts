@@ -4,7 +4,7 @@ export interface SearchHit { collection: string; title: string; text: string; ro
 
 const ROUTES: Record<string, string> = {
   specs: '/specs', modelYears: '/years', colors: '/colors', packages: '/packages', prices: '/packages',
-  marketSales: '/packages', production: '/years', performance: '/performance', recalls: '/ownership',
+  marketSales: '/packages', auctionResults: '/market', marketStats: '/market', production: '/years', performance: '/performance', recalls: '/ownership',
   maintenance: '/ownership', vinPositions: '/vin', modStages: '/mods', competitors: '/compare',
   communities: '/community', partNumbers: '/parts', guides: '/guides', media: '/media', photos: '/media', audio: '/media', notes: '/sources',
 };
@@ -18,7 +18,7 @@ function flatten(v: unknown): string {
 const index = Object.entries(collections).flatMap(([collection, recs]) =>
   recs.map((r) => {
     const o = r as unknown as Record<string, unknown>;
-    const title = String(o.label ?? o.name ?? o.title ?? o.number ?? o.item ?? o.stage ?? o.positions ?? o.text ?? collection);
+    const title = String(o.label ?? o.name ?? o.title ?? o.number ?? o.item ?? o.stage ?? o.positions ?? o.text ?? o.description ?? collection);
     return { collection, title, text: flatten(r), route: ROUTES[collection] ?? '/', source: r.source };
   }),
 );
@@ -37,6 +37,11 @@ const tools: SearchHit[] = [
   { title: 'Track Day Log', text: 'track day lap times sessions tire pressures best average theoretical Laguna Seca VIR log', route: '/track' },
   { title: 'Maintenance reminders', text: 'service reminders interval oil change due soon overdue odometer garage', route: '/garage' },
   { title: 'Share card', text: 'share card PNG garage spec card', route: '/garage' },
+  { title: 'Service history report', text: 'resale report service history print pdf odometer recalls checklist buyer', route: '/report' },
+  { title: 'Market value', text: 'auction results market value price mileage bring a trailer mecum barrett-jackson median', route: '/market' },
+  { title: 'Achievements', text: 'achievements milestones badges first track day drag passes miles', route: '/achievements' },
+  { title: 'Calendar export', text: 'ics calendar export maintenance reminders ical google apple outlook', route: '/garage' },
+  { title: 'Keyboard shortcuts', text: 'keyboard shortcuts hotkeys keys help', route: '/settings' },
   { title: 'Backup & restore', text: 'export import JSON backup restore reset', route: '/settings' },
   { title: 'Drag Strip Log', text: 'drag strip timeslip reaction time 60 ft 330 eighth quarter mile ET trap mph density altitude DA weather consistency', route: '/drag' },
   { title: 'Density altitude calculator', text: 'density altitude DA calculator temperature barometer pressure humidity elevation weather correction', route: '/drag' },

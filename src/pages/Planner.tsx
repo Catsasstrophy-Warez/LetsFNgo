@@ -8,10 +8,12 @@ import { checkPlan, orderOfOps } from '../lib/compat';
 import { warrantyNote } from '../data/mods';
 import { costPerHp } from '../lib/roi';
 import { ShareLink } from '../components/ShareLink';
+import { useT } from '../components/SettingsContext';
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('en-US')}`;
 
 export default function Planner() {
+  const t = useT();
   const [plans, setPlans] = useState<Plan[]>(loadPlans);
   const [activeId, setActiveId] = useState<string>(() => loadPlans()[0]?.id ?? '');
   const [flash, setFlash] = useState('');
@@ -22,7 +24,7 @@ export default function Planner() {
   const ordered = orderOfOps(sum.mods);
 
   const newPlan = () => {
-    const p: Plan = { id: uid(), name: `Plan ${plans.length + 1}`, modIds: [], created: today() };
+    const p: Plan = { id: uid(), name: t('plan.default', { n: plans.length + 1 }), modIds: [], created: today() };
     setPlans([...plans, p]); setActiveId(p.id);
   };
   const update = (patch: Partial<Plan>) => setPlans((ps) => ps.map((p) => (p.id === activeId ? { ...p, ...patch } : p)));
@@ -30,27 +32,27 @@ export default function Planner() {
 
   return (
     <>
-      <h1>Build Planner</h1>
-      <p className="lede">Pick sourced mods into a plan. Costs are summed only where a source lists a price. Horsepower figures are never combined.</p>
+      <h1>{t('nav.planner')}</h1>
+      <p className="lede">{t('plan.lede')}</p>
       <section className="card">
         <div className="form">
-          <label>Plan
+          <label>{t('plan.plan')}
             <select className="input" value={activeId} onChange={(e) => setActiveId(e.target.value)}>
-              {!plans.length && <option value="">No plans yet</option>}
+              {!plans.length && <option value="">{t('plan.none')}</option>}
               {plans.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </label>
-          {active && <label>Plan name<input className="input" value={active.name} onChange={(e) => update({ name: e.target.value })} /></label>}
+          {active && <label>{t('plan.name')}<input className="input" value={active.name} onChange={(e) => update({ name: e.target.value })} /></label>}
         </div>
         <div className="btn-row">
-          <button className="btn" onClick={newPlan}>New plan</button>
-          {active && <button className="btn ghost" onClick={() => { if (confirm(`Delete "${active.name}"?`)) { const rest = plans.filter((p) => p.id !== active.id); setPlans(rest); setActiveId(rest[0]?.id ?? ''); } }}>Delete plan</button>}
+          <button className="btn" onClick={newPlan}>{t('plan.new')}</button>
+          {active && <button className="btn ghost" onClick={() => { if (confirm(t('plan.confirmDelete', { n: active.name }))) { const rest = plans.filter((p) => p.id !== active.id); setPlans(rest); setActiveId(rest[0]?.id ?? ''); } }}>{t('plan.delete')}</button>}
         </div>
       </section>
       {active && (
         <>
           <section className="card">
-            <h2>Choose mods</h2>
+            <h2>{t('plan.choose')}</h2>
             <ul className="rows">
               {plannable.map((m) => (
                 <li key={m.id}>
@@ -64,8 +66,8 @@ export default function Planner() {
           </section>
           {sum.mods.length > 0 && (
             <section className="card" aria-labelledby="compat-h">
-              <h2 id="compat-h">Compatibility &amp; order of operations</h2>
-              {warnings.length === 0 ? <p className="muted">No sourced compatibility notes for this selection.</p> : (
+              <h2 id="compat-h">{t('plan.compat')}</h2>
+              {warnings.length === 0 ? <p className="muted">{t('plan.noCompat')}</p> : (
                 <ul className="rows">
                   {warnings.map((w) => (
                     <li key={w.id} className={`compat compat-${w.severity}`}>
@@ -76,15 +78,15 @@ export default function Planner() {
                   ))}
                 </ul>
               )}
-              <div className="sub">Suggested order (by the stage the sourced data assigns)</div>
+              <div className="sub">{t('plan.order')}</div>
               <ol className="rows">{ordered.map((m) => <li key={m.id}>{m.stage}</li>)}</ol>
-              <Note>Rules come only from records already in this app; an empty list does not mean a combination is safe. Ask your tuner.</Note>
+              <Note>{t('plan.compatNote')}</Note>
             </section>
           )}
           <section className="card hl" aria-live="polite">
-            <h2>{active.name}: {sum.mods.length} mod{sum.mods.length === 1 ? '' : 's'}</h2>
-            <p className="stat-v">{sum.pricedCount ? (sum.costMin === sum.costMax ? money(sum.costMin) : `${money(sum.costMin)}–${money(sum.costMax)}`) : '—'}<small>parts, sourced prices</small></p>
-            {sum.unpricedCount > 0 && <p className="warn-t">{sum.unpricedCount} selected mod{sum.unpricedCount === 1 ? ' has' : 's have'} no sourced price, so the total is incomplete. Labor, tuning and fuel are not included.</p>}
+            <h2>{t('plan.count', { name: active.name, n: sum.mods.length })}</h2>
+            <p className="stat-v">{sum.pricedCount ? (sum.costMin === sum.costMax ? money(sum.costMin) : `${money(sum.costMin)}–${money(sum.costMax)}`) : '—'}<small>{t('sharev.sourcedPrices')}</small></p>
+            {sum.unpricedCount > 0 && <p className="warn-t">{t('plan.unpriced', { n: sum.unpricedCount })}</p>}
             <ul className="rows">
               {sum.mods.map((m) => (
                 <li key={m.id}>
@@ -95,12 +97,12 @@ export default function Planner() {
                 </li>
               ))}
             </ul>
-            <Note>Each figure above comes from a different car, dyno, fuel and source. Gains are not additive and no combined horsepower is estimated.</Note>
+            <Note>{t('plan.gainsNote')}</Note>
             {sum.mods.length > 0 && (
-              <button className="btn" onClick={() => { addModsToGarage(sum.mods.map((m) => ({ title: m.stage.replace(/^[\d·\s]+/, '') + ' (planned)', notes: `${m.parts}. From plan "${active.name}". Source: ${m.source}` }))); setFlash(`Added ${sum.mods.length} to the Garage mods log.`); }}>Add to Garage mods log</button>
+              <button className="btn" onClick={() => { addModsToGarage(sum.mods.map((m) => ({ title: m.stage.replace(/^[\d·\s]+/, '') + t('plan.planned'), notes: t('plan.fromPlan', { parts: m.parts, name: active.name, src: m.source }) }))); setFlash(t('plan.added', { n: sum.mods.length })); }}>{t('plan.addGarage')}</button>
             )}
-            {flash && <p className="ok-t" role="status">{flash} <Link to="/garage">Open Garage →</Link></p>}
-            {sum.mods.length > 0 && <ShareLink label="Share plan as link" payload={{ v: 1, k: 'plan', name: active.name, modIds: active.modIds }} />}
+            {flash && <p className="ok-t" role="status">{flash} <Link to="/garage">{t('nav.garage')} →</Link></p>}
+            {sum.mods.length > 0 && <ShareLink label={t('plan.share')} payload={{ v: 1, k: 'plan', name: active.name, modIds: active.modIds }} />}
           </section>
           {sum.mods.length > 0 && <RoiView mods={sum.mods} />}
         </>
@@ -111,24 +113,25 @@ export default function Planner() {
 }
 
 function RoiView({ mods }: { mods: ReturnType<typeof summarizePlan>['mods'] }) {
+  const t = useT();
   const rows = costPerHp(mods);
   return (
     <section className="card" aria-labelledby="roi-h">
-      <h2 id="roi-h">Cost per horsepower</h2>
+      <h2 id="roi-h">{t('plan.roi')}</h2>
       <ul className="rows">
         {rows.map((r) => (
           <li key={r.mod.id}>
             <div className="sub">{r.mod.stage}</div>
             {r.ok ? (
-              <p><strong>{r.perHpMin === r.perHpMax ? money(r.perHpMin) : `${money(r.perHpMin)}–${money(r.perHpMax)}`} per whp</strong> <span className="muted">· +{r.gainWhp} whp for {r.costMin === r.costMax ? money(r.costMin) : `${money(r.costMin)}–${money(r.costMax)}`}</span></p>
+              <p><strong>{t('plan.perWhp', { v: r.perHpMin === r.perHpMax ? money(r.perHpMin) : `${money(r.perHpMin)}–${money(r.perHpMax)}` })}</strong> <span className="muted">· {t('plan.forCost', { g: r.gainWhp, c: r.costMin === r.costMax ? money(r.costMin) : `${money(r.costMin)}–${money(r.costMax)}` })}</span></p>
             ) : (
-              <p className="muted"><span className="badge badge-unverified">insufficient data</span> no sourced {r.missing.join(' or ')}</p>
+              <p className="muted"><span className="badge badge-unverified">{t('plan.insufficient')}</span> {t('plan.noSourced', { m: r.missing.map((x) => t(`plan.miss.${x}`)).join(t('plan.or')) })}</p>
             )}
-            {r.mod.gain && <p className="small muted">Gain basis: {r.mod.gain.basis} <Cite c={r.mod.confidence} url={r.mod.source} /></p>}
+            {r.mod.gain && <p className="small muted">{t('plan.gainBasis', { b: r.mod.gain.basis })} <Cite c={r.mod.confidence} url={r.mod.source} /></p>}
           </li>
         ))}
       </ul>
-      <Note>Uses only a price range and a horsepower gain that sources state for that mod. Nothing is estimated, and per-mod gains are not added up. Labor and tuning are excluded.</Note>
+      <Note>{t('plan.roiNote')}</Note>
     </section>
   );
 }

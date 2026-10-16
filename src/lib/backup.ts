@@ -1,9 +1,10 @@
-import { EMPTY_GARAGE, KEYS, loadGarage, loadPlans, loadTrack, type GarageState, type Plan, type TrackSession } from './garage';
+import { DEFAULT_CAR_ID, EMPTY_GARAGE, carOf, KEYS, loadCars, loadPlans, loadTrack, type CarStore, type GarageState, type Plan, type TrackSession } from './garage';
+import { ACH_KEY, loadAch, normAch, type AchState } from './achievements';
 import { DRAG_KEY, loadDrag, type Timeslip } from './drag';
 import { FUEL_KEY, loadFuel, type FillUp } from './fuel';
 import { SETTINGS_KEY, loadSettings, normalizeSettings, type Settings } from './units';
 import { QUIZ_KEY } from './quiz';
-import { DEFAULT_ONBOARDING, normFill, normGarage, normOnboarding, normPlan, normSlip, normTrack, type Onboarding } from './validate';
+import { DEFAULT_ONBOARDING, normCarStore, normFill, normGarage, normOnboarding, normPlan, normSlip, normTrack, type Onboarding } from './validate';
 import { ONBOARDING_KEY, loadOnboarding } from './onboarding';
 import { remove, save } from './storage';
 import { DYNO_KEY, loadDyno, type DynoPull } from './dyno';
@@ -19,26 +20,32 @@ import { DEFAULT_NOTIFY, normDyno, normNotify, type DashLayout, type NotifyPrefs
  *      v2 files migrate with onboarding marked done (an existing user never sees the intro again).
  *  4 — adds dyno pulls, notification preference (permission itself is never restored) and Home layout.
  *      v3 files migrate with no pulls, notifications off and the default Home layout.
+ *  5 — multi-car Garage: `garage` becomes `cars` ({ active, cars: [{ id, ...garage }] }); track, drag, fuel and dyno
+ *      entries may carry `carId`. v4 files migrate losslessly to one car with id "car1" (entries without carId belong to it).
+ *  6 — adds `achievements` ({ seen: [...] }, which unlocked milestones were already announced). v5 files migrate with none seen.
  */
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 6;
 export const APP_ID = 'gt500-companion';
 /** Largest backup file accepted for import. */
 export const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 
 export interface Backup {
   app: typeof APP_ID; schema: number; exported: string;
-  garage: GarageState; plans: Plan[]; track: TrackSession[]; drag: Timeslip[]; fuel: FillUp[]; settings: Settings; onboarding: Onboarding;
-  dyno: DynoPull[]; notify: NotifyPrefs; dashboard: DashLayout;
+  cars: CarStore; plans: Plan[]; track: TrackSession[]; drag: Timeslip[]; fuel: FillUp[]; settings: Settings; onboarding: Onboarding;
+  dyno: DynoPull[]; notify: NotifyPrefs; dashboard: DashLayout; achievements: AchState;
 }
 
-export function makeBackup(garage: GarageState, plans: Plan[], track: TrackSession[], drag: Timeslip[] = [], fuel: FillUp[] = [], settings: Settings = normalizeSettings({}), exported = new Date().toISOString(), onboarding: Onboarding = { ...DEFAULT_ONBOARDING },
-  extra: { dyno?: DynoPull[]; notify?: NotifyPrefs; dashboard?: DashLayout } = {}): Backup {
-  return { app: APP_ID, schema: SCHEMA_VERSION, exported, garage, plans, track, drag, fuel, settings, onboarding,
-    dyno: extra.dyno ?? [], notify: extra.notify ?? { ...DEFAULT_NOTIFY, sent: {} }, dashboard: extra.dashboard ?? { ...DEFAULT_DASH, order: [...DEFAULT_DASH.order] } };
+/** Wrap a single Garage as a one-car store (accepts a store unchanged). */
+export const asStore = (g: GarageState | CarStore): CarStore => ('cars' in g && Array.isArray(g.cars) ? g : { active: DEFAULT_CAR_ID, cars: [{ ...(g as GarageState), id: DEFAULT_CAR_ID }] });
+
+export function makeBackup(garage: GarageState | CarStore, plans: Plan[], track: TrackSession[], drag: Timeslip[] = [], fuel: FillUp[] = [], settings: Settings = normalizeSettings({}), exported = new Date().toISOString(), onboarding: Onboarding = { ...DEFAULT_ONBOARDING },
+  extra: { dyno?: DynoPull[]; notify?: NotifyPrefs; dashboard?: DashLayout; achievements?: AchState } = {}): Backup {
+  return { app: APP_ID, schema: SCHEMA_VERSION, exported, cars: asStore(garage), plans, track, drag, fuel, settings, onboarding,
+    dyno: extra.dyno ?? [], notify: extra.notify ?? { ...DEFAULT_NOTIFY, sent: {} }, dashboard: extra.dashboard ?? { ...DEFAULT_DASH, order: [...DEFAULT_DASH.order] }, achievements: extra.achievements ?? { seen: [] } };
 }
 
 /** Everything currently stored on this device. */
-export const currentBackup = () => makeBackup(loadGarage(), loadPlans(), loadTrack(), loadDrag(), loadFuel(), loadSettings(), undefined, loadOnboarding(), { dyno: loadDyno(), notify: loadNotify(), dashboard: loadDash() });
+export const currentBackup = () => makeBackup(loadCars(), loadPlans(), loadTrack(), loadDrag(), loadFuel(), loadSettings(), undefined, loadOnboarding(), { dyno: loadDyno(), notify: loadNotify(), dashboard: loadDash(), achievements: loadAch() });
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -56,6 +63,12 @@ export function migrate(v: Obj): Obj {
   if (o.schema === 1) o = { ...o, schema: 2, drag: o.drag ?? [], fuel: o.fuel ?? [], settings: o.settings ?? {} };
   if (o.schema === 2) o = { ...o, schema: 3, onboarding: o.onboarding ?? { done: true, completed: '' } };
   if (o.schema === 3) o = { ...o, schema: 4, dyno: o.dyno ?? [], notify: o.notify ?? { enabled: false, sent: {} }, dashboard: o.dashboard ?? { order: [...DEFAULT_DASH.order], hidden: [] } };
+  if (o.schema === 4) {
+    const { garage, ...rest } = o;
+    // Keep a malformed garage as-is so validation reports it instead of silently replacing it.
+    o = { ...rest, schema: 5, cars: isObj(garage) ? { active: DEFAULT_CAR_ID, cars: [{ ...garage, id: DEFAULT_CAR_ID }] } : garage === undefined ? { active: DEFAULT_CAR_ID, cars: [{ id: DEFAULT_CAR_ID }] } : garage };
+  }
+  if (o.schema === 5) o = { ...o, schema: 6, achievements: o.achievements ?? { seen: [] } };
   return o;
 }
 
@@ -68,8 +81,12 @@ export function validateBackup(raw: unknown): { ok: true; data: Backup; migrated
   if (raw.schema > SCHEMA_VERSION) return { ok: false, errors: [...errs, `Schema ${raw.schema} is newer than this app supports (${SCHEMA_VERSION})`] };
   const from = raw.schema;
   const v = migrate(raw);
-  const garage = normGarage(v.garage);
-  if (!garage) errs.push('"garage" is malformed (every field must be a string; logs need id, date and title)');
+  const cars = normCarStore(v.cars);
+  if (!cars) errs.push(isObj(v.cars) && Array.isArray(v.cars.cars) && v.cars.cars.length === 1 && !normGarage(v.cars.cars[0])
+    ? '"garage" is malformed (every field must be a string; logs need id, date and title)'
+    : '"cars" is malformed (1–12 cars with unique ids; every field must be a string; logs need id, date and title)');
+  const achievements = normAch(v.achievements);
+  if (!achievements) errs.push('"achievements" is malformed');
   const plans = strictList(v.plans, 'plans', normPlan, errs);
   const track = strictList(v.track, 'track', normTrack, errs);
   const drag = strictList(v.drag, 'drag', normSlip, errs);
@@ -83,10 +100,14 @@ export function validateBackup(raw: unknown): { ok: true; data: Backup; migrated
   const dashboard = normDashboard(v.dashboard);
   if (!dashboard) errs.push('"dashboard" is malformed');
   if (errs.length) return { ok: false, errors: errs };
+  // Entries that point at a car the file does not contain are re-homed to the first car instead of becoming invisible.
+  const ids = new Set((cars?.cars ?? []).map((c) => c.id));
+  const first = cars?.cars[0]?.id ?? DEFAULT_CAR_ID;
+  const home = <T extends { carId?: string }>(xs: T[]): T[] => xs.map((e) => (ids.has(carOf(e)) ? e : { ...e, carId: first }));
   return {
     ok: true, migratedFrom: from < SCHEMA_VERSION ? from : null,
-    data: { app: APP_ID, schema: SCHEMA_VERSION, exported: typeof v.exported === 'string' ? v.exported : '', garage: garage ?? { ...EMPTY_GARAGE }, plans, track, drag, fuel, settings: normalizeSettings(v.settings), onboarding: onboarding ?? { ...DEFAULT_ONBOARDING },
-      dyno, notify: notify ?? { ...DEFAULT_NOTIFY, sent: {} }, dashboard: dashboard ?? { ...DEFAULT_DASH } },
+    data: { app: APP_ID, schema: SCHEMA_VERSION, exported: typeof v.exported === 'string' ? v.exported : '', cars: cars ?? { active: DEFAULT_CAR_ID, cars: [{ ...EMPTY_GARAGE, id: DEFAULT_CAR_ID }] }, plans, track: home(track), drag: home(drag), fuel: home(fuel), settings: normalizeSettings(v.settings), onboarding: onboarding ?? { ...DEFAULT_ONBOARDING },
+      dyno: home(dyno), notify: notify ?? { ...DEFAULT_NOTIFY, sent: {} }, dashboard: dashboard ?? { ...DEFAULT_DASH }, achievements: achievements ?? { seen: [] } },
   };
 }
 
@@ -97,13 +118,15 @@ export function parseBackup(text: string) {
 
 /** Write a validated backup to localStorage. Returns false if any write failed (e.g. quota). */
 export function restoreBackup(b: Backup): boolean {
+  // The restored cars replace the legacy single-car key too, so a stale copy can never resurface as a fallback.
+  remove(KEYS.garage);
   return [
-    save(KEYS.garage, b.garage), save(KEYS.plans, b.plans), save(KEYS.track, b.track),
+    save(KEYS.cars, b.cars), save(KEYS.plans, b.plans), save(KEYS.track, b.track),
     save(DRAG_KEY, b.drag), save(FUEL_KEY, b.fuel), save(SETTINGS_KEY, b.settings), save(ONBOARDING_KEY, b.onboarding),
-    save(DYNO_KEY, b.dyno), save(NOTIFY_KEY, b.notify), save(DASH_KEY, b.dashboard),
+    save(DYNO_KEY, b.dyno), save(NOTIFY_KEY, b.notify), save(DASH_KEY, b.dashboard), save(ACH_KEY, b.achievements),
   ].every(Boolean);
 }
 
 /** Every key this app writes. */
-export const ALL_KEYS = [KEYS.garage, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, DYNO_KEY, NOTIFY_KEY, DASH_KEY, 'gt500.theme'];
+export const ALL_KEYS = [KEYS.garage, KEYS.cars, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, DYNO_KEY, NOTIFY_KEY, DASH_KEY, ACH_KEY, 'gt500.theme'];
 export function resetAll(): void { ALL_KEYS.forEach(remove); }

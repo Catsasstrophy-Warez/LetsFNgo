@@ -4,7 +4,7 @@ import type { LogEntry } from './garage';
 
 export type FuelType = '93' | 'E85' | 'blend';
 /** A fill-up. Stored in imperial units (miles, US gallons, $/gal). */
-export interface FillUp { id: string; date: string; odometer: number; gallons: number; price: number; fuel: FuelType; /** Ethanol % for blends. */ blend: number | null; full: boolean; notes: string }
+export interface FillUp { id: string; date: string; odometer: number; gallons: number; price: number; fuel: FuelType; /** Ethanol % for blends. */ blend: number | null; full: boolean; notes: string; /** Owning car; missing = car #1. */ carId?: string }
 
 export const FUEL_KEY = 'gt500.fuel.v1';
 export const loadFuel = (): FillUp[] => normList(load<unknown>(FUEL_KEY, []), normFill);

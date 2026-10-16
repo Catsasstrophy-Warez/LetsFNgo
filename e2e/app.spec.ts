@@ -8,20 +8,21 @@ const shot = async (page: Page, name: string, project: string) => { if (SHOTS) a
 
 const ROUTES = ['/', '/specs', '/years', '/colors', '/visualizer', '/packages', '/performance', '/vin', '/ownership', '/garage', '/planner',
   '/timeline', '/track', '/timer', '/drag', '/gps', '/fuel', '/gearing', '/tools', '/mods', '/compare', '/diff', '/media', '/community',
-  '/quiz', '/print', '/sources', '/settings', '/search', '/welcome', '/dyno', '/tires', '/parts', '/guides', '/guides/track-service', '/guides/dct-fluid'];
+  '/quiz', '/print', '/sources', '/settings', '/search', '/welcome', '/dyno', '/tires', '/parts', '/guides', '/guides/track-service', '/guides/dct-fluid',
+  '/report', '/market', '/achievements'];
 
 /** Seed a returning user so Home does not redirect to the intro, with some data so log pages render content. */
-async function seed(page: Page, theme: 'dark' | 'light') {
-  await page.addInitScript((t) => {
+async function seed(page: Page, theme: 'dark' | 'light', lang: 'en' | 'es' = 'en') {
+  await page.addInitScript(([t, l]) => {
     if (sessionStorage.getItem('seeded')) return;
     sessionStorage.setItem('seeded', '1');
-    localStorage.setItem('gt500.settings.v1', JSON.stringify({ units: 'imperial', theme: t }));
+    localStorage.setItem('gt500.settings.v1', JSON.stringify({ units: 'imperial', theme: t, lang: l }));
     localStorage.setItem('gt500.onboarding.v1', JSON.stringify({ done: true, completed: '2026-01-01' }));
     localStorage.setItem('gt500.garage.v1', JSON.stringify({ year: '2020', color: 'race-red', nickname: 'Snake', mods: [{ id: 'm', date: '2025-06-01', title: 'Tune', notes: '', cost: '900' }], service: [{ id: 's', date: '2025-01-01', title: 'Oil change', notes: '', cost: '150' }] }));
     localStorage.setItem('gt500.plans.v1', JSON.stringify([{ id: 'p', name: 'Big', modIds: ['vmp', 'hpj'], created: '' }]));
     const w = { tempF: null, pressureInHg: null, humidity: null, elevationFt: null, pressureIsStation: false };
     localStorage.setItem('gt500.drag.v1', JSON.stringify([{ id: 'a', date: '2026-03-01', track: 'Texas Motorplex', rt: 0.5, sixty: 1.7, threeThirty: null, eighthEt: null, eighthMph: null, quarterEt: 11.2, quarterMph: 128, da: 2000, weather: w, mods: [], notes: '' }]));
-  }, theme);
+  }, [theme, lang]);
 }
 
 async function goto(page: Page, route: string) {
@@ -29,18 +30,20 @@ async function goto(page: Page, route: string) {
   await expect(page.locator('main h1').first()).toBeVisible();
 }
 
-for (const theme of ['dark', 'light'] as const) {
-  test(`axe: no serious/critical violations on every route (${theme})`, async ({ page }, info) => {
-    await seed(page, theme);
+for (const [theme, lang] of [['dark', 'en'], ['light', 'en'], ['dark', 'es'], ['light', 'es']] as const) {
+  test(`axe: no serious/critical violations on every route (${theme}, ${lang})`, async ({ page }, info) => {
+    test.setTimeout(180_000);
+    await seed(page, theme, lang);
     const failures: string[] = [];
     for (const r of ROUTES) {
       await goto(page, r);
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+      await expect(page.locator('html')).toHaveAttribute('lang', lang);
       const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('iframe').analyze();
       for (const v of res.violations.filter((x) => x.impact === 'serious' || x.impact === 'critical')) {
         failures.push(`${r} [${v.impact}] ${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`);
       }
-      if (['/timer', '/gps', '/timeline', '/diff', '/planner', '/welcome', '/dyno', '/tires', '/', '/parts', '/guides', '/guides/track-service', '/sources', '/settings'].includes(r)) await shot(page, `${theme}${r.replace(/\//g, '-')}`, info.project.name);
+      if (['/timer', '/gps', '/timeline', '/diff', '/planner', '/welcome', '/dyno', '/tires', '/', '/parts', '/guides', '/guides/track-service', '/sources', '/settings', '/report', '/market', '/achievements', '/garage'].includes(r)) await shot(page, `${theme}-${lang}${r.replace(/\//g, '-')}`, info.project.name);
     }
     expect(failures, failures.join('\n')).toEqual([]);
   });
@@ -57,7 +60,7 @@ test('first run shows the intro, seeds the Garage, and can be re-run from Settin
   await page.getByRole('radio', { name: /Metric/ }).click();
   await page.getByRole('button', { name: 'Finish' }).click();
   await expect(page).toHaveURL(/#\/garage/);
-  const g = await page.evaluate(() => JSON.parse(localStorage.getItem('gt500.garage.v1') || '{}'));
+  const g = await page.evaluate(() => { const s = JSON.parse(localStorage.getItem('gt500.cars.v1') || '{}'); return s.cars.find((c: { id: string }) => c.id === s.active); });
   expect(g.year).toBe('2021'); expect(g.color).toBe('carbonized-gray');
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('gt500.settings.v1') || '{}').units)).toBe('metric');
   await goto(page, '/');

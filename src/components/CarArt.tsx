@@ -1,10 +1,11 @@
+import { tr } from '../lib/i18n';
 import { useId } from 'react';
 
 /** Generic fastback silhouette drawn in SVG — not a trademark, logo or photo. */
-export function CarArt({ body = '#c8102e', stripe = '#f4f4f4', stripes = true, className = '', label = 'Stylized fastback coupe illustration' }: { body?: string; stripe?: string; stripes?: boolean; className?: string; label?: string }) {
+export function CarArt({ body = '#c8102e', stripe = '#f4f4f4', stripes = true, className = '', label }: { body?: string; stripe?: string; stripes?: boolean; className?: string; label?: string }) {
   const clip = `carBody-${useId().replace(/:/g, '')}`;
   return (
-    <svg className={`car-art ${className}`} viewBox="0 0 400 140" role="img" aria-label={label}>
+    <svg className={`car-art ${className}`} viewBox="0 0 400 140" role="img" aria-label={label ?? tr('car.art')}>
       <defs>
         <clipPath id={clip}><path d="M20 98 C22 80 40 74 70 70 L120 64 C150 40 190 30 236 32 C270 34 300 50 330 66 L372 74 C388 78 392 88 390 100 L386 108 L20 108 Z" /></clipPath>
       </defs>

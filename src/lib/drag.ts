@@ -16,6 +16,8 @@ export interface Timeslip {
   notes: string;
   /** Present only for runs timed by the GPS meter. These are approximate and excluded from strip stats. */
   gps?: GpsRun;
+  /** Owning car (multi-car Garage); missing = car #1. */
+  carId?: string;
 }
 
 /** A GPS-meter result saved to the Drag log ("GPS estimate"). */

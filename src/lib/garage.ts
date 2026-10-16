@@ -1,5 +1,5 @@
 import { load, save } from './storage';
-import { normGarage, normList, normPlan, normTrack } from './validate';
+import { normCarStore, normGarage, normList, normPlan, normTrack } from './validate';
 
 export interface LogEntry { id: string; date: string; title: string; notes: string; miles?: string; cost?: string }
 
@@ -18,9 +18,11 @@ export interface TrackSession {
   id: string; date: string; track: string; conditions: string; airTemp: string;
   pressures: { fl: string; fr: string; rl: string; rr: string };
   laps: string; notes: string;
+  /** Owning car (multi-car Garage). Missing means the first, migrated car (`DEFAULT_CAR_ID`). */
+  carId?: string;
 }
 
-export const KEYS = { garage: 'gt500.garage.v1', plans: 'gt500.plans.v1', track: 'gt500.track.v1' } as const;
+export const KEYS = { garage: 'gt500.garage.v1', cars: 'gt500.cars.v1', plans: 'gt500.plans.v1', track: 'gt500.track.v1' } as const;
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 /** Local calendar date (YYYY-MM-DD), not UTC. */
@@ -45,11 +47,71 @@ export const DEFAULT_REMINDERS: Reminder[] = [
 
 export const EMPTY_GARAGE: GarageState = { vin: '', year: '', color: '', nickname: '', odometer: '', mods: [], service: [], reminders: DEFAULT_REMINDERS };
 
+/**
+ * Multi-car Garage. Every car is a full GarageState plus an id; logs (track, drag, fuel, dyno) link to a car by
+ * `carId`. Data from the single-car era (key `gt500.garage.v1`, logs without `carId`) becomes car #1 with id
+ * `DEFAULT_CAR_ID`, so nothing has to be rewritten: an entry without `carId` belongs to that car.
+ */
+export const DEFAULT_CAR_ID = 'car1';
+export const MAX_CARS = 12;
+export interface Car extends GarageState { id: string }
+export interface CarStore { active: string; cars: Car[] }
+
+/** The car a log entry belongs to. */
+export const carOf = (e: { carId?: string }): string => e.carId || DEFAULT_CAR_ID;
+/** Entries that belong to one car. */
+export const forCar = <T extends { carId?: string }>(list: T[], id: string): T[] => list.filter((e) => carOf(e) === id);
+
+/** Store from the legacy single-car key (lossless: every field is kept, the car gets id `car1`). */
+export function legacyStore(): CarStore {
+  const g = normGarage(load<unknown>(KEYS.garage, null)) ?? { ...EMPTY_GARAGE };
+  return { active: DEFAULT_CAR_ID, cars: [{ id: DEFAULT_CAR_ID, ...g }] };
+}
+
 // Loaders validate stored JSON and fall back to defaults, so a corrupt or legacy key cannot crash a page.
-export const loadGarage = (): GarageState => normGarage(load<unknown>(KEYS.garage, null)) ?? { ...EMPTY_GARAGE };
-export const saveGarage = (g: GarageState) => save(KEYS.garage, g);
+/** All cars. Reads `gt500.cars.v1`; if it is missing or corrupt, migrates the legacy single-car key. */
+export const loadCars = (): CarStore => normCarStore(load<unknown>(KEYS.cars, null)) ?? legacyStore();
+export const saveCars = (s: CarStore) => save(KEYS.cars, s);
+export const activeCar = (s: CarStore): Car => s.cars.find((c) => c.id === s.active) ?? s.cars[0];
+export const activeCarId = (): string => activeCar(loadCars()).id;
+
+/** The active car's Garage (what every single-car page reads). */
+export const loadGarage = (): GarageState => { const { id: _id, ...g } = activeCar(loadCars()); void _id; return g; };
+/** Replace the active car's Garage, keeping the other cars. */
+export function saveGarage(g: GarageState): boolean {
+  const s = loadCars();
+  const id = activeCar(s).id;
+  const { id: _drop, ...clean } = g as GarageState & { id?: string }; void _drop;
+  return saveCars({ active: id, cars: s.cars.map((c) => (c.id === id ? { ...clean, id } : c)) });
+}
+
+/** Display name: nickname, else "2021 GT500", else "Car 2". */
+export function carLabel(c: Pick<Car, 'nickname' | 'year'>, index: number): string {
+  return c.nickname.trim() || (c.year ? `${c.year} GT500` : `Car ${index + 1}`);
+}
+
+/** Add a car (fresh reminders) and make it active. Returns the new id, or null at the limit / on a failed write. */
+export function addCar(init: Partial<GarageState> = {}, s: CarStore = loadCars()): string | null {
+  if (s.cars.length >= MAX_CARS) return null;
+  let id = uid();
+  while (id === DEFAULT_CAR_ID || s.cars.some((c) => c.id === id)) id = uid();
+  const car: Car = { ...EMPTY_GARAGE, reminders: DEFAULT_REMINDERS.map((r) => ({ ...r })), mods: [], service: [], ...init, id };
+  return saveCars({ active: id, cars: [...s.cars, car] }) ? id : null;
+}
+
+export const setActiveCar = (id: string, s: CarStore = loadCars()): boolean =>
+  s.cars.some((c) => c.id === id) ? saveCars({ ...s, active: id }) : false;
+
+/** Remove a car (never the last one). The caller also purges that car's log entries (see `purgeCarLogs`). */
+export function removeCarFromStore(id: string, s: CarStore): CarStore | null {
+  if (s.cars.length <= 1 || !s.cars.some((c) => c.id === id)) return null;
+  const cars = s.cars.filter((c) => c.id !== id);
+  return { active: s.active === id ? cars[0].id : s.active, cars };
+}
 export const loadPlans = (): Plan[] => normList(load<unknown>(KEYS.plans, []), normPlan);
 export const loadTrack = (): TrackSession[] => normList(load<unknown>(KEYS.track, []), normTrack);
+/** Track sessions of the active car. */
+export const loadCarTrack = (): TrackSession[] => forCar(loadTrack(), activeCarId());
 
 /** Append an entry to the Garage mods log (used by the build planner). */
 export function addModsToGarage(titles: { title: string; notes: string }[]): void {

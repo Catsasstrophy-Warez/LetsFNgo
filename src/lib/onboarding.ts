@@ -1,6 +1,6 @@
 import { load, save } from './storage';
 import { DEFAULT_ONBOARDING, normOnboarding, type Onboarding } from './validate';
-import { loadGarage, saveGarage, today } from './garage';
+import { loadCars, loadGarage, saveGarage, today } from './garage';
 
 export const ONBOARDING_KEY = 'gt500.onboarding.v1';
 export const loadOnboarding = (): Onboarding => normOnboarding(load<unknown>(ONBOARDING_KEY, null)) ?? { ...DEFAULT_ONBOARDING };
@@ -9,8 +9,8 @@ export const finishOnboarding = () => saveOnboarding({ done: true, completed: to
 
 /** Garage already has user data (so an existing user is never sent through the intro). */
 export function garageHasData(): boolean {
-  const g = loadGarage();
-  return !!(g.vin || g.year || g.color || g.nickname || g.odometer || g.mods.length || g.service.length);
+  const s = loadCars();
+  return s.cars.length > 1 || s.cars.some((g) => !!(g.vin || g.year || g.color || g.nickname || g.odometer || g.mods.length || g.service.length));
 }
 
 /** Show the intro only on a true first run. */

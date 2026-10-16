@@ -17,6 +17,8 @@ export interface DynoPull {
   dynoType: DynoType; correction: Correction;
   weather: { tempF: number | null; pressureInHg: number | null; humidity: number | null; elevationFt: number | null; pressureIsStation: boolean };
   mods: string[]; curve: CurvePoint[]; notes: string;
+  /** Owning car (multi-car Garage); missing = car #1. */
+  carId?: string;
 }
 
 export const DYNO_KEY = 'gt500.dyno.v1';

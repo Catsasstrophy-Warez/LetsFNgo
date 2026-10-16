@@ -45,7 +45,7 @@ describe('round-6 pages render', () => {
     for (const t of ['Shared build plan', 'Weekend', '$8,100–$8,850', 'Import to my Build Planner', 'Read-only']) expect(h).toContain(t);
     const car = encodeShare({ v: 1, k: 'car', year: '2021', color: 'race-red', nickname: '<b>x</b>', mods: ['Tune'] })!;
     const c = await render('Share', 'imperial', `/share/${car}`, '/share/:data');
-    for (const t of ['Shared car', '&lt;b&gt;x&lt;/b&gt;', '2021', 'Import to my Garage', 'never include a VIN']) expect(c).toContain(t);
+    for (const t of ['Shared car', '&lt;b&gt;x&lt;/b&gt;', '2021', 'Add as a new car', 'Merge into current car', 'never include a VIN']) expect(c).toContain(t);
     expect(await render('Share', 'imperial', '/share/%%%', '/share/:data')).toContain('damaged');
   });
   it('Planner: cost per hp with insufficient data and share link', async () => {
@@ -60,7 +60,7 @@ describe('round-6 pages render', () => {
   });
   it('Settings has the notifications toggle (unsupported fallback in SSR)', async () => {
     const h = await render('Settings');
-    for (const t of ['Maintenance notifications', 'does not support notifications', 'schema v4']) expect(h).toContain(t);
+    for (const t of ['Maintenance notifications', 'does not support notifications', 'schema v6']) expect(h).toContain(t);
   });
   it('Year compare tables carry stacked-card labels', async () => {
     const h = await render('YearCompare');

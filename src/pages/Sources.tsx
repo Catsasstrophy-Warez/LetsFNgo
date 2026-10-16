@@ -2,6 +2,8 @@ import { allSourceUrls, REPORT_PATH } from '../data';
 import { hostOf } from '../components/Facts';
 import { factRows, toCsv, toJson } from '../lib/factExport';
 import { today } from '../lib/garage';
+import { useT } from '../components/SettingsContext';
+
 
 function download(name: string, text: string, type: string) {
   const url = URL.createObjectURL(new Blob([text], { type }));
@@ -10,26 +12,28 @@ function download(name: string, text: string, type: string) {
 }
 
 function ExportFacts() {
+  const t = useT();
   const n = factRows().length;
   return (
     <section className="card" id="export">
-      <h2>Download the data</h2>
-      <p className="muted">All {n} sourced facts, one row each (conflicting values, guide steps and other nested citations get their own rows), with source URL and confidence. CSV opens in a spreadsheet; JSON is for scripts.</p>
+      <h2>{t('src.download')}</h2>
+      <p className="muted">{t('src.downloadText', { n })}</p>
       <div className="btn-row">
-        <button className="btn" onClick={() => download(`gt500-facts-${today()}.csv`, toCsv(factRows()), 'text/csv;charset=utf-8')}>Download CSV</button>
-        <button className="btn ghost" onClick={() => download(`gt500-facts-${today()}.json`, toJson(factRows()), 'application/json')}>Download JSON</button>
+        <button className="btn" onClick={() => download(`gt500-facts-${today()}.csv`, toCsv(factRows()), 'text/csv;charset=utf-8')}>{t('src.csv')}</button>
+        <button className="btn ghost" onClick={() => download(`gt500-facts-${today()}.json`, toJson(factRows()), 'application/json')}>{t('src.json')}</button>
       </div>
     </section>
   );
 }
 
 export default function Sources() {
+  const t = useT();
   const urls = allSourceUrls();
   const byHost = urls.reduce<Record<string, string[]>>((acc, u) => { (acc[hostOf(u)] ||= []).push(u); return acc; }, {});
   return (
     <>
-      <h1>Sources</h1>
-      <p className="lede">Every URL cited in the app ({urls.length}). Content compiled from the project research report (<code>{REPORT_PATH}</code>) and notes. Inclusion is not endorsement; some pages are forums, listings or vendor claims — see each fact's confidence badge.</p>
+      <h1>{t('nav.sources')}</h1>
+      <p className="lede">{t('src.lede', { n: urls.length })} <code>{REPORT_PATH}</code></p>
       <ExportFacts />
       {Object.keys(byHost).sort().map((h) => (
         <section key={h} className="card">

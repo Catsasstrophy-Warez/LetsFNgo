@@ -257,3 +257,38 @@ export interface Guide extends Sourced {
   /** Related `partNumbers` ids. */
   partIds: string[];
 }
+
+/**
+ * One public auction / marketplace result. `price` is USD and null when no USD figure was published
+ * (a foreign-currency conversion is kept in `localPrice`, never converted). `outlier` explains why a result
+ * is excluded from medians by default; `conflicts` lists every sourced value when sources disagree.
+ */
+export interface AuctionResult extends Sourced {
+  id: string;
+  /** YYYY-MM-DD, or YYYY-MM when only the month is known; null when unknown. */
+  date: string | null;
+  venue: string | null;
+  year: ModelYear;
+  mileage: number | null;
+  price: number | null;
+  localPrice?: { amount: number; currency: 'GBP' | 'EUR' | 'CAD' };
+  outcome: 'sold' | 'offer' | 'no-sale';
+  /** null = not stated by the source. */
+  cftp: boolean | null;
+  heritage: boolean | null;
+  outlier?: string;
+  conflicts?: SourcedValue<string>[];
+  description: string;
+}
+
+/** A published market statistic (median, valuation) from one source. */
+export interface MarketStat extends SourcedValue<number> {
+  id: string;
+  label: string;
+  /** Model year the figure covers. */
+  year: ModelYear;
+  kind: 'yearly-median' | 'median' | 'estimate';
+  period?: string;
+  sampleSize?: number | null;
+  conflicts?: SourcedValue<number>[];
+}

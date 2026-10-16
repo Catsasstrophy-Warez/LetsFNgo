@@ -1,7 +1,8 @@
 import type { Confidence, SourcedValue } from '../data/types';
+import { tr } from '../lib/i18n';
 
 export function Badge({ c }: { c: Confidence }) {
-  return <span className={`badge badge-${c}`} title={`Confidence: ${c}`}>{c}</span>;
+  return <span className={`badge badge-${c}`} title={tr('common.confidence', { c })}>{c}</span>;
 }
 
 export function hostOf(url: string): string {
@@ -18,12 +19,12 @@ export function Cite({ c, url }: { c: Confidence; url: string }) {
 }
 
 export function fmt(v: number | string | null | undefined, unit?: string): string {
-  if (v === null || v === undefined) return 'Unknown';
+  if (v === null || v === undefined) return tr('common.unknown');
   const s = typeof v === 'number' ? v.toLocaleString('en-US') : v;
   return unit ? `${s} ${unit}` : s;
 }
 
-export const usd = (n: number | null) => (n === null ? 'Unknown' : `$${n.toLocaleString('en-US')}`);
+export const usd = (n: number | null) => (n === null ? tr('common.unknown') : `$${n.toLocaleString('en-US')}`);
 
 export function Conflicts({ values, unit, money }: { values: SourcedValue[]; unit?: string; money?: boolean }) {
   return (

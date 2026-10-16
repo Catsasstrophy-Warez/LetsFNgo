@@ -2,15 +2,17 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { search } from '../lib/search';
 import { Src } from '../components/Facts';
+import { useT } from '../components/SettingsContext';
 
 export default function Search() {
+  const t = useT();
   const [q, setQ] = useState('');
   const hits = search(q);
   return (
     <>
-      <h1>Search</h1>
-      <input className="input" type="search" autoFocus placeholder="e.g. curb weight, Code Orange, recall, Whipple" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search all data" />
-      {q && <p className="muted">{hits.length} result{hits.length === 1 ? '' : 's'}</p>}
+      <h1>{t('nav.search')}</h1>
+      <input id="search-input" className="input" type="search" autoFocus placeholder={t('search.placeholder')} value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('search.label')} />
+      {q && <p className="muted">{t('search.count', { n: hits.length })}</p>}
       <ul className="rows">
         {hits.map((h, i) => (
           <li key={i}>

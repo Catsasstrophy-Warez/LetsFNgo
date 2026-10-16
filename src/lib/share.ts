@@ -1,5 +1,6 @@
 import { plannable } from './planner';
 import { colors } from '../data/colors';
+import { tr } from './i18n';
 
 /**
  * Shareable links: a build plan or car summary encoded as versioned, base64url JSON in the URL hash
@@ -43,26 +44,26 @@ const isObj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.i
 const strArr = (v: unknown, max: number, len: number) => Array.isArray(v) && v.length <= max && v.every((x) => typeof x === 'string' && x.length <= len);
 
 export function decodeShare(raw: string): { ok: true; data: SharePayload } | { ok: false; error: string } {
-  if (typeof raw !== 'string' || !raw) return { ok: false, error: 'The link has no data.' };
-  if (raw.length > MAX_SHARE_CHARS) return { ok: false, error: 'The link is too long.' };
-  if (!/^[A-Za-z0-9_-]+$/.test(raw)) return { ok: false, error: 'The link is damaged (unexpected characters).' };
+  if (typeof raw !== 'string' || !raw) return { ok: false, error: tr('sharelink.e0') };
+  if (raw.length > MAX_SHARE_CHARS) return { ok: false, error: tr('sharelink.e1') };
+  if (!/^[A-Za-z0-9_-]+$/.test(raw)) return { ok: false, error: tr('sharelink.e2') };
   let v: unknown;
-  try { v = JSON.parse(b64urlDecode(raw)); } catch { return { ok: false, error: 'The link is damaged and could not be read.' }; }
-  if (!isObj(v)) return { ok: false, error: 'The link is damaged.' };
-  if (v.v !== SHARE_VERSION) return { ok: false, error: typeof v.v === 'number' && v.v > SHARE_VERSION ? 'This link was made by a newer version of the app.' : 'Unknown link version.' };
+  try { v = JSON.parse(b64urlDecode(raw)); } catch { return { ok: false, error: tr('sharelink.e3') }; }
+  if (!isObj(v)) return { ok: false, error: tr('sharelink.e4') };
+  if (v.v !== SHARE_VERSION) return { ok: false, error: typeof v.v === 'number' && v.v > SHARE_VERSION ? tr('sharelink.e10') : tr('sharelink.e11') };
   if (v.k === 'plan') {
-    if (typeof v.name !== 'string' || v.name.length > MAX_NAME || !strArr(v.modIds, MAX_MODS, 40)) return { ok: false, error: 'The build plan in this link is malformed.' };
+    if (typeof v.name !== 'string' || v.name.length > MAX_NAME || !strArr(v.modIds, MAX_MODS, 40)) return { ok: false, error: tr('sharelink.e5') };
     const ids = [...new Set(v.modIds as string[])];
-    if (!ids.every((id) => plannable.some((m) => m.id === id))) return { ok: false, error: 'The plan lists mods this app does not know.' };
+    if (!ids.every((id) => plannable.some((m) => m.id === id))) return { ok: false, error: tr('sharelink.e6') };
     return { ok: true, data: { v: 1, k: 'plan', name: clean(v.name, MAX_NAME) || 'Shared plan', modIds: ids } };
   }
   if (v.k === 'car') {
     if (!['', '2020', '2021', '2022'].includes(v.year as string) || typeof v.color !== 'string' || typeof v.nickname !== 'string' || v.nickname.length > MAX_NAME || !strArr(v.mods, MAX_MODS, MAX_MOD_TITLE))
-      return { ok: false, error: 'The car summary in this link is malformed.' };
-    if (v.color && !colors.some((c) => c.id === v.color)) return { ok: false, error: 'The link names an unknown color.' };
+      return { ok: false, error: tr('sharelink.e7') };
+    if (v.color && !colors.some((c) => c.id === v.color)) return { ok: false, error: tr('sharelink.e8') };
     return { ok: true, data: { v: 1, k: 'car', year: v.year as '', color: v.color, nickname: clean(v.nickname, MAX_NAME), mods: (v.mods as string[]).map((m) => clean(m, MAX_MOD_TITLE)).filter(Boolean) } };
   }
-  return { ok: false, error: 'Unknown link type.' };
+  return { ok: false, error: tr('sharelink.e9') };
 }
 
 /** Full link for the current deployment (works under any subpath; HashRouter). */
