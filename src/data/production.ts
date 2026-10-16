@@ -27,5 +27,5 @@ export const production: ProductionFact[] = [
     ],
   },
   { id: 'kr', label: 'Shelby GT500KR (limit)', scope: 'Shelby American', value: 180, source: 'https://en.wikipedia.org/wiki/Shelby_Mustang', confidence: 'reported' },
-  { id: 'colors', label: 'Color / package splits', scope: '2020–2022', value: null, source: 'https://www.aol.com/ford-mustang-shelby-gt500s-10-214500277.html', confidence: 'unverified', note: 'Ford does not publish them.' },
+  { id: 'colors', label: 'Color / package splits', scope: '2020–2022', value: null, source: 'https://www.aol.com/ford-mustang-shelby-gt500s-10-214500277.html', confidence: 'unverified', note: 'Ford does not publish them. Source link dead as of 2026-10-16.' },
 ];

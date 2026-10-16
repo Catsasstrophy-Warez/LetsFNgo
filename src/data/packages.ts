@@ -10,8 +10,8 @@ export const packages: OptionPackage[] = [
     note: '2022 availability supported by a 2022 Heritage CFTP sold on PCARMarket.',
   },
   {
-    id: 'cfhp', name: 'Carbon Fiber Handling Package', years: [2021], source: 'https://www.musclecarsandtrucks.com/2021-ford-mustang-shelby-gt500-carbon-fiber-handling-package-costs-10000/', confidence: 'reported',
-    price: { value: 10000, source: 'https://www.musclecarsandtrucks.com/2021-ford-mustang-shelby-gt500-carbon-fiber-handling-package-costs-10000/', confidence: 'reported' },
+    id: 'cfhp', name: 'Carbon Fiber Handling Package', years: [2021], source: 'https://web.archive.org/web/20240529210008/https://www.musclecarsandtrucks.com/2021-ford-mustang-shelby-gt500-carbon-fiber-handling-package-costs-10000/', originalUrl: 'https://www.musclecarsandtrucks.com/2021-ford-mustang-shelby-gt500-carbon-fiber-handling-package-costs-10000/', confidence: 'reported',
+    price: { value: 10000, source: 'https://web.archive.org/web/20240529210008/https://www.musclecarsandtrucks.com/2021-ford-mustang-shelby-gt500-carbon-fiber-handling-package-costs-10000/', originalUrl: 'https://www.musclecarsandtrucks.com/2021-ford-mustang-shelby-gt500-carbon-fiber-handling-package-costs-10000/', confidence: 'reported' },
     contents: ['20-in painted carbon fiber wheels', 'Adjustable strut-top mounts', 'Oil catch can', 'Wheel locks'],
     contentsConfidence: 'reported',
     note: 'Reportedly dropped for 2022 (CarsDirect via Carscoops).',

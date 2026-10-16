@@ -100,6 +100,9 @@
       "note": {
         "type": "string",
         "minLength": 1
+      },
+      "originalUrl": {
+        "$ref": "#/$defs/source"
       }
     },
     "additionalProperties": false
@@ -150,6 +153,9 @@
         "note": {
           "type": "string",
           "minLength": 1
+        },
+        "originalUrl": {
+          "$ref": "#/$defs/source"
         }
       },
       "additionalProperties": false
@@ -185,6 +191,9 @@
         "note": {
           "type": "string",
           "minLength": 1
+        },
+        "originalUrl": {
+          "$ref": "#/$defs/source"
         }
       },
       "additionalProperties": false
@@ -221,6 +230,9 @@
         "note": {
           "type": "string",
           "minLength": 1
+        },
+        "originalUrl": {
+          "$ref": "#/$defs/source"
         }
       },
       "additionalProperties": false

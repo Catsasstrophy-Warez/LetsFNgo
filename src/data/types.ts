@@ -6,6 +6,8 @@ export interface Sourced {
   source: string;
   confidence: Confidence;
   note?: string;
+  /** The original URL when `source` points at a Wayback Machine snapshot of a dead page. */
+  originalUrl?: string;
 }
 
 export type ModelYear = 2020 | 2021 | 2022;

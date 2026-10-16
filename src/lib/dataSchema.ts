@@ -29,7 +29,7 @@ function rec(req: Record<string, JsonSchema>, opt: Record<string, JsonSchema> = 
   return {
     type: 'object',
     required: [...Object.keys(req), ...Object.keys(base)],
-    properties: { ...req, ...base, ...opt, ...(sourced ? { note: str } : {}) },
+    properties: { ...req, ...base, ...opt, ...(sourced ? { note: str, originalUrl: { $ref: '#/$defs/source' } } : {}) },
     additionalProperties: false,
   };
 }
@@ -193,6 +193,7 @@ export function checkCollections(collections: Record<string, Sourced[]>): Issue[
         if (typeof s.source !== 'string' || !/^https:\/\/\S+$/.test(s.source)) push(`${p}.source`, 'source must be an https URL');
         if (!CONFIDENCE.includes(s.confidence as string)) push(`${p}.confidence`, `confidence must be one of ${CONFIDENCE.join(', ')}`);
         if ('value' in s && s.value === null && !(typeof s.note === 'string' && s.note.trim())) push(`${p}.note`, 'a null value needs a note explaining the gap');
+        if ('originalUrl' in s && !(typeof s.source === 'string' && s.source.startsWith('https://web.archive.org/web/') && s.source.endsWith(String(s.originalUrl)))) push(`${p}.originalUrl`, 'originalUrl is only for a Wayback snapshot source that ends with it');
       });
       for (const k of CONFLICT_KEYS) {
         const list = o[k];
