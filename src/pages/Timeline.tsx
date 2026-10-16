@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { usdFixed } from '../lib/format';
 import { Link } from 'react-router';
 import { activeCarId, carLabel, forCar, loadCars, loadTrack } from '../lib/garage';
 import { loadDrag } from '../lib/drag';
@@ -10,7 +11,7 @@ import { fmtQty } from '../lib/units';
 
 const KINDS = Object.keys(KIND_LABEL) as EventKind[];
 const KL = (k: EventKind) => `tl.kind.${k}` as MsgKey;
-const money = (n: number) => `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const money = (n: number) => usdFixed(n);
 
 export default function Timeline() {
   const u = useUnits();

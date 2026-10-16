@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { downloadText } from '../lib/download';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { saveOnboarding } from '../lib/onboarding';
 import { useSettings, useT } from '../components/SettingsContext';
@@ -28,9 +29,7 @@ export function DataManagement() {
   const { refresh } = useCar();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const exportAll = () => {
-    const url = URL.createObjectURL(new Blob([JSON.stringify(currentBackup(), null, 2)], { type: 'application/json' }));
-    const a = document.createElement('a'); a.href = url; a.download = `gt500-companion-backup-${today()}.json`; a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    downloadText(JSON.stringify(currentBackup(), null, 2), `gt500-companion-backup-${today()}.json`, 'application/json');
     setMsg({ ok: true, text: t('data.downloaded') });
   };
   const importFile = async (file: File) => {

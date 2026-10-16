@@ -175,7 +175,12 @@ export function normNotify(v: unknown): NotifyPrefs | null {
   const s = v.sent ?? {};
   if (!isObj(s)) return null;
   const sent: Record<string, string> = {};
-  for (const [k, x] of Object.entries(s).slice(0, 200)) { if (typeof x !== 'string') return null; sent[k] = x; }
+  for (const [k, x] of Object.entries(s).slice(0, 200)) {
+    if (typeof x !== 'string') return null;
+    // Keys come from imported JSON: never let one reach an object's prototype slot.
+    if (k === '__proto__' || k === 'constructor' || k === 'prototype' || k.length > 100 || x.length > 200) continue;
+    sent[k] = x;
+  }
   return { enabled: v.enabled, sent };
 }
 

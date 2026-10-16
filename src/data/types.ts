@@ -292,3 +292,75 @@ export interface MarketStat extends SourcedValue<number> {
   sampleSize?: number | null;
   conflicts?: SourcedValue<number>[];
 }
+
+/** The research notes' own confidence scale (round 8+), kept verbatim next to the app's badge level. */
+export type ResearchLevel = 'high' | 'medium' | 'low';
+/** Badge level for a research level: high → confirmed, medium → reported, low → unverified. */
+export const levelToConfidence = (l: ResearchLevel): Confidence => (l === 'high' ? 'confirmed' : l === 'medium' ? 'reported' : 'unverified');
+
+/**
+ * A Shelby American post-title edition built on the 2020–22 GT500. Every unknown is null — never estimated.
+ * `price` is the new-car or package price as the source states it (see `priceNote`); `upfitPrice` is the price to
+ * convert an existing car, where one is published.
+ */
+export interface ShelbyEdition extends Sourced {
+  id: string;
+  name: string;
+  /** Years as the source words them (e.g. "2022 (upfit available for 2020-2021 cars)"). */
+  years: string;
+  /** Donor/base model years the edition applies to, for filtering. */
+  modelYears: ModelYear[];
+  hpClaim: string | null;
+  price: number | null;
+  priceNote?: string;
+  upfitPrice?: number | null;
+  production: string | null;
+  /** Every sourced value when sources disagree on production. */
+  productionConflicts?: SourcedValue<string>[];
+  content: string | null;
+  streetLegal: boolean | null;
+  research: ResearchLevel;
+}
+
+/** Emissions/legal status as Ford Performance labels a part; null when the catalog does not say. */
+export type EmissionsStatus = 'carb-eo' | '50-state-legal' | 'not-legal-for-road' | null;
+
+/** A Ford Performance catalog item (M-number). MSRP is the price on the fetch date, not a period price. */
+export interface FpCatalogItem extends Sourced {
+  id: string;
+  /** M-number exactly as printed, e.g. "M-6766-A52". */
+  number: string;
+  name: string;
+  msrp: number | null;
+  /** YYYY-MM-DD the price was read. */
+  priceAsOf: string | null;
+  emissions: EmissionsStatus;
+  /** GT500 model years the part fits. */
+  fitmentYears: ModelYear[];
+  /** false = fitment inferred from the part name, not listed for the 2020–22 GT500 by the catalog. */
+  fitmentExplicit: boolean;
+  category: 'Body & aero' | 'Engine' | 'Fuel & cooling' | 'Driveline' | 'Appearance';
+  research: ResearchLevel;
+}
+
+/** An owner event, program or notable auction tied to the 2020–22 GT500. */
+export interface HistoryEvent extends Sourced {
+  id: string;
+  kind: 'program' | 'convention' | 'auction';
+  name: string;
+  /** YYYY, YYYY-MM or YYYY-MM-DD; null when unknown. `dateText` keeps the source's wording. */
+  date: string | null;
+  dateText?: string;
+  location: string | null;
+  cost?: string | null;
+  research: ResearchLevel;
+}
+
+/** A media/press milestone (reveal, award). `placement` is null when the final result is unknown. */
+export interface Milestone extends Sourced {
+  id: string;
+  date: string | null;
+  title: string;
+  placement?: string | null;
+  research: ResearchLevel;
+}

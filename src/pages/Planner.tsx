@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { usdRange } from '../lib/format';
 import { Link } from 'react-router';
 import { Cite, Note } from '../components/Facts';
 import { save } from '../lib/storage';
@@ -10,7 +11,6 @@ import { costPerHp } from '../lib/roi';
 import { ShareLink } from '../components/ShareLink';
 import { useT } from '../components/SettingsContext';
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('en-US')}`;
 
 export default function Planner() {
   const t = useT();
@@ -85,14 +85,14 @@ export default function Planner() {
           )}
           <section className="card hl" aria-live="polite">
             <h2>{t('plan.count', { name: active.name, n: sum.mods.length })}</h2>
-            <p className="stat-v">{sum.pricedCount ? (sum.costMin === sum.costMax ? money(sum.costMin) : `${money(sum.costMin)}–${money(sum.costMax)}`) : '—'}<small>{t('sharev.sourcedPrices')}</small></p>
+            <p className="stat-v">{sum.pricedCount ? usdRange(sum.costMin, sum.costMax) : '—'}<small>{t('sharev.sourcedPrices')}</small></p>
             {sum.unpricedCount > 0 && <p className="warn-t">{t('plan.unpriced', { n: sum.unpricedCount })}</p>}
             <ul className="rows">
               {sum.mods.map((m) => (
                 <li key={m.id}>
                   <div className="sub">{m.stage}</div>
                   <p><strong>{m.result}</strong></p>
-                  <div className="row-meta">{m.cost && <span className="tag">{m.cost.min === m.cost.max ? money(m.cost.min) : `${money(m.cost.min)}–${money(m.cost.max)}`}</span>}<Cite c={m.confidence} url={m.source} /></div>
+                  <div className="row-meta">{m.cost && <span className="tag">{usdRange(m.cost.min, m.cost.max)}</span>}<Cite c={m.confidence} url={m.source} /></div>
                   {m.note && <Note>{m.note}</Note>}
                 </li>
               ))}
@@ -123,7 +123,7 @@ function RoiView({ mods }: { mods: ReturnType<typeof summarizePlan>['mods'] }) {
           <li key={r.mod.id}>
             <div className="sub">{r.mod.stage}</div>
             {r.ok ? (
-              <p><strong>{t('plan.perWhp', { v: r.perHpMin === r.perHpMax ? money(r.perHpMin) : `${money(r.perHpMin)}–${money(r.perHpMax)}` })}</strong> <span className="muted">· {t('plan.forCost', { g: r.gainWhp, c: r.costMin === r.costMax ? money(r.costMin) : `${money(r.costMin)}–${money(r.costMax)}` })}</span></p>
+              <p><strong>{t('plan.perWhp', { v: usdRange(r.perHpMin, r.perHpMax) })}</strong> <span className="muted">· {t('plan.forCost', { g: r.gainWhp, c: usdRange(r.costMin, r.costMax) })}</span></p>
             ) : (
               <p className="muted"><span className="badge badge-unverified">{t('plan.insufficient')}</span> {t('plan.noSourced', { m: r.missing.map((x) => t(`plan.miss.${x}`)).join(t('plan.or')) })}</p>
             )}

@@ -9,7 +9,9 @@ import { reminderStatus, type Reminder } from './garage';
 export const CRLF = '\r\n';
 
 export function escapeText(s: string): string {
-  return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r\n|\r|\n/g, '\\n');
+  // Control characters other than newlines are not allowed in TEXT values (they could break parsers): dropped.
+  // eslint-disable-next-line no-control-regex
+  return s.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r\n|\r|\n/g, '\\n');
 }
 
 const enc = new TextEncoder();

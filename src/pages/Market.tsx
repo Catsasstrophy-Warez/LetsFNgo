@@ -4,6 +4,7 @@ import { auctionResults as ALL, marketStats as STATS } from '../data/auctions';
 import type { AuctionResult, MarketStat, ModelYear } from '../data/types';
 import { Cite, Conflicts, Note } from '../components/Facts';
 import { ScatterChart } from '../components/ScatterChart';
+import { LazyRender } from '../components/LazyRender';
 import { useT, useUnits } from '../components/SettingsContext';
 import { DEFAULT_FILTER, byDate, byMileage, filterAuctions, median, priced, usd0, type MarketFilter } from '../lib/market';
 import { loadGarage, toNum } from '../lib/garage';
@@ -65,16 +66,19 @@ export default function Market({ results = ALL, stats = STATS }: { results?: Auc
           <section className="card">
             <h2>{t('market.charts')}</h2>
             {med !== null && <p>{t('market.median', { m: usd0(med), n: pts.length })}</p>}
+            <LazyRender minHeight={760} label={t('chrome.loading')}>
             <ScatterChart title={t('market.byDate')} points={byDate(shown)} fmtX={monthLabel} fmtY={usd0} xLabel={t('market.saleDate')} yLabel={t('market.price')}
               refY={med !== null ? { y: med, label: t('market.medianShort', { m: usd0(med) }) } : undefined} tableLabel={t('chart.table')} empty={t('market.noPoints')} />
             <ScatterChart title={t('market.byMiles')} points={byMileage(shown)} fmtX={(mi) => distX(mi)} fmtY={usd0} xLabel={t('market.mileage', { u: unitLabel('distance', u) })} yLabel={t('market.price')}
               marker={myMiles !== null ? { x: myMiles, label: t('market.yourCar', { d: fmtQty('distance', myMiles, u) }) } : undefined} tableLabel={t('chart.table')} empty={t('market.noPoints')} />
+            </LazyRender>
             {myMiles === null && <p className="muted small">{t('market.setOdo')} <Link to="/garage#maintenance">{t('nav.garage')} →</Link></p>}
             <Note>{t('market.chartNote')}</Note>
           </section>
           <section className="card">
             <h2>{t('market.results')}</h2>
             {shown.length === 0 ? <p className="muted">{t('market.noMatch')}</p> : (
+              <LazyRender minHeight={Math.min(shown.length, 20) * 120} label={t('chrome.loading')}>
               <ul className="rows">
                 {[...shown].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')).map((r) => (
                   <li key={r.id}>
@@ -89,6 +93,7 @@ export default function Market({ results = ALL, stats = STATS }: { results?: Auc
                   </li>
                 ))}
               </ul>
+              </LazyRender>
             )}
           </section>
         </>

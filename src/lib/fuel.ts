@@ -1,3 +1,4 @@
+import { parseMoney as parseAmount } from './format';
 import { load } from './storage';
 import { normFill, normList } from './validate';
 import type { LogEntry } from './garage';
@@ -49,7 +50,8 @@ export function fuelSummary(fills: FillUp[]): FuelSummary {
 }
 
 /** "$1,234.50", "1234" → 1234.5; anything else → 0 (log costs are free text). */
-export const parseMoney = (s: string | undefined) => { const n = Number(String(s ?? '').replace(/[$,\s]/g, '')); return Number.isFinite(n) && n > 0 ? n : 0; };
+/** A positive typed amount, or 0 (blank, unparseable, zero or negative). */
+export const parseMoney = (s: string | undefined) => { const n = parseAmount(s) ?? 0; return n > 0 ? n : 0; };
 
 export interface OwnershipCost { fuel: number; service: number; mods: number; total: number; miles: number; perMile: number | null }
 

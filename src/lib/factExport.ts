@@ -45,9 +45,12 @@ export function factRows(cols: Record<string, Sourced[]> = collections): FactRow
 }
 
 const COLS: (keyof FactRow)[] = ['collection', 'id', 'path', 'label', 'value', 'source', 'confidence', 'note'];
-/** RFC 4180 quoting; cells starting with = + - @ (spreadsheet formulas) are prefixed with ' to stop CSV injection. */
+/**
+ * RFC 4180 quoting; cells starting with = + - @ (spreadsheet formulas), tab/CR/LF, or whitespace followed by a
+ * formula character are prefixed with ' to stop CSV injection (some spreadsheets trim leading spaces).
+ */
 export function csvCell(s: string): string {
-  const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  const safe = /^[=+\-@\t\r\n]|^\s+[=+\-@]/.test(s) ? `'${s}` : s;
   return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 export const toCsv = (rows: FactRow[]) => [COLS.join(','), ...rows.map((r) => COLS.map((c) => csvCell(r[c])).join(','))].join('\r\n') + '\r\n';

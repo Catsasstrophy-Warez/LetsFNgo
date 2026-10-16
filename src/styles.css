@@ -345,3 +345,18 @@ kbd { font: 600 .8rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; border: 
   .report .tbl-wrap { overflow: visible; }
   .report tr { break-inside: avoid; }
 }
+
+/* Install prompt: fixed above the tab bar so it never shifts page content. */
+.install { position: fixed; left: .75rem; right: .75rem; bottom: calc(64px + env(safe-area-inset-bottom)); z-index: 30; max-width: 640px; margin: 0 auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: .75rem 1rem; box-shadow: 0 6px 24px rgba(0,0,0,.35); }
+.install p { margin: 0 0 .5rem; }
+.row-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+@media print { .install { display: none; } }
+/* Lazy below-the-fold placeholders */
+.lazy-ph { display: block; }
+/* History timeline */
+.tl-ms::before { background: var(--accent); } .tl-ev::before { background: var(--accent-2); }
+/* Help */
+.help-list > div { padding: .5rem 0; border-bottom: 1px solid var(--border); }
+.help-list dt { font-weight: 600; } .help-list dd { margin: .2rem 0 0; color: var(--text); }
+.fit-note { color: var(--b-unverified); }

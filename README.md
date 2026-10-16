@@ -2,7 +2,7 @@
 
 An unofficial, mobile-first PWA reference for the 2020–2022 Ford Mustang Shelby GT500: specs by system, model years and Shelby American editions, colors, packages and pricing, performance, a working VIN decoder, ownership/recalls, a local "Garage", mods, competitor comparison, embedded media, community links and a full source list.
 
-Every fact carries a source URL and a confidence level (`confirmed` / `reported` / `unverified`). Conflicting figures (e.g. curb weight) are shown with every sourced value, and unknowns are `null` with a note — nothing is invented. Content comes from `reports/Shelby GT500 2020 to 2022.md` and `research_notes/` (rounds 1–7; round 5 adds paint codes FA/HY/EB, the 2021 base MSRP, the re-extracted 2021 service schedule and stock dyno baselines; round 6 adds a few mod prices, Ford Performance part numbers and a forum-transcribed track alignment, all with low or reported confidence; round 7 adds auction results and market medians, and an unverified Wimbledon White code N4). The Compare spec-sheet table uses round-3 figures, each with its own source. Rows from low-quality or database-only sources (Redeye, Jailbreak) are unverified and hidden until you ask to see them.
+Every fact carries a source URL and a confidence level (`confirmed` / `reported` / `unverified`). Conflicting figures (e.g. curb weight) are shown with every sourced value, and unknowns are `null` with a note — nothing is invented. Content comes from `reports/Shelby GT500 2020 to 2022.md` and `research_notes/` (rounds 1–8; round 5 adds paint codes FA/HY/EB, the 2021 base MSRP, the re-extracted 2021 service schedule and stock dyno baselines; round 6 adds a few mod prices, Ford Performance part numbers and a forum-transcribed track alignment, all with low or reported confidence; round 7 adds auction results and market medians, and an unverified Wimbledon White code N4; round 8 adds Shelby American editions (Signature Edition, GT500KR, Code Red), 18 Ford Performance catalog items with current MSRP, owner events and press milestones — research levels high/medium/low are kept verbatim and badged confirmed/reported/unverified). The Compare spec-sheet table uses round-3 figures, each with its own source. Rows from low-quality or database-only sources (Redeye, Jailbreak) are unverified and hidden until you ask to see them.
 
 ## Run
 
@@ -13,11 +13,11 @@ npm install
 npm run dev        # local dev server
 npm run build      # typecheck + production build to dist/
 npm run preview    # serve the build
-npm test           # Vitest: multi-car Garage + v4→v5→v6 migration, .ics (escaping/folding), service report, market data/filters, achievements, shortcuts, en/es key parity and Spanish render of every page, Pages workflow triggers, VIN decoder, round-7 review regressions, i18n, parts, guides, fact export, prefetch, data integrity, tool math, DA/fuel/quiz/units, backup validation & migration, SW update flow, page render tests
+npm test           # Vitest (304 tests): security regressions (report CSP/escaping, ICS control chars, CSV formula guard, prototype keys, CSP/Capacitor/SW config, https-only sources), money helpers, round-8 data slots and filters, install prompt, Editions/History/Help/Ford Performance renders and empty states, multi-car Garage + v4→v5→v6 migration, .ics (escaping/folding), service report, market data/filters, achievements, shortcuts, en/es key parity and Spanish render of every page, Pages workflow triggers, VIN decoder, round-7 review regressions, i18n, parts, guides, fact export, prefetch, data integrity, tool math, DA/fuel/quiz/units, backup validation & migration, SW update flow, page render tests
 npm run typecheck
 npm run lint
 npm run lighthouse # Lighthouse mobile preset on the built app (needs Chromium; see below)
-npm run e2e        # Playwright (Chromium) + axe-core: every route in dark and light themes × English and Spanish, multi-car add/switch/delete with legacy migration, report download + print media, .ics download, keyboard shortcuts, market filters, v4 backup import, onboarding, timer, GPS meter (mocked geolocation), timeline, planner; needs `npm run build` first
+npm run e2e        # Playwright (Chromium) + axe-core: every route in dark and light themes × English and Spanish, multi-car add/switch/delete with legacy migration, report download + print media, .ics download, keyboard shortcuts, market filters, v4 backup import, onboarding, timer, GPS meter (mocked geolocation), timeline, planner; needs `npm run build` first. Round 9 adds: strict-CSP violation check, custom install prompt + dismiss memory, iOS hint, Ford Performance tab keyboard switching, Editions/History (Spanish), Help and manifest shortcuts. Lazy below-the-fold content is scrolled into view before axe runs.
 ```
 
 CI (`.github/workflows/ci.yml`, Node 20) has two jobs on every push and pull request: `build` (`npm ci`, typecheck, lint, unit tests, build) and `e2e` (`npx playwright install --with-deps chromium` for the pinned @playwright/test version, build, then the Playwright + axe suite; the HTML report is uploaded as the `playwright-report` artifact on failure). Routing uses `react-router` 7 (`HashRouter`); `npm audit` reports 0 vulnerabilities.
@@ -33,26 +33,36 @@ npm run cap:ios      # open Xcode
 npm run cap:android  # open Android Studio
 ```
 
-The app already works inside the WebView: `HashRouter` keeps every route after `#`, and Vite's `base: './'` makes every asset URL relative, so `capacitor://localhost` (iOS) and `https://localhost` (Android) need no rewrites. In the native wrapper (`window.Capacitor.isNativePlatform()`), `src/lib/platform.ts` skips the service worker and the offline warm-up, because the assets ship inside the app and iOS WKWebView does not support service workers. Maintenance notifications use the web Notification API and fall back to the in-app explanation where the WebView lacks it. No native plugins are used yet.
+The app already works inside the WebView: `HashRouter` keeps every route after `#`, and Vite's `base: './'` makes every asset URL relative, so `capacitor://localhost` (iOS) and `https://localhost` (Android) need no rewrites. In the native wrapper (`window.Capacitor.isNativePlatform()`), `src/lib/platform.ts` skips the service worker and the offline warm-up, because the assets ship inside the app and iOS WKWebView does not support service workers. Maintenance notifications use the web Notification API and fall back to the in-app explanation where the WebView lacks it. No native plugins are used yet. The config pins `server.androidScheme: 'https'`, `cleartext: false`, an empty `allowNavigation`, `android.allowMixedContent: false`, `webContentsDebuggingEnabled: false` and `ios.limitsNavigationsToAppBoundDomains`.
+
+### Icons and splash screens
+
+`resources/` holds SVG sources (generic stripes and "760", no logos) and their PNG renders: `icon-only`, `icon-foreground`, `icon-background` (1024²) and `splash`, `splash-dark` (2732²). Re-render after editing an SVG with `node scripts/gen-assets.mjs` (Playwright Chromium; set `CHROME_PATH` if needed); it also renders the PWA's full-bleed maskable icons `public/icon-maskable-{192,512}.png`. Then generate every native size:
+
+```sh
+npx @capacitor/assets generate --assetPath resources --iconBackgroundColor '#0d0f12' --splashBackgroundColor '#f4f5f7' --splashBackgroundColorDark '#0d0f12'
+```
 
 ## Performance
 
-Route chunks are prefetched when you hover, focus or touch a link, and when a link scrolls into view once the browser is idle (skipped with Data Saver on) (`src/lib/prefetch.ts`). The offline warm-up of every chunk now runs only after a service worker has registered. Run Lighthouse on the production build with `npm run build && npm run lighthouse [-- /route …]`. It uses `npx lighthouse@12` with the mobile preset and Chromium from `CHROME_PATH`, defaulting to `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`, and writes JSON reports to `.lighthouse/`.
+Below-the-fold work on `/market` (both SVG charts and the results list) renders only when scrolled near the viewport (`src/components/LazyRender.tsx`, which reserves its height so nothing shifts). The page no longer imports every route module after the service worker registers: the worker already precaches every emitted chunk at install, and evaluating ~40 modules right after load was the main source of blocking time (Market TBT 450 ms → 20 ms). Route chunks are prefetched when you hover, focus or touch a link, and when a link scrolls into view once the browser is idle (skipped with Data Saver on) (`src/lib/prefetch.ts`). Run Lighthouse on the production build with `npm run build && npm run lighthouse [-- /route …]`. It uses `npx lighthouse@12` with the mobile preset and Chromium from `CHROME_PATH`, defaulting to `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`, and writes JSON reports to `.lighthouse/`.
 
-Last run (mobile preset, local `vite preview`):
+Last run (mobile preset, local `vite preview`, round 9):
 
 | Route | Performance | Accessibility | Best practices | SEO |
 |---|---|---|---|---|
-| `/` | 95 | 100 | 100 | 100 |
-| `/specs` | 98 | 100 | 100 | 100 |
-| `/garage` | 97 | 100 | 100 | 100 |
+| `/` | 99 | 100 | 100 | 100 |
+| `/specs` | 99 | 100 | 100 | 100 |
+| `/garage` | 95 | 100 | 100 | 100 |
 | `/report` | 98 | 100 | 100 | 100 |
-| `/market` | 90 | 100 | 100 | 100 |
-| `/achievements` | 99 | 100 | 100 | 100 |
-| `/settings` | 97 | 100 | 100 | 100 |
-| `/parts` | 98 | 100 | 100 | 100 |
+| `/market` | 98 | 100 | 100 | 100 |
+| `/parts` | 99 | 100 | 100 | 100 |
+| `/editions` | 98 | 100 | 100 | 100 |
+| `/history` | 99 | 100 | 100 | 100 |
+| `/help` | 99 | 100 | 100 | 100 |
+| `/settings` | 98 | 100 | 100 | 100 |
 
-Scores vary by a few points from run to run. `/market` (LCP 3.2 s) draws two charts from 20 results; the Spanish dictionary is a separate chunk, so English users never download it.
+Scores vary by a few points from run to run. `/market` was 84–90 before the round-9 changes. The Spanish dictionary is a separate chunk, so English users never download it.
 
 Fixes made after the first run:
 - Layout shift: the lazy-route loading placeholder now reserves the viewport height, so the footer no longer jumps. CLS went from 0.10 to 0.
@@ -97,6 +107,8 @@ Fixes made after the first run:
 - `src/data/auctions.ts` — typed `auctionResults` (`AuctionResult`: date, venue, year, mileage, USD price or `null`, `localPrice` kept unconverted, outcome sold/offer/no-sale, CFTP/Heritage `null` when not stated, `outlier`, `conflicts`) and `marketStats` (published medians/estimates). `src/lib/market.ts` filters, medians and chart points; `src/components/ScatterChart.tsx` is an accessible SVG scatter with a "your car" marker
 - `src/lib/achievements.ts` — milestones derived from local data (first track day, 10 drag passes, 1,000 / 10,000 miles logged, ten-second pass, …) with the date each was reached; `gt500.achievements.v1` only remembers which were already announced
 - `src/lib/shortcuts.ts` — keyboard shortcut matcher (ignores inputs, textareas, selects, contenteditable and modifier chords); `src/components/Shortcuts.tsx` — the `?` help dialog
+- `src/data/editions.ts` — typed `editions` (`ShelbyEdition`: years, model years, power claim, price/upfit price, production with `productionConflicts`, content, street-legal, `research` level) and `editionGaps` (searched, unsourced: Super Snake). `src/data/history.ts` — `events` (`HistoryEvent`: program/convention/auction) and `milestones` (`Milestone`, `placement: null` when unknown) plus `historyGaps`. `fpCatalog` in `src/data/parts.ts` — `FpCatalogItem` (M-number, MSRP + `priceAsOf`, `emissions` null when the catalog is silent, `fitmentYears`, `fitmentExplicit`; the 12 name-inferred items carry the "fitment inferred" caveat). `levelToConfidence` maps research high/medium/low to the badges.
+- `src/lib/catalog.ts` — edition/FP filters and the merged, date-ordered history timeline; `src/lib/format.ts` — shared money formatting/parsing (replaces copies in Planner, Share, Timeline, Fuel, market, report, timeline); `src/lib/install.ts` — install-prompt state (`gt500.install.v1`, 90-day dismiss), iOS Safari and standalone detection
 - `src/pages/` — screens; `public/` — manifest, icons, service worker
 
 ## Deploying to GitHub Pages
@@ -144,13 +156,30 @@ The site appears at `https://<owner>.github.io/<repo>/`. No configuration change
 - **Keyboard shortcuts** (desktop): `/` search, `?` help, `g h` Home, `g s` Specs, `g g` Garage, `g t` Timeline, `g r` Report, `g m` Market, `g a` Achievements, `g p` Settings, `Esc` closes. Ignored while typing in a field.
 - **Sources** has **Download CSV / JSON** of all sourced facts with source and confidence, for researchers.
 - **Round-6 mods**: JLT Big Air intake ($399; +25–30 rwhp is a manufacturer claim with no dyno sheet, unverified) is now the one cost-per-hp example; VMP Stage 2 Pulley Pack ($1,399.99) and Predator EO Drag Pack ($2,339.99) have reported prices and no gain; the FordMuscle bolt-on build (674 → 828 rwhp, 561 → 666 lb-ft on E85) is one combined record with no per-part attribution. The VMP Odin kit is for the Coyote and F-150, not the GT500, and is not listed.
+- **Shelby American Editions** (`/editions`): Signature Edition, GT500KR and Code Red with sourced price, upfit price, power claim, production (KR new-vs-upgrade split and SE cap shown as conflicts), street-legal status and research level; year/confidence/street-legal filters; searched-but-unsourced items (Super Snake) listed as gaps; empty state.
+- **Events & History** (`/history`): vertical timeline of press milestones (NAIAS reveal, R&T PCOTY, MotorTrend BDC contender with unknown placement) and owner events (Track Attack, SAAC-46/47/48, KR charity auction); filter by kind; undated items last; empty state.
+- **Parts → Ford Performance** tab (`/parts?tab=fp`, arrow-key tabs): 18 M-numbers with current MSRP (as of 2026-10-16), emissions status (unknown for all), fitment years and a listed / fitment-inferred tag; search, year, category and listed-only filters; empty state.
+- **Help & Guide** (`/help`, en/es): what each tool does, the confidence badges, data privacy (all local, nothing uploaded) and how backups work.
+- **Install**: a custom banner on `beforeinstallprompt` ("Install" / "Not now", dismissal remembered 90 days), an "Add to Home Screen" hint on iOS Safari, hidden when installed or in the native app. The manifest has shortcuts (Garage, Session Timer, VIN Decoder) and separate full-bleed maskable icons.
 - Home shows a Garage summary and the next maintenance due. All tools appear in the menu and in Search.
 - Every route except Home is lazy-loaded. After the service worker registers, the app fetches each route chunk once so it is cached for offline use.
 - The build stamps `dist/sw.js` with a per-build cache name and the list of emitted assets; old caches are deleted on activate. Only `ok`, same-origin, non-redirected responses are cached. A new version waits until you tap **Reload** in the "Update ready" banner (the page posts `SKIP_WAITING`, then reloads on `controllerchange`). An "Offline" banner shows when the connection drops, and a warning appears if the browser refuses to save data.
-- `index.html` sets a Content-Security-Policy (self, Wikimedia images, youtube-nocookie and freesound frames). YouTube embeds are sandboxed and ids are validated.
+- `index.html` sets a Content-Security-Policy (self, Wikimedia images, youtube-nocookie and freesound frames; no `'unsafe-inline'` for scripts or styles, `script-src-attr 'none'`, `object-src 'none'`, `form-action 'none'`). YouTube embeds are sandboxed and ids are validated.
 - Ownership groups Mustang NHTSA recalls by GT500 applicability (applies / likely / depends on VIN / not applicable) from round-4 review of the recall documents, with build windows. Fluids added from a 2021 GT500 supplement are marked `reported`; its service-interval table is `unverified` because the PDF columns were misaligned.
 
 Garage cars (`gt500.cars.v1`), plans (`gt500.plans.v1`), track sessions (`gt500.track.v1`), timeslips (incl. GPS estimates), fill-ups, settings, intro state and quiz score are kept only in the browser's `localStorage`. Videos are embedded from youtube-nocookie.com and load only on tap; no copyrighted images are re-hosted, and the car art is generic CSS/SVG.
+
+## Security
+
+Round-9 review of the whole repo (fixes have regression tests in `tests/round9.test.tsx` and `e2e/round9.spec.ts`):
+- The downloaded service report already escaped every value; it now also carries its own CSP (`default-src 'none'`, no scripts) and `no-referrer`, so a future escaping bug could not run code or load anything.
+- CSP: removed `style-src 'unsafe-inline'` (React sets styles through the CSSOM, which CSP allows) and added `script-src-attr 'none'`; an e2e test fails on any CSP violation.
+- `.ics`: control characters are stripped from TEXT values (newlines were already escaped, so no property injection).
+- CSV: the formula guard also catches a formula after leading whitespace or a newline.
+- Imported notification state skips `__proto__`/`constructor` keys and caps lengths; notification titles are capped plain text. The service worker opens only its own `#/garage` on notification click.
+- Capacitor: explicit https scheme, no cleartext, no remote navigation, no WebView debugging.
+- Every source URL in the data (including nested citations) must be `https://`, so no `javascript:` link can reach the page.
+- No issue found in share links (strict allow-list decode, no VIN), i18n interpolation and SVG text (React-escaped), or import validation (allow-list normalizers, 2 MB cap). `npm audit`: 0 vulnerabilities.
 
 ## Disclaimer
 

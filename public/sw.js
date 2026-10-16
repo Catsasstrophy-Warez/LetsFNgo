@@ -2,7 +2,7 @@
 // so every deploy gets its own cache and old caches are deleted on activate.
 const VERSION = '__BUILD__';
 const CACHE = `gt500-${VERSION}`;
-const PRECACHE = ['./', './index.html', './manifest.webmanifest', './icon.svg' /*__ASSETS__*/];
+const PRECACHE = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-192.png', './icon-maskable-192.png' /*__ASSETS__*/];
 
 self.addEventListener('install', (e) => {
   // Precache individually so one missing file does not abort the install. No skipWaiting here:
@@ -35,4 +35,15 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   e.respondWith(fetch(req).then((r) => put(req, r)).catch(() => caches.match(req)));
+});
+
+// Tapping a maintenance notification focuses the app (or opens it) on the Garage. Only same-scope URLs are used;
+// the notification payload is never treated as a URL.
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const target = new URL('./#/garage', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((cs) => {
+    const c = cs.find((x) => x.url.startsWith(self.registration.scope));
+    return c ? c.focus().then((w) => (w && 'navigate' in w ? w.navigate(target) : w)) : self.clients.openWindow(target);
+  }));
 });

@@ -7,6 +7,7 @@ import { QUIZ_KEY } from './quiz';
 import { DEFAULT_ONBOARDING, normCarStore, normFill, normGarage, normOnboarding, normPlan, normSlip, normTrack, type Onboarding } from './validate';
 import { ONBOARDING_KEY, loadOnboarding } from './onboarding';
 import { remove, save } from './storage';
+import { INSTALL_KEY } from './install';
 import { DYNO_KEY, loadDyno, type DynoPull } from './dyno';
 import { NOTIFY_KEY, loadNotify } from './notify';
 import { DASH_KEY, DEFAULT_DASH, loadDash, normDashboard } from './dashboard';
@@ -128,5 +129,5 @@ export function restoreBackup(b: Backup): boolean {
 }
 
 /** Every key this app writes. */
-export const ALL_KEYS = [KEYS.garage, KEYS.cars, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, DYNO_KEY, NOTIFY_KEY, DASH_KEY, ACH_KEY, 'gt500.theme'];
+export const ALL_KEYS = [KEYS.garage, KEYS.cars, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, DYNO_KEY, NOTIFY_KEY, DASH_KEY, ACH_KEY, INSTALL_KEY, 'gt500.theme'];
 export function resetAll(): void { ALL_KEYS.forEach(remove); }

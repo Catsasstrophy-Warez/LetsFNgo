@@ -120,10 +120,12 @@ test('keyboard shortcuts: ?, Esc, g-sequences and / (ignored while typing)', asy
 test('market value: charts, filters, outlier toggle and your-car marker', async ({ page }, info) => {
   await seedLegacy(page);
   await goto(page, '/market');
+  await page.getByRole('heading', { name: 'Price charts' }).scrollIntoViewIfNeeded();
   await expect(page.getByText('Price vs sale date', { exact: true })).toBeVisible();
   await expect(page.getByText('Your car: 4,200 mi', { exact: true })).toBeVisible();
   await expect(page.getByText(/Edsel Ford II/)).toHaveCount(0);
   await page.getByLabel('Include outliers (e.g. celebrity provenance)').check();
+  await page.getByRole('heading', { name: 'Results', exact: true }).scrollIntoViewIfNeeded();
   await expect(page.getByText(/Edsel Ford II/).first()).toBeVisible();
   await page.getByLabel('CFTP').selectOption('yes');
   await expect(page.getByText('1 of 20 results · 0 with a USD price')).toBeVisible();

@@ -13,6 +13,9 @@ export function notifySupport(): Support {
   return Notification.permission as Support;
 }
 
+/** Notification text comes from user data: plain text only (the OS renders no markup), capped in length. */
+const cap = (s: string, n = 120) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+
 export interface DueAlert { id: string; key: string; title: string; body: string }
 
 /**
@@ -29,7 +32,7 @@ export function dueAlerts(rs: Reminder[], odometer: number | null, now: string, 
     const key = `${s.state}|${s.dueMiles ?? ''}|${s.dueDate ?? ''}`;
     if (sent[id] === key) return [];
     const when = [s.dueMiles !== null && `${s.dueMiles.toLocaleString('en-US')} mi`, s.dueDate].filter(Boolean).join(' · ');
-    return [{ id, key, title: `${s.state === 'overdue' ? tr('notify.overdue') : tr('notify.soon')}: ${car?.label ? `${car.label} — ` : ''}${r.item}`, body: when ? tr('notify.due', { w: when }) : tr('notify.open') }];
+    return [{ id, key, title: cap(`${s.state === 'overdue' ? tr('notify.overdue') : tr('notify.soon')}: ${car?.label ? `${car.label} — ` : ''}${r.item}`), body: when ? tr('notify.due', { w: when }) : tr('notify.open') }];
   });
 }
 

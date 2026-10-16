@@ -9,7 +9,7 @@ const shot = async (page: Page, name: string, project: string) => { if (SHOTS) a
 const ROUTES = ['/', '/specs', '/years', '/colors', '/visualizer', '/packages', '/performance', '/vin', '/ownership', '/garage', '/planner',
   '/timeline', '/track', '/timer', '/drag', '/gps', '/fuel', '/gearing', '/tools', '/mods', '/compare', '/diff', '/media', '/community',
   '/quiz', '/print', '/sources', '/settings', '/search', '/welcome', '/dyno', '/tires', '/parts', '/guides', '/guides/track-service', '/guides/dct-fluid',
-  '/report', '/market', '/achievements'];
+  '/report', '/market', '/achievements', '/editions', '/history', '/help', '/parts?tab=fp'];
 
 /** Seed a returning user so Home does not redirect to the intro, with some data so log pages render content. */
 async function seed(page: Page, theme: 'dark' | 'light', lang: 'en' | 'es' = 'en') {
@@ -37,13 +37,16 @@ for (const [theme, lang] of [['dark', 'en'], ['light', 'en'], ['dark', 'es'], ['
     const failures: string[] = [];
     for (const r of ROUTES) {
       await goto(page, r);
+      // Lazy, below-the-fold content (Market charts) renders once scrolled into view: check it too.
+      await expect.poll(() => page.evaluate(() => { const ph = document.querySelector('.lazy-ph'); ph?.scrollIntoView(); return document.querySelectorAll('.lazy-ph').length; })).toBe(0);
+      await page.evaluate(() => window.scrollTo(0, 0));
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       await expect(page.locator('html')).toHaveAttribute('lang', lang);
       const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).exclude('iframe').analyze();
       for (const v of res.violations.filter((x) => x.impact === 'serious' || x.impact === 'critical')) {
         failures.push(`${r} [${v.impact}] ${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`);
       }
-      if (['/timer', '/gps', '/timeline', '/diff', '/planner', '/welcome', '/dyno', '/tires', '/', '/parts', '/guides', '/guides/track-service', '/sources', '/settings', '/report', '/market', '/achievements', '/garage'].includes(r)) await shot(page, `${theme}-${lang}${r.replace(/\//g, '-')}`, info.project.name);
+      if (['/timer', '/gps', '/timeline', '/diff', '/planner', '/welcome', '/dyno', '/tires', '/', '/parts', '/guides', '/guides/track-service', '/sources', '/settings', '/report', '/market', '/achievements', '/garage', '/editions', '/history', '/help', '/parts?tab=fp'].includes(r)) await shot(page, `${theme}-${lang}${r.replace(/[/?=]/g, '-')}`, info.project.name);
     }
     expect(failures, failures.join('\n')).toEqual([]);
   });

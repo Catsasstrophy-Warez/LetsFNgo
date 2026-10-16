@@ -50,4 +50,4 @@ export const byDate = (list: AuctionResult[]): ScatterPt[] => priced(list).flatM
 export const byMileage = (list: AuctionResult[]): ScatterPt[] => priced(list).flatMap((r) =>
   r.mileage === null ? [] : [{ id: r.id, x: r.mileage, y: r.price, label: `${r.mileage.toLocaleString('en-US')} mi · ${r.date ?? 'date unknown'}` }]);
 
-export const usd0 = (n: number) => `$${Math.round(n).toLocaleString('en-US')}`;
+export { usdWhole as usd0 } from './format';

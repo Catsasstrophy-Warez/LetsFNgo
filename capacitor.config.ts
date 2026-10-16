@@ -11,8 +11,11 @@ const config: CapacitorConfig = {
   appName: 'GT500 Companion',
   webDir: 'dist',
   backgroundColor: '#0b0d10',
-  android: { allowMixedContent: false },
-  ios: { contentInset: 'automatic' },
+  // Hardening: the WebView serves the bundled app over https://localhost, never navigates to remote hosts
+  // (external links open in the system browser), allows no cleartext HTTP and no remote debugging in release.
+  server: { androidScheme: 'https', iosScheme: 'capacitor', cleartext: false, allowNavigation: [] },
+  android: { allowMixedContent: false, webContentsDebuggingEnabled: false },
+  ios: { contentInset: 'automatic', limitsNavigationsToAppBoundDomains: true },
 };
 
 export default config;

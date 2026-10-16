@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usdFixed } from '../lib/format';
 import { useCarLog } from '../components/CarContext';
 import { Link } from 'react-router';
 import { Note } from '../components/Facts';
@@ -10,7 +11,7 @@ import { FUEL_KEY, fuelIntervals, fuelSummary, loadFuel, ownershipCost, type Fil
 import { fmtQty, toDisplay, unitLabel } from '../lib/units';
 
 const blank = (): Omit<FillUp, 'id'> => ({ date: today(), odometer: NaN, gallons: NaN, price: NaN, fuel: '93', blend: null, full: true, notes: '' });
-const money = (n: number | null, d = 2) => (n === null ? '—' : `$${n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d })}`);
+const money = (n: number | null, d = 2) => (n === null ? '—' : usdFixed(n, d));
 
 export default function Fuel() {
   const u = useUnits();

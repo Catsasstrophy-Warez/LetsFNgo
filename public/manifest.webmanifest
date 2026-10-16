@@ -1,15 +1,25 @@
 {
+  "id": "./",
   "name": "GT500 Companion (unofficial)",
   "short_name": "GT500",
   "description": "Unofficial, sourced reference for the 2020–2022 Mustang Shelby GT500.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#0d0f12",
   "theme_color": "#0d0f12",
+  "categories": ["utilities", "lifestyle"],
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Garage", "short_name": "Garage", "description": "Your cars, service log and reminders", "url": "./#/garage", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Session Timer", "short_name": "Timer", "description": "Track-day lap timer", "url": "./#/timer", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "VIN Decoder", "short_name": "VIN", "description": "Check and decode a GT500 VIN", "url": "./#/vin", "icons": [{ "src": "icon-192.png", "sizes": "192x192", "type": "image/png" }] }
   ]
 }

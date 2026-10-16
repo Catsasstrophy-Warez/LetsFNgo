@@ -11,6 +11,7 @@ import { isLangLoaded, loadLang, setCurrentLang, translate, type MsgKey } from '
 import { usePrefetch } from './lib/prefetch';
 import { CarContext, useCarState } from './components/CarContext';
 import { Shortcuts } from './components/Shortcuts';
+import { InstallPrompt } from './components/InstallPrompt';
 
 // Every route except Home is code-split; main.tsx warms these chunks so the PWA works offline.
 export const PAGES = {
@@ -52,6 +53,9 @@ export const PAGES = {
   Report: () => import('./pages/Report'),
   Market: () => import('./pages/Market'),
   Achievements: () => import('./pages/Achievements'),
+  Editions: () => import('./pages/Editions'),
+  History: () => import('./pages/History'),
+  Help: () => import('./pages/Help'),
 };
 /** First path segment → chunk, for hover/visible-link prefetch. */
 const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
@@ -62,9 +66,10 @@ const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
   '/print': PAGES.PrintSheet, '/quiz': PAGES.Quiz, '/timer': PAGES.Timer, '/gps': PAGES.GpsMeter, '/timeline': PAGES.Timeline, '/diff': PAGES.YearCompare,
   '/welcome': PAGES.Welcome, '/dyno': PAGES.Dyno, '/tires': PAGES.Tires, '/share': PAGES.Share, '/parts': PAGES.Parts,
   '/report': PAGES.Report, '/market': PAGES.Market, '/achievements': PAGES.Achievements,
+  '/editions': PAGES.Editions, '/history': PAGES.History, '/help': PAGES.Help,
   '/guides': () => Promise.all([PAGES.Guides(), PAGES.Guide()]),
 };
-const L = Object.fromEntries(Object.entries(PAGES).map(([k, f]) => [k, lazy(f)])) as Record<keyof typeof PAGES, React.LazyExoticComponent<() => JSX.Element>>;
+const L = Object.fromEntries(Object.entries(PAGES).map(([k, f]) => [k, lazy(f as () => Promise<{ default: () => JSX.Element }>)])) as Record<keyof typeof PAGES, React.LazyExoticComponent<() => JSX.Element>>;
 
 export const NAV = [
   { to: '/', label: 'Home', key: 'nav.home' as MsgKey },
@@ -72,6 +77,8 @@ export const NAV = [
   { to: '/years', label: 'Model Years', key: 'nav.years' as MsgKey },
   { to: '/colors', label: 'Colors', key: 'nav.colors' as MsgKey },
   { to: '/visualizer', label: 'Color Visualizer', key: 'nav.visualizer' as MsgKey },
+  { to: '/editions', label: 'Shelby American Editions', key: 'nav.editions' as MsgKey },
+  { to: '/history', label: 'Events & History', key: 'nav.history' as MsgKey },
   { to: '/packages', label: 'Packages & Pricing', key: 'nav.packages' as MsgKey },
   { to: '/market', label: 'Market Value', key: 'nav.market' as MsgKey },
   { to: '/performance', label: 'Performance', key: 'nav.performance' as MsgKey },
@@ -101,6 +108,7 @@ export const NAV = [
   { to: '/quiz', label: 'Trivia Quiz', key: 'nav.quiz' as MsgKey },
   { to: '/print', label: 'Print Spec Sheet', key: 'nav.print' as MsgKey },
   { to: '/sources', label: 'Sources', key: 'nav.sources' as MsgKey },
+  { to: '/help', label: 'Help & Guide', key: 'nav.help' as MsgKey },
   { to: '/settings', label: 'Settings', key: 'nav.settings' as MsgKey },
 ];
 
@@ -206,12 +214,16 @@ export default function App() {
           <Route path="/report" element={<L.Report />} />
           <Route path="/market" element={<L.Market />} />
           <Route path="/achievements" element={<L.Achievements />} />
+          <Route path="/editions" element={<L.Editions />} />
+          <Route path="/history" element={<L.History />} />
+          <Route path="/help" element={<L.Help />} />
           <Route path="*" element={<Home />} />
         </Routes>
         </Suspense>
         </ErrorBoundary>
         <footer className="footer">{t('chrome.footer')}</footer>
         <Shortcuts />
+        <InstallPrompt />
       </main>
       <nav className="tabbar" aria-label={t('chrome.quick')}>
         {TABS.map((tb) => (

@@ -5,6 +5,7 @@ import { carOf, toNum, type Car, type LogEntry } from './garage';
 import type { FillUp } from './fuel';
 import { fmtQty, type Units } from './units';
 import type { MsgKey } from './i18n';
+import { parseMoney } from './format';
 
 /**
  * Resale service-history report for one car. Everything comes from what the owner typed into the app;
@@ -24,7 +25,7 @@ export interface ReportModel {
   nhtsaUrl: string;
 }
 
-const money = (s?: string) => { const n = Number(String(s ?? '').replace(/[$,\s]/g, '')); return s && s.trim() && Number.isFinite(n) ? n : 0; };
+const money = (s?: string) => parseMoney(s) ?? 0;
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Does a recall's `years` field ("2020", "2021-2022", "2020-2022") cover a model year? Missing years = all. */
@@ -65,6 +66,9 @@ export function buildReport(car: Car, fuel: FillUp[], generated: string, vinMode
 
 export const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
+/** The downloaded report runs no scripts and loads nothing: even if escaping were ever bypassed, injected markup could not execute or phone home. */
+export const REPORT_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'";
+
 type T = (k: MsgKey, v?: Record<string, string | number>) => string;
 const usd = (n: number) => `$${n.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
 
@@ -81,7 +85,7 @@ export function reportHtml(m: ReportModel, t: T, u: Units, lang: string): string
     ? m.odometerHistory.map((r) => `<tr><td>${e(r.date)}</td><td>${dist(r.miles)}</td><td>${e(t(`report.from.${r.from}` as MsgKey))}</td></tr>`).join('')
     : `<tr><td colspan="3">${e(t('report.none'))}</td></tr>`;
   return `<!doctype html>
-<html lang="${e(lang)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="${e(lang)}"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${REPORT_CSP}"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${e(t('report.docTitle', { car: m.title }))}</title>
 <style>
 body{font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#111;background:#fff;max-width:900px;margin:24px auto;padding:0 16px}

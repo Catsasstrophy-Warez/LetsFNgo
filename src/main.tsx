@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HashRouter } from 'react-router';
-import App, { PAGES } from './App';
+import App from './App';
 import { watchRegistration } from './lib/sw';
 import { shouldRegisterSW } from './lib/platform';
 import './styles.css';
@@ -26,10 +26,9 @@ if (shouldRegisterSW() && import.meta.env.PROD) {
         watchRegistration(reg, () => !!navigator.serviceWorker.controller);
         // Check for a new version when the app regains focus.
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => undefined); });
-        // Fetch every lazy route chunk once so the service worker caches them for offline use. Only when a
-        // worker exists: without one, warming just spends data (hover/visible-link prefetch still applies).
-        const warm = () => { Object.values(PAGES).forEach((f) => f().catch(() => undefined)); loadLang('es').catch(() => undefined); };
-        if ('requestIdleCallback' in window) requestIdleCallback(warm); else setTimeout(warm, 2000);
+        // Offline: the worker precaches every emitted chunk at install (the build stamps the list into sw.js), so
+        // the page no longer imports — and evaluates — every route module itself, which used to block the main
+        // thread right after load.
       })
       .catch(() => undefined);
   });

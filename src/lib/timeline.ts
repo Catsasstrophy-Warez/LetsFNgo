@@ -1,3 +1,4 @@
+import { parseMoney } from './format';
 import type { GarageState, TrackSession } from './garage';
 import type { Timeslip } from './drag';
 import type { FillUp } from './fuel';
@@ -8,7 +9,7 @@ export const KIND_LABEL: Record<EventKind, string> = { service: 'Service', mod: 
 
 export interface TimelineEvent { id: string; kind: EventKind; date: string; title: string; detail: string; cost: number | null }
 
-const money = (s: string | undefined) => { const n = Number(String(s ?? '').replace(/[$,\s]/g, '')); return s && s.trim() && Number.isFinite(n) ? n : null; };
+const money = parseMoney;
 const ISO = /^\d{4}-\d{2}-\d{2}/;
 
 /** Every dated entry across Garage service/mods, track, drag and fuel logs, newest first. Undated entries are skipped. */

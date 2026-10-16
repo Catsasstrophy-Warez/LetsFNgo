@@ -1,4 +1,4 @@
-import type { PartNumber } from './types';
+import type { FpCatalogItem, PartNumber } from './types';
 import { LMR, MC_DCT, SUPP21, SUPP_NOTE } from './maintenance';
 
 /**
@@ -24,3 +24,33 @@ export const partNumbers: PartNumber[] = [
 export const partSlots = ['Engine air filter', 'Cabin air filter', 'Brake fluid (Motorcraft part number)', 'Brake pads & rotors', 'Wiper blades'];
 
 export const partsForReminder = (reminderId: string) => partNumbers.filter((p) => p.reminderIds.includes(reminderId));
+
+/**
+ * Ford Performance catalog (performanceparts.ford.com/search/GT500, fetched 2026-10-16, research round 8).
+ * MSRPs are current prices on that date, not period prices. The catalog shows no per-part emissions status, so
+ * `emissions` is null. Only the first six are listed for the 2020–22 GT500; the rest are inferred from part names.
+ */
+const FP = 'https://performanceparts.ford.com/search/GT500';
+export const FP_AS_OF = '2026-10-16';
+const AS_OF = FP_AS_OF;
+export const FITMENT_INFERRED = 'Fitment inferred from the part name; not listed for the 2020-22 GT500 by the catalog. Confirm with Ford Performance before ordering.';
+export const fpCatalog: FpCatalogItem[] = [
+  { id: 'm-16612-c20', number: 'M-16612-C20', name: '2020-2022 GT500 Carbon Fiber Hood Vent Kit', msrp: 1360, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: true, category: 'Body & aero', source: FP, confidence: 'confirmed', research: 'high' },
+  { id: 'm-16601-mcf', number: 'M-16601-MCF', name: '2020-2022 GT500 Carbon Fiber Front Splitter Kit', msrp: 1990, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: true, category: 'Body & aero', source: FP, confidence: 'confirmed', research: 'high' },
+  { id: 'm-17750-mcf', number: 'M-17750-MCF', name: '2020-22 GT500 Carbon Fiber Bumper Insert', msrp: 1255, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: true, category: 'Body & aero', source: FP, confidence: 'confirmed', research: 'high' },
+  { id: 'm-16600-mcf', number: 'M-16600-MCF', name: '2020-2022 GT500 Carbon Fiber Rear Deck Lid Trim Panel', msrp: 725, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: true, category: 'Body & aero', source: FP, confidence: 'confirmed', research: 'high' },
+  { id: 'm-9926-m5292', number: 'M-9926-M5292', name: '2020-2021 GT500 Throttle Body 92MM', msrp: 475, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021], fitmentExplicit: true, category: 'Engine', source: FP, confidence: 'confirmed', research: 'high' },
+  { id: 'm-6766-a52', number: 'M-6766-A52', name: '2020-2022 GT500 5.2L Oil-Air Separator', msrp: 625, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: true, category: 'Engine', source: FP, confidence: 'confirmed', research: 'high' },
+  { id: 'm-6017-m52sc', number: 'M-6017-M52SC', name: '5.2L Mustang GT500 Engine Control Pack', msrp: 2730, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: false, category: 'Engine', source: FP, confidence: 'reported', research: 'medium', note: FITMENT_INFERRED },
+  { id: 'm-6675-m52s', number: 'M-6675-M52S', name: '5.0L/5.2L GT500 Aluminum Oil Pan and Pump Kit', msrp: 1485, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: false, category: 'Engine', source: FP, confidence: 'reported', research: 'medium', note: FITMENT_INFERRED },
+  { id: 'm-8501-m58', number: 'M-8501-M58', name: 'High Performance Intercooler Pump Kit, Cobra Jet/GT500', msrp: 415, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: false, category: 'Fuel & cooling', source: FP, confidence: 'reported', research: 'medium', note: FITMENT_INFERRED },
+  { id: 'm-3a331-gt500a', number: 'M-3A331-GT500A', name: 'GT500 LH Inner Half Shaft Seal', msrp: 180, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: false, category: 'Driveline', source: FP, confidence: 'reported', research: 'medium', note: FITMENT_INFERRED },
+  { id: 'm-1620001-hatbw', number: 'M-1620001-HATBW', name: 'Mustang Shelby GT500 Underhood Rain Hat Graphic', msrp: 65, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: false, category: 'Appearance', source: FP, confidence: 'reported', research: 'medium', note: FITMENT_INFERRED },
+  { id: 'm-6564-m52a', number: 'M-6564-M52A', name: '5.2L Predator Roller Finger Follower Kit', msrp: 600, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: false, category: 'Engine', source: FP, confidence: 'reported', research: 'medium', note: FITMENT_INFERRED },
+  { id: 'm-9407-m52sc', number: 'M-9407-M52SC', name: 'High Performance Dual Fuel Pump Kit', msrp: 220, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: false, category: 'Fuel & cooling', source: FP, confidence: 'reported', research: 'medium', note: FITMENT_INFERRED },
+  { id: 'm-12029-m52', number: 'M-12029-M52', name: '5.0L/5.2L Hi-Energy Engine Ignition Coils (8)', msrp: 645, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: false, category: 'Engine', source: FP, confidence: 'reported', research: 'medium', note: FITMENT_INFERRED },
+  { id: 'm-6500-m50r', number: 'M-6500-M50R', name: '2011-2024 5.0L/5.2L Coyote High Performance Lash Adjusters', msrp: 475, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: false, category: 'Engine', source: FP, confidence: 'reported', research: 'medium', note: FITMENT_INFERRED },
+  { id: 'm-6303-m52b', number: 'M-6303-M52B', name: 'Coyote 5.2L Forged Crankshaft', msrp: 1440, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: false, category: 'Engine', source: FP, confidence: 'reported', research: 'medium', note: FITMENT_INFERRED },
+  { id: 'm-16600-fp', number: 'M-16600-FP', name: '2015-23 Mustang Rear Spoiler w/ Gurney Flap', msrp: 700, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: false, category: 'Body & aero', source: FP, confidence: 'reported', research: 'medium', note: FITMENT_INFERRED },
+  { id: 'm-4130-ma', number: 'M-4130-MA', name: '2015-2026 Mustang Half Shaft Upgrade Kit', msrp: 2575, priceAsOf: AS_OF, emissions: null, fitmentYears: [2020, 2021, 2022], fitmentExplicit: false, category: 'Driveline', source: FP, confidence: 'reported', research: 'medium', note: FITMENT_INFERRED },
+];

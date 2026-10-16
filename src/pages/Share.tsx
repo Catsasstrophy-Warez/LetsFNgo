@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usdRange } from '../lib/format';
 import { Link, useNavigate, useParams } from 'react-router';
 import { Cite, Note } from '../components/Facts';
 import { decodeShare } from '../lib/share';
@@ -9,7 +10,6 @@ import { useCar } from '../components/CarContext';
 import { save } from '../lib/storage';
 import { colors } from '../data/colors';
 
-const money = (n: number) => `$${Math.round(n).toLocaleString('en-US')}`;
 
 /** Read-only view of a shared plan or car summary (#/share/<payload>). Nothing is saved until "Import". */
 export default function Share() {
@@ -35,7 +35,7 @@ export default function Share() {
         <p className="lede">{t('sharev.readOnly')}</p>
         <section className="card">
           <h2>{d.name}</h2>
-          <p className="stat-v">{sum.pricedCount ? (sum.costMin === sum.costMax ? money(sum.costMin) : `${money(sum.costMin)}–${money(sum.costMax)}`) : '—'}<small>{t('sharev.sourcedPrices')}</small></p>
+          <p className="stat-v">{sum.pricedCount ? usdRange(sum.costMin, sum.costMax) : '—'}<small>{t('sharev.sourcedPrices')}</small></p>
           {sum.unpricedCount > 0 && <p className="warn-t">{t('sharev.unpriced', { n: sum.unpricedCount })}</p>}
           <ul className="rows">{sum.mods.map((m) => <li key={m.id}><div className="sub">{m.stage}</div><p>{m.result}</p><Cite c={m.confidence} url={m.source} /></li>)}</ul>
           <button className="btn" onClick={importPlan}>{t('sharev.importPlan')}</button>
