@@ -12,6 +12,10 @@ const TOOLS = [
   { to: '/tools', label: 'Performance tools', d: '¼-mile estimate, power-to-weight' },
   { to: '/planner', label: 'Build planner', d: 'Sourced mods, cost range' },
   { to: '/track', label: 'Track day log', d: 'Laps, best, theoretical' },
+  { to: '/drag', label: 'Drag strip log', d: 'Timeslips, DA, consistency' },
+  { to: '/fuel', label: 'Fuel & cost', d: 'mpg, cost per mile, ownership' },
+  { to: '/visualizer', label: 'Color visualizer', d: 'Every sourced paint' },
+  { to: '/quiz', label: 'Trivia quiz', d: 'Sourced facts only' },
 ];
 
 function GarageSummary() {

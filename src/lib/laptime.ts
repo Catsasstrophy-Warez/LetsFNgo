@@ -12,6 +12,8 @@ export function parseLapTime(input: string): number | null {
 
 export function formatLapTime(sec: number | null, digits = 3): string {
   if (sec === null || !Number.isFinite(sec)) return '—';
+  const f = 10 ** digits;
+  sec = Math.round(sec * f) / f; // round first so 59.9996 carries into the minute
   const m = Math.floor(sec / 60);
   const rest = sec - m * 60;
   const r = rest.toFixed(digits).padStart(digits ? digits + 3 : 2, '0');

@@ -5,15 +5,19 @@ import { colors } from '../data/colors';
 import { CarArt } from '../components/CarArt';
 import { Note } from '../components/Facts';
 import {
-  EMPTY_GARAGE, KEYS, loadGarage, loadPlans, loadTrack, reminderStatus, saveGarage, toNum, today, uid,
+  loadGarage, loadTrack, reminderStatus, saveGarage, toNum, today, uid,
   type GarageState, type LogEntry, type Reminder,
 } from '../lib/garage';
-import { makeBackup, parseBackup } from '../lib/backup';
-import { save } from '../lib/storage';
+import { UnitInput } from '../components/UnitInput';
+import { useUnits } from '../components/SettingsContext';
+import { fmtQty } from '../lib/units';
+import { loadDrag } from '../lib/drag';
+import { EtTrend, LapTrend } from '../components/Trends';
 import { formatLapTime, lapStats, parseLaps } from '../lib/laptime';
 import { drawShareCard } from '../lib/shareCard';
 
 function Log({ title, items, onAdd, onDelete }: { title: string; items: LogEntry[]; onAdd: (e: LogEntry) => void; onDelete: (id: string) => void }) {
+  const u = useUnits();
   const [f, setF] = useState({ date: today(), title: '', notes: '', miles: '', cost: '' });
   return (
     <section className="card">
@@ -21,7 +25,7 @@ function Log({ title, items, onAdd, onDelete }: { title: string; items: LogEntry
       <form className="form" onSubmit={(e) => { e.preventDefault(); if (!f.title.trim()) return; onAdd({ id: uid(), ...f }); setF({ ...f, title: '', notes: '', miles: '', cost: '' }); }}>
         <input className="input" type="date" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} aria-label={`${title}: date`} />
         <input className="input" placeholder="What was done" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} aria-label={`${title}: what was done`} />
-        <input className="input" placeholder="Mileage" inputMode="numeric" value={f.miles} onChange={(e) => setF({ ...f, miles: e.target.value })} aria-label={`${title}: mileage`} />
+        <UnitInput label={`${title}: odometer`} kind="distance" value={toNum(f.miles)} onChange={(v) => setF({ ...f, miles: v === null ? '' : String(Math.round(v)) })} digits={0} />
         <input className="input" placeholder="Cost" inputMode="decimal" value={f.cost} onChange={(e) => setF({ ...f, cost: e.target.value })} aria-label={`${title}: cost`} />
         <textarea className="input" placeholder="Notes" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} aria-label={`${title}: notes`} />
         <button className="btn" type="submit">Add</button>
@@ -30,7 +34,7 @@ function Log({ title, items, onAdd, onDelete }: { title: string; items: LogEntry
         <ul className="rows">
           {[...items].sort((a, b) => b.date.localeCompare(a.date)).map((i) => (
             <li key={i.id}>
-              <div className="row-main"><span><strong>{i.title}</strong> <span className="muted">{i.date}{i.miles && ` · ${i.miles} mi`}{i.cost && ` · $${i.cost}`}</span></span>
+              <div className="row-main"><span><strong>{i.title}</strong> <span className="muted">{i.date}{toNum(i.miles ?? '') !== null && ` · ${fmtQty('distance', toNum(i.miles ?? ''), u)}`}{i.cost && ` · $${i.cost}`}</span></span>
                 <button className="link-btn" onClick={() => onDelete(i.id)} aria-label={`Delete ${i.title}`}>Delete</button></div>
               {i.notes && <p className="wrap">{i.notes}</p>}
             </li>
@@ -51,7 +55,7 @@ function Reminders({ g, setG }: { g: GarageState; setG: React.Dispatch<React.Set
   return (
     <section className="card" id="maintenance">
       <h2>Maintenance reminders</h2>
-      <label className="form-label">Current odometer (mi)<input className="input" inputMode="numeric" value={g.odometer} onChange={(e) => setG({ ...g, odometer: e.target.value })} /></label>
+      <div className="form-label"><UnitInput label="Current odometer" kind="distance" value={odo} onChange={(v) => setG({ ...g, odometer: v === null ? '' : String(Math.round(v)) })} digits={0} /></div>
       <Note>Intervals are <strong>user-set</strong>. The defaults are placeholders, not Ford's schedule — the 2020–22 GT500 service intervals are not sourced in this app. Check your owner's manual and oil-life monitor. <Link to="/ownership">Fluids &amp; specs →</Link></Note>
       <ul className="rows">
         {g.reminders.map((r) => {
@@ -63,9 +67,9 @@ function Reminders({ g, setG }: { g: GarageState; setG: React.Dispatch<React.Set
                 <span className={`due due-${st.state}`}>{STATE_LABEL[st.state]}</span>
               </div>
               <div className="form four">
-                <label>Every (mi)<input className="input" inputMode="numeric" value={r.everyMiles ?? ''} onChange={(e) => upd(r.id, { everyMiles: n(e.target.value) })} /></label>
+                <UnitInput label="Every" kind="distance" value={r.everyMiles} onChange={(v) => upd(r.id, { everyMiles: v === null ? null : Math.round(v) })} digits={0} />
                 <label>Every (months)<input className="input" inputMode="numeric" value={r.everyMonths ?? ''} onChange={(e) => upd(r.id, { everyMonths: n(e.target.value) })} /></label>
-                <label>Last done (mi)<input className="input" inputMode="numeric" value={r.lastMiles ?? ''} onChange={(e) => upd(r.id, { lastMiles: n(e.target.value) })} /></label>
+                <UnitInput label="Last done" kind="distance" value={r.lastMiles} onChange={(v) => upd(r.id, { lastMiles: v === null ? null : Math.round(v) })} digits={0} />
                 <label>Last done (date)<input className="input" type="date" value={r.lastDate} onChange={(e) => upd(r.id, { lastDate: e.target.value })} /></label>
               </div>
               <p className="muted small">
@@ -107,39 +111,9 @@ function ShareCard({ g }: { g: GarageState }) {
   );
 }
 
-function Backup({ setG }: { setG: (g: GarageState) => void }) {
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const exportAll = () => {
-    const b = makeBackup(loadGarage(), loadPlans(), loadTrack());
-    const url = URL.createObjectURL(new Blob([JSON.stringify(b, null, 2)], { type: 'application/json' }));
-    const a = document.createElement('a'); a.href = url; a.download = `gt500-companion-backup-${today()}.json`; a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setMsg({ ok: true, text: 'Backup downloaded.' });
-  };
-  const importFile = async (file: File) => {
-    const r = parseBackup(await file.text());
-    if (!r.ok) return setMsg({ ok: false, text: `Import failed: ${r.errors.slice(0, 4).join('; ')}` });
-    if (!confirm('Replace Garage, build plans and track sessions on this device with the backup?')) return;
-    saveGarage(r.data.garage); save(KEYS.plans, r.data.plans); save(KEYS.track, r.data.track);
-    setG(r.data.garage);
-    setMsg({ ok: true, text: `Imported ${r.data.plans.length} plan(s) and ${r.data.track.length} session(s).` });
-  };
-  return (
-    <section className="card">
-      <h2>Backup &amp; restore</h2>
-      <p className="muted">Exports Garage, maintenance reminders, build plans and track sessions as one JSON file (schema v1).</p>
-      <div className="btn-row">
-        <button className="btn" onClick={exportAll}>Export JSON</button>
-        <label className="btn ghost file-btn">Import JSON<input type="file" accept="application/json,.json" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ''; }} /></label>
-      </div>
-      {msg && <p className={msg.ok ? 'ok-t' : 'err'} role="status">{msg.text}</p>}
-    </section>
-  );
-}
-
 export default function Garage() {
   const [g, setG] = useState<GarageState>(loadGarage);
-  useEffect(() => saveGarage(g), [g]);
+  useEffect(() => { saveGarage(g); }, [g]);
   const d = g.vin ? decodeVin(g.vin) : null;
   const swatch = colors.find((c) => c.id === g.color)?.swatch;
 
@@ -151,7 +125,7 @@ export default function Garage() {
   return (
     <>
       <h1>My Garage</h1>
-      <p className="muted">Stored only on this device (localStorage). Clearing site data erases it — use Backup below.</p>
+      <p className="muted">Stored only on this device (localStorage). Clearing site data erases it — export a backup in <Link to="/settings#data">Settings</Link>.</p>
       <section className="card">
         <CarArt body={swatch} />
         <div className="form">
@@ -176,8 +150,17 @@ export default function Garage() {
       <Log title="Mods log" items={g.mods} onAdd={(e) => setG((s) => ({ ...s, mods: [...s.mods, e] }))} onDelete={(id) => setG((s) => ({ ...s, mods: s.mods.filter((m) => m.id !== id) }))} />
       <Log title="Service log" items={g.service} onAdd={(e) => setG((s) => ({ ...s, service: [...s.service, e] }))} onDelete={(id) => setG((s) => ({ ...s, service: s.service.filter((m) => m.id !== id) }))} />
       <ShareCard g={g} />
-      <Backup setG={setG} />
-      <button className="link-btn danger" onClick={() => { if (confirm('Erase all garage data on this device?')) setG(EMPTY_GARAGE); }}>Reset garage</button>
+      <section className="card">
+        <h2>Trends</h2>
+        <LapTrend sessions={loadTrack()} />
+        <EtTrend slips={[...loadDrag()].sort((a, b) => a.date.localeCompare(b.date))} />
+        <p className="small"><Link to="/track">Track Day Log →</Link> · <Link to="/drag">Drag Strip Log →</Link> · <Link to="/fuel">Fuel &amp; Cost →</Link></p>
+      </section>
+      <section className="card">
+        <h2>Backup, restore &amp; reset</h2>
+        <p className="muted">Export, import and reset now live in Settings.</p>
+        <Link className="btn ghost" to="/settings#data">Open data management →</Link>
+      </section>
     </>
   );
 }

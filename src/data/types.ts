@@ -105,6 +105,12 @@ export interface RecallIssue extends Sourced {
   years?: string;
   campaign: string | null;
   summary: string;
+  /** Whether the campaign covers the GT500: yes, likely (no exclusion, full build span), no, or vin (depends on VIN). */
+  appliesToGT500?: 'yes' | 'likely' | 'no' | 'vin';
+  /** What the recall documents say about scope. */
+  evidence?: string;
+  /** Affected build dates where the documents give them. */
+  buildWindow?: string | null;
 }
 
 export interface MaintenanceItem extends SourcedValue {

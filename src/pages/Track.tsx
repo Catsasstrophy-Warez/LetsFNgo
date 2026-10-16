@@ -4,6 +4,7 @@ import { save } from '../lib/storage';
 import { KEYS, loadTrack, today, uid, type TrackSession } from '../lib/garage';
 import { formatLapTime, lapStats, parseLaps } from '../lib/laptime';
 import { REFERENCE_TRACKS, referenceLaps } from '../lib/refLaps';
+import { LapTrend } from '../components/Trends';
 
 const blank = (): Omit<TrackSession, 'id'> => ({ date: today(), track: '', conditions: '', airTemp: '', pressures: { fl: '', fr: '', rl: '', rr: '' }, laps: '', notes: '' });
 
@@ -17,7 +18,7 @@ export default function Track() {
   const [sessions, setSessions] = useState<TrackSession[]>(loadTrack);
   const [f, setF] = useState(blank);
   const [err, setErr] = useState('');
-  useEffect(() => save(KEYS.track, sessions), [sessions]);
+  useEffect(() => { save(KEYS.track, sessions); }, [sessions]);
   const preview = parseLaps(f.laps);
   const setP = (k: keyof TrackSession['pressures'], v: string) => setF({ ...f, pressures: { ...f.pressures, [k]: v } });
 
@@ -55,6 +56,7 @@ export default function Track() {
         {err && <p className="err" role="alert">{err}</p>}
         <button className="btn" type="submit">Save session</button>
       </form>
+      {sessions.length > 0 && <section className="card"><h2>Lap-time trend</h2><LapTrend sessions={sessions} /></section>}
       {sessions.length === 0 ? <p className="muted">No sessions logged yet.</p> : [...sessions].sort((a, b) => b.date.localeCompare(a.date)).map((s) => {
         const st = lapStats(parseLaps(s.laps).laps);
         const refs = referenceLaps(s.track);

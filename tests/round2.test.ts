@@ -29,7 +29,8 @@ describe('round 2 data', () => {
   });
   it('round-3 gap fills', () => {
     expect(specs.find((s) => s.id === 'bore-stroke')).toMatchObject({ value: expect.stringContaining('94 × 93 mm'), confidence: 'reported' });
-    expect(maintenance.find((m) => m.id === 'plugs')).toMatchObject({ value: expect.stringContaining('0.035–0.039'), confidence: 'unverified' });
+    // Round 4 replaced the unverified 0.035–0.039 range with the 2021 supplement figure; the old range stays as a secondary value.
+    expect(maintenance.find((m) => m.id === 'plugs')!.conflicts!.find((c) => String(c.value).includes('0.035–0.039'))!.confidence).toBe('unverified');
     const h = production.find((p) => p.id === 'heritage')!;
     expect(h.value).toBe(225); expect(h.conflicts!.map((c) => c.value)).toContain('~255');
     expect(prices.find((p) => p.id === 'p22-heritage')!.value).toBe(76695);
@@ -40,7 +41,7 @@ describe('round 2 data', () => {
   it('lists NHTSA campaigns with VIN-check framing', () => {
     const n = recalls.filter((r) => r.kind === 'nhtsa-recall');
     expect(n.length).toBe(16);
-    for (const r of n) { expect(r.campaign).toMatch(/^\d{2}V\d{6}$/); expect(r.summary).toMatch(/VIN check required/); }
+    for (const r of n) { expect(r.campaign).toMatch(/^\d{2}V\d{6}$/); expect(r.appliesToGT500).toMatch(/^(yes|likely|no|vin)$/); }
     expect(recalls.some((r) => r.campaign === 'ODI 11522730')).toBe(true);
   });
   it('credits every Commons photo and audio clip', () => {

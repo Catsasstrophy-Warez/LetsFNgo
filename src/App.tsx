@@ -1,6 +1,9 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom';
-import { load, save } from './lib/storage';
+import { loadSettings, resolveTheme, saveSettings, type Settings } from './lib/units';
+import { SettingsContext } from './components/SettingsContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { StatusBar } from './components/StatusBar';
 import Home from './pages/Home';
 
 // Every route except Home is code-split; main.tsx warms these chunks so the PWA works offline.
@@ -23,6 +26,12 @@ export const PAGES = {
   PerfTools: () => import('./pages/PerfTools'),
   Planner: () => import('./pages/Planner'),
   Track: () => import('./pages/Track'),
+  Settings: () => import('./pages/Settings'),
+  Drag: () => import('./pages/Drag'),
+  Fuel: () => import('./pages/Fuel'),
+  Visualizer: () => import('./pages/Visualizer'),
+  PrintSheet: () => import('./pages/PrintSheet'),
+  Quiz: () => import('./pages/Quiz'),
 };
 const L = Object.fromEntries(Object.entries(PAGES).map(([k, f]) => [k, lazy(f)])) as Record<keyof typeof PAGES, React.LazyExoticComponent<() => JSX.Element>>;
 
@@ -31,6 +40,7 @@ export const NAV = [
   { to: '/specs', label: 'Specs' },
   { to: '/years', label: 'Model Years' },
   { to: '/colors', label: 'Colors' },
+  { to: '/visualizer', label: 'Color Visualizer' },
   { to: '/packages', label: 'Packages & Pricing' },
   { to: '/performance', label: 'Performance' },
   { to: '/vin', label: 'VIN Decoder' },
@@ -38,13 +48,18 @@ export const NAV = [
   { to: '/garage', label: 'Garage' },
   { to: '/planner', label: 'Build Planner' },
   { to: '/track', label: 'Track Day Log' },
+  { to: '/drag', label: 'Drag Strip Log' },
+  { to: '/fuel', label: 'Fuel & Cost' },
   { to: '/gearing', label: 'Gear & Speed Calc' },
   { to: '/tools', label: 'Performance Tools' },
   { to: '/mods', label: 'Mods & Tuning' },
   { to: '/compare', label: 'Compare' },
   { to: '/media', label: 'Media' },
   { to: '/community', label: 'Community' },
+  { to: '/quiz', label: 'Trivia Quiz' },
+  { to: '/print', label: 'Print Spec Sheet' },
   { to: '/sources', label: 'Sources' },
+  { to: '/settings', label: 'Settings' },
 ];
 
 const TABS = [
@@ -55,25 +70,31 @@ const TABS = [
   { to: '/search', label: 'Search', icon: '⌕' },
 ];
 
-type Theme = 'dark' | 'light';
-
 export default function App() {
-  const [theme, setTheme] = useState<Theme>(() => load<Theme>('gt500.theme', 'dark'));
+  const [settings, setSettings] = useState<Settings>(loadSettings);
+  const [prefersDark, setPrefersDark] = useState(() => typeof matchMedia === 'undefined' || matchMedia('(prefers-color-scheme: dark)').matches);
   const [menu, setMenu] = useState(false);
   const loc = useLocation();
+  const theme = resolveTheme(settings.theme, prefersDark);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    save('gt500.theme', theme);
-  }, [theme]);
+    if (typeof matchMedia === 'undefined') return;
+    const mq = matchMedia('(prefers-color-scheme: dark)');
+    const f = () => setPrefersDark(mq.matches);
+    mq.addEventListener?.('change', f);
+    return () => mq.removeEventListener?.('change', f);
+  }, []);
+  useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  useEffect(() => { saveSettings(settings); }, [settings]);
   useEffect(() => { setMenu(false); window.scrollTo(0, 0); }, [loc.pathname]);
 
   return (
+    <SettingsContext.Provider value={{ settings, setSettings }}>
     <div className="app">
       <header className="topbar">
         <button className="icon-btn" onClick={() => setMenu((m) => !m)} aria-label="Menu" aria-expanded={menu}>☰</button>
         <NavLink to="/" className="brand"><span className="brand-stripes" aria-hidden />GT500 Companion</NavLink>
-        <button className="icon-btn" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} aria-label="Toggle theme">{theme === 'dark' ? '☀' : '☾'}</button>
+        <button className="icon-btn" onClick={() => setSettings({ ...settings, theme: theme === 'dark' ? 'light' : 'dark' })} aria-label="Toggle theme">{theme === 'dark' ? '☀' : '☾'}</button>
       </header>
       <nav className={`drawer ${menu ? 'open' : ''}`} aria-label="Sections">
         {NAV.map((n) => <NavLink key={n.to} to={n.to} end={n.to === '/'}>{n.label}</NavLink>)}
@@ -81,6 +102,8 @@ export default function App() {
       {menu && <div className="scrim" onClick={() => setMenu(false)} aria-hidden />}
       <a href="#main" className="skip" onClick={(e) => { e.preventDefault(); document.getElementById('main')?.focus(); }}>Skip to content</a>
       <main className="content" id="main" tabIndex={-1}>
+        <StatusBar />
+        <ErrorBoundary resetKey={loc.pathname}>
         <Suspense fallback={<p className="muted" role="status">Loading…</p>}>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -102,9 +125,16 @@ export default function App() {
           <Route path="/track" element={<L.Track />} />
           <Route path="/gearing" element={<L.Gearing />} />
           <Route path="/tools" element={<L.PerfTools />} />
+          <Route path="/settings" element={<L.Settings />} />
+          <Route path="/drag" element={<L.Drag />} />
+          <Route path="/fuel" element={<L.Fuel />} />
+          <Route path="/visualizer" element={<L.Visualizer />} />
+          <Route path="/print" element={<L.PrintSheet />} />
+          <Route path="/quiz" element={<L.Quiz />} />
           <Route path="*" element={<Home />} />
         </Routes>
         </Suspense>
+        </ErrorBoundary>
         <footer className="footer">
           Unofficial fan reference. Not affiliated with, endorsed by or sponsored by Ford Motor Company, Shelby American or Carroll Shelby Licensing.
           Names are used for identification only. Verify figures with official documents.
@@ -116,5 +146,6 @@ export default function App() {
         ))}
       </nav>
     </div>
+    </SettingsContext.Provider>
   );
 }

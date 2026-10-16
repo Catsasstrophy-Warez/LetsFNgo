@@ -13,7 +13,7 @@ export const specs: SpecFact[] = [
   { id: 'supercharger', system: 'Engine', label: 'Supercharger', value: '2.65L Eaton TVS R2650 Roots', source: WIKI, confidence: 'confirmed' },
   { id: 'hp', system: 'Engine', label: 'Horsepower', value: 760, unit: 'hp @ 7,300 rpm', source: CARADVICE, confidence: 'confirmed' },
   { id: 'tq', system: 'Engine', label: 'Torque', value: 625, unit: 'lb-ft @ 5,000 rpm', source: CARADVICE, confidence: 'confirmed' },
-  { id: 'redline', system: 'Engine', label: 'Redline', value: 7500, unit: 'rpm', source: TREMEC, confidence: 'confirmed' },
+  { id: 'redline', system: 'Engine', label: 'Redline', value: 7500, unit: 'rpm', source: TREMEC, confidence: 'reported', note: 'From the TREMEC transmission page, not a Ford engine spec.' },
   { id: 'compression', system: 'Engine', label: 'Compression ratio', value: '9.5:1', source: TREMEC, confidence: 'confirmed' },
   { id: 'boost', system: 'Engine', label: 'Max boost', value: 12, unit: 'psi (approx.)', source: FA_ENGINE, confidence: 'reported' },
   { id: 'intercooler', system: 'Engine', label: 'Intercooler', value: 'Bar-and-plate, above the rotors', source: 'https://themustangsource.com/?p=31080', confidence: 'reported' },

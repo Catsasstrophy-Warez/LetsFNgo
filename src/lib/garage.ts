@@ -1,4 +1,5 @@
 import { load, save } from './storage';
+import { normGarage, normList, normPlan, normTrack } from './validate';
 
 export interface LogEntry { id: string; date: string; title: string; notes: string; miles?: string; cost?: string }
 
@@ -22,7 +23,8 @@ export interface TrackSession {
 export const KEYS = { garage: 'gt500.garage.v1', plans: 'gt500.plans.v1', track: 'gt500.track.v1' } as const;
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
-export const today = () => new Date().toISOString().slice(0, 10);
+/** Local calendar date (YYYY-MM-DD), not UTC. */
+export const today = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 /** Starter reminders. Every interval is a placeholder the owner should edit — none is a Ford figure. */
 export const DEFAULT_REMINDERS: Reminder[] = [
@@ -34,10 +36,11 @@ export const DEFAULT_REMINDERS: Reminder[] = [
 
 export const EMPTY_GARAGE: GarageState = { vin: '', year: '', color: '', nickname: '', odometer: '', mods: [], service: [], reminders: DEFAULT_REMINDERS };
 
-export const loadGarage = (): GarageState => ({ ...EMPTY_GARAGE, ...load<Partial<GarageState>>(KEYS.garage, {}) });
+// Loaders validate stored JSON and fall back to defaults, so a corrupt or legacy key cannot crash a page.
+export const loadGarage = (): GarageState => normGarage(load<unknown>(KEYS.garage, null)) ?? { ...EMPTY_GARAGE };
 export const saveGarage = (g: GarageState) => save(KEYS.garage, g);
-export const loadPlans = () => load<Plan[]>(KEYS.plans, []);
-export const loadTrack = () => load<TrackSession[]>(KEYS.track, []);
+export const loadPlans = (): Plan[] => normList(load<unknown>(KEYS.plans, []), normPlan);
+export const loadTrack = (): TrackSession[] => normList(load<unknown>(KEYS.track, []), normTrack);
 
 /** Append an entry to the Garage mods log (used by the build planner). */
 export function addModsToGarage(titles: { title: string; notes: string }[]): void {

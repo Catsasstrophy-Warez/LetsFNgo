@@ -31,7 +31,15 @@ const tools: SearchHit[] = [
   { title: 'Build Planner', text: 'build plan mods cost total tune pulley Whipple exhaust planner', route: '/planner' },
   { title: 'Track Day Log', text: 'track day lap times sessions tire pressures best average theoretical Laguna Seca VIR log', route: '/track' },
   { title: 'Maintenance reminders', text: 'service reminders interval oil change due soon overdue odometer garage', route: '/garage' },
-  { title: 'Backup & share card', text: 'export import JSON backup restore share card PNG garage', route: '/garage' },
+  { title: 'Share card', text: 'share card PNG garage spec card', route: '/garage' },
+  { title: 'Backup & restore', text: 'export import JSON backup restore reset', route: '/settings' },
+  { title: 'Drag Strip Log', text: 'drag strip timeslip reaction time 60 ft 330 eighth quarter mile ET trap mph density altitude DA weather consistency', route: '/drag' },
+  { title: 'Density altitude calculator', text: 'density altitude DA calculator temperature barometer pressure humidity elevation weather correction', route: '/drag' },
+  { title: 'Fuel & Cost Log', text: 'fuel fill up gallons litres price mpg economy cost per mile E85 93 octane ownership cost', route: '/fuel' },
+  { title: 'Color Visualizer', text: 'paint color visualizer stripes rarity production count code', route: '/visualizer' },
+  { title: 'Print spec sheet', text: 'print spec sheet PDF printable', route: '/print' },
+  { title: 'Trivia quiz', text: 'trivia quiz questions score game', route: '/quiz' },
+  { title: 'Settings', text: 'settings units metric imperial km kg theme dark light export import reset data backup', route: '/settings' },
 ].map((t) => ({ ...t, collection: 'tools', source: TOOL }));
 
 export function search(q: string, limit = 40): SearchHit[] {

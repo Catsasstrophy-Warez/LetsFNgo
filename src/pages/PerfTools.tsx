@@ -1,4 +1,8 @@
 import { useState } from 'react';
+import { UnitInput } from '../components/UnitInput';
+import { useUnits } from '../components/SettingsContext';
+import { convertSpec, fmtQty } from '../lib/units';
+import { fmt } from '../components/Facts';
 import { Cite, Note } from '../components/Facts';
 import { specs } from '../data/specs';
 import { performance } from '../data/performance';
@@ -11,8 +15,10 @@ const num = (s: string) => { const n = Number(s.replace(/,/g, '')); return Numbe
 
 export default function PerfTools() {
   const [hp, setHp] = useState(String(hpSpec.value));
-  const [wt, setWt] = useState('4225');
-  const [driver, setDriver] = useState('180');
+  const u = useUnits();
+  const [wtN, setWt] = useState<number | null>(4225);
+  const [driverN, setDriver] = useState<number | null>(180);
+  const wt = String(wtN ?? 0), driver = String(driverN ?? 0);
   const race = num(wt) + num(driver);
   const h = haleQuarter(race, num(hp));
   const f = foxQuarter(race, num(hp));
@@ -24,10 +30,10 @@ export default function PerfTools() {
       <section className="card">
         <div className="form two">
           <label>Horsepower (crank)<input className="input" inputMode="numeric" value={hp} onChange={(e) => setHp(e.target.value)} /></label>
-          <label>Car weight (lb)<input className="input" inputMode="numeric" value={wt} onChange={(e) => setWt(e.target.value)} /></label>
-          <label>Driver + fuel extra (lb)<input className="input" inputMode="numeric" value={driver} onChange={(e) => setDriver(e.target.value)} /></label>
+          <UnitInput label="Car weight" kind="weight" value={wtN} onChange={setWt} digits={0} />
+          <UnitInput label="Driver + fuel extra" kind="weight" value={driverN} onChange={setDriver} digits={0} />
         </div>
-        <p className="muted">Stock: {String(hpSpec.value)} hp <Cite c={hpSpec.confidence} url={hpSpec.source} /> · curb weight {String(wtSpec.value)} lb (sources conflict) <Cite c={wtSpec.confidence} url={wtSpec.source} /></p>
+        <p className="muted">Stock: {String(hpSpec.value)} hp <Cite c={hpSpec.confidence} url={hpSpec.source} /> · curb weight {(() => { const c = convertSpec(wtSpec.value!, wtSpec.unit, u); return fmt(c.value, c.unit); })()} (sources conflict) <Cite c={wtSpec.confidence} url={wtSpec.source} /></p>
       </section>
       <section className="card">
         <h2>Quarter-mile estimate <span className="badge badge-unverified">estimate</span></h2>
@@ -35,12 +41,12 @@ export default function PerfTools() {
           <table className="tbl">
             <thead><tr><th>Formula</th><th>ET</th><th>Trap</th></tr></thead>
             <tbody>
-              <tr><td>Hale (5.825·∛(W/hp), 234·∛(hp/W))</td><td>{h.et.toFixed(2)} s</td><td>{h.mph.toFixed(1)} mph</td></tr>
-              <tr><td>Fox (6.290·∛(W/hp), 224·∛(hp/W))</td><td>{f.et.toFixed(2)} s</td><td>{f.mph.toFixed(1)} mph</td></tr>
+              <tr><td>Hale (5.825·∛(W/hp), 234·∛(hp/W))</td><td>{h.et.toFixed(2)} s</td><td>{fmtQty('speed', h.mph, u, 1)}</td></tr>
+              <tr><td>Fox (6.290·∛(W/hp), 224·∛(hp/W))</td><td>{f.et.toFixed(2)} s</td><td>{fmtQty('speed', f.mph, u, 1)}</td></tr>
             </tbody>
           </table>
         ) : <p className="err">Enter positive weight and horsepower.</p>}
-        <p className="muted">Race weight used: {race.toLocaleString('en-US')} lb.</p>
+        <p className="muted">Race weight used: {fmtQty('weight', race, u)}.</p>
         <Note>These formulas assume ideal traction and typical gearing; they are not sourced test results. For comparison, the best attributable stock pass is {best.result} <Cite c={best.confidence} url={best.source} />.</Note>
       </section>
       <section className="card">

@@ -12,7 +12,7 @@ export default function Planner() {
   const [plans, setPlans] = useState<Plan[]>(loadPlans);
   const [activeId, setActiveId] = useState<string>(() => loadPlans()[0]?.id ?? '');
   const [flash, setFlash] = useState('');
-  useEffect(() => save(KEYS.plans, plans), [plans]);
+  useEffect(() => { save(KEYS.plans, plans); }, [plans]);
   const active = plans.find((p) => p.id === activeId) ?? null;
   const sum = summarizePlan(active?.modIds ?? []);
 

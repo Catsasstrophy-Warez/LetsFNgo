@@ -180,3 +180,60 @@ textarea.input { min-height: 70px; }
 .tbl .tag { margin-left: .35rem; }
 .cite { white-space: normal; } .src { overflow-wrap: anywhere; }
 .conflicts li, .swatch-card, .fact dd { min-width: 0; overflow-wrap: anywhere; }
+
+/* Round 4: settings, logs, charts, visualizer, quiz, print */
+.statusbar { position: sticky; top: 64px; z-index: 15; background: var(--surface); border: 1px solid var(--warn); border-radius: 12px; padding: .25rem .75rem; margin-bottom: 1rem; }
+.statusbar p { margin: .35rem 0; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.pill-off { display: inline-block; font-size: .72rem; font-weight: 800; text-transform: uppercase; padding: .1rem .5rem; border-radius: 999px; background: var(--b-unverified-bg); color: var(--b-unverified); }
+.small-btn { margin: 0; min-height: 36px; padding: .3rem .8rem; }
+.danger-btn { color: var(--bad); }
+.pressures.wide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 640px) { .pressures.wide { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.tbl.slip { display: table; }
+.tbl.slip th { border-top: 1px solid var(--border); }
+.chart { margin: 0 0 1rem; min-width: 0; }
+.chart-t { font-weight: 700; font-size: .92rem; }
+.chart-readout { margin: .1rem 0 .25rem; font-size: .85rem; color: var(--muted); }
+.chart-readout strong { color: var(--text); }
+.chart-svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.chart-grid { stroke: var(--border); stroke-width: 1; }
+.chart-ref { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.chart-axis { fill: var(--muted); font-size: 19px; }
+.chart-line { fill: none; stroke: var(--accent-2); stroke-width: 2; stroke-linejoin: round; }
+.chart-dot { fill: var(--accent-2); stroke: var(--surface); stroke-width: 2; }
+.chart-dot.best { fill: var(--accent); }
+.viz .car-art { margin-bottom: .5rem; }
+.swatch-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .5rem; margin-bottom: 1rem; }
+.swatch-btn { display: flex; align-items: center; gap: .5rem; text-align: left; min-height: 48px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: .4rem .6rem; font: inherit; font-size: .85rem; cursor: pointer; min-width: 0; overflow-wrap: anywhere; }
+.swatch-btn.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; font-weight: 700; }
+.dot.big { width: 26px; height: 26px; flex: none; margin: 0; }
+.choices { display: grid; gap: .5rem; margin-bottom: .75rem; }
+.choice { text-align: left; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .9rem; font: inherit; cursor: pointer; min-height: 48px; overflow-wrap: anywhere; }
+.choice.right { border-color: var(--ok); background: var(--b-confirmed-bg); color: var(--b-confirmed); font-weight: 700; }
+.choice.wrong { border-color: var(--bad); color: var(--bad); }
+.print-cols { display: grid; gap: 1rem; }
+@media (min-width: 760px) { .print-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.print-sys h3 { border-bottom: 2px solid var(--accent); padding-bottom: .2rem; }
+.print-tbl { width: 100%; border-collapse: collapse; font-size: .84rem; table-layout: fixed; }
+.print-tbl th { text-align: left; width: 38%; color: var(--muted); font-weight: 600; vertical-align: top; padding: .25rem .4rem .25rem 0; overflow-wrap: anywhere; }
+.print-tbl td { padding: .25rem 0; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
+.print-tbl tr:first-child td { border-top: 0; }
+.print-src { font-size: .72rem; color: var(--muted); }
+.print-car { border: 1px solid var(--border); border-radius: 12px; padding: .75rem 1rem; margin-bottom: 1rem; }
+
+@media print {
+  :root, :root[data-theme='dark'], :root[data-theme='light'] {
+    --bg: #fff; --surface: #fff; --surface-2: #f2f2f2; --text: #000; --muted: #444; --border: #bbb; --accent: #000;
+    --b-confirmed-bg: #fff; --b-confirmed: #000; --b-reported-bg: #fff; --b-reported: #000; --b-unverified-bg: #fff; --b-unverified: #000;
+    color-scheme: light;
+  }
+  @page { margin: 12mm; }
+  body { font-size: 10.5pt; }
+  .topbar, .drawer, .tabbar, .scrim, .skip, .statusbar, .no-print, .footer { display: none !important; }
+  .content { margin: 0 !important; padding: 0 !important; max-width: none; }
+  .badge { border: 1px solid #000; }
+  .print-cols { grid-template-columns: 1fr 1fr; gap: 8mm; }
+  .print-sys { break-inside: avoid; }
+  a { color: #000; text-decoration: none; }
+  h1 { font-size: 16pt; }
+}

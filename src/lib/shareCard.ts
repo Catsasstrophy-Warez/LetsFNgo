@@ -1,3 +1,11 @@
+/** Shorten text with an ellipsis until it fits `max` px (measure is ctx.measureText in the app). */
+export function fitText(text: string, max: number, measure: (s: string) => number): string {
+  if (measure(text) <= max) return text;
+  let t = text;
+  while (t.length > 1 && measure(t + '…') > max) t = t.slice(0, -1);
+  return t + '…';
+}
+
 export interface CardData { title: string; year: string; colorName: string; swatch: string; modsCount: number; bestLap: string; bestLapTrack: string }
 
 const BODY = 'M20 98 C22 80 40 74 70 70 L120 64 C150 40 190 30 236 32 C270 34 300 50 330 66 L372 74 C388 78 392 88 390 100 L386 108 L20 108 Z';
@@ -26,7 +34,7 @@ export function drawShareCard(canvas: HTMLCanvasElement, d: CardData): void {
   c.restore();
 
   c.fillStyle = '#eceff3'; c.font = '800 64px system-ui, sans-serif';
-  c.fillText(d.title || 'My GT500', 80, 560);
+  c.fillText(fitText(d.title || 'My GT500', W - 160, (x) => c.measureText(x).width), 80, 560);
   c.fillStyle = '#9aa3ae'; c.font = '600 34px system-ui, sans-serif';
   c.fillText(`${d.year || 'Year not set'} · 5.2L supercharged V8 · 7-speed DCT`, 80, 615);
 
@@ -40,7 +48,8 @@ export function drawShareCard(canvas: HTMLCanvasElement, d: CardData): void {
     c.fillStyle = '#1e232b'; c.fillRect(80, y - 58, W - 160, 76);
     c.fillStyle = '#9aa3ae'; c.font = '600 30px system-ui, sans-serif'; c.fillText(k, 110, y - 8);
     c.fillStyle = '#eceff3'; c.font = '700 34px system-ui, sans-serif';
-    const tw = c.measureText(v).width; c.fillText(v, W - 110 - tw, y - 8);
+    const fv = fitText(v, W - 400, (x) => c.measureText(x).width);
+    const tw = c.measureText(fv).width; c.fillText(fv, W - 110 - tw, y - 8);
     if (i === 0) { c.fillStyle = d.swatch; c.fillRect(W - 150 - tw - 40, y - 42, 34, 34); }
   });
   c.fillStyle = '#6b7480'; c.font = '500 24px system-ui, sans-serif';
