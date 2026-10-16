@@ -57,7 +57,12 @@ exact quote from that source. A maintainer will add it.
 `link-report/links.md` and `links.json` (ok / redirect / 4xx / 5xx / blocked / error). Many sites block automated
 requests (`blocked`), which does not mean the page is gone. A GitHub Actions workflow (`Source link check`) runs it
 weekly and on demand and uploads the report as an artifact; it never fails a build or commits anything. For a dead
-link, prefer replacing it with a web.archive.org snapshot of the same page.
+link, prefer replacing it with a web.archive.org snapshot of the same page:
+
+- Set `source` to `https://web.archive.org/web/<timestamp>/<original-url>` and keep the dead URL in `originalUrl`.
+  `npm run validate:data` rejects an `originalUrl` that isn't the URL the snapshot archives.
+- Pick a snapshot from a date when the page still showed the cited content; don't change the record's `confidence`.
+- If no snapshot exists, keep the URL and append `source link dead as of <YYYY-MM-DD>` to the record's `note`.
 
 ## Code changes
 
