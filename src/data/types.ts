@@ -122,6 +122,8 @@ export interface ModStage extends Sourced {
   parts: string;
   result: string;
   status?: 'excluded';
+  /** Parts price range in USD, only where the cited source lists one. */
+  cost?: { min: number; max: number };
 }
 
 export interface Competitor extends Sourced {

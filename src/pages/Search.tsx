@@ -16,7 +16,7 @@ export default function Search() {
           <li key={i}>
             <div className="row-main"><Link to={h.route}><strong>{h.title}</strong></Link><span className="tag">{h.collection}</span></div>
             <p className="muted clamp">{h.text}</p>
-            <Src url={h.source} />
+            {h.collection !== 'tools' && <Src url={h.source} />}
           </li>
         ))}
       </ul>

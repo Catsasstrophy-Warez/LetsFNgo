@@ -1,5 +1,5 @@
 // Minimal offline service worker: network-first for navigations, cache-first for same-origin assets.
-const CACHE = 'gt500-v1';
+const CACHE = 'gt500-v2';
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['./', './index.html', './manifest.webmanifest', './icon.svg'])));
   self.skipWaiting();
