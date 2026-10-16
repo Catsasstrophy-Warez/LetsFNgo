@@ -166,7 +166,7 @@ describe('paint visualizer', () => {
 
 describe('backup schema 2', () => {
   it('migrates v1 and round-trips v2 stores', () => {
-    expect(migrate({ schema: 1 })).toMatchObject({ schema: 3, drag: [], fuel: [] });
+    expect(migrate({ schema: 1 })).toMatchObject({ schema: 4, drag: [], fuel: [], dyno: [] });
     const v1 = validateBackup({ app: 'gt500-companion', schema: 1, garage: {}, plans: [], track: [] });
     expect(v1.ok && v1.migratedFrom).toBe(1);
     const b = makeBackup(EMPTY_GARAGE, [], [], [slip({ id: 'x', quarterEt: 11 })], [fill(10, 5)], { units: 'metric', theme: 'light' });
@@ -273,7 +273,7 @@ describe('round 4 data', () => {
     expect(recalls.find((r) => r.id === 'tensioner')!.campaign).toBe('CSP 21B26');
     expect(recalls.find((r) => r.id === 'c105')!.campaign).toBe('SSM 49440');
   });
-  it('supplement fluids are reported; intervals unverified; paint codes still null', () => {
+  it('supplement fluids are reported; intervals unverified; paint codes (round 5)', () => {
     const m = (id: string) => maintenance.find((x) => x.id === id)!;
     expect(String(m('coolant').value)).toContain('VC-13DL-G'); expect(String(m('coolant').value)).toContain('15.2 qt');
     expect(String(m('ic-coolant').value)).toContain('2.5 qt');
@@ -281,8 +281,9 @@ describe('round 4 data', () => {
     expect(String(m('plugs').value)).toContain('0.037'); expect(m('plugs').conflicts!.some((c) => c.confidence === 'unverified')).toBe(true);
     expect(String(m('oil-spec-supp').value)).toContain('WSS-M2C931-C');
     for (const id of ['coolant', 'ic-coolant', 'brake-fluid', 'plugs', 'oil-spec-supp']) { expect(m(id).confidence).toBe('reported'); expect(m(id).note).toMatch(/2021/); }
-    expect(m('supp-intervals').confidence).toBe('unverified'); expect(m('supp-intervals').note).toMatch(/misaligned/);
-    for (const id of ['wimbledon-white', 'dark-matter-gray', 'eruption-green', 'brittany-blue']) expect(colors.find((c) => c.id === id)!.code).toBeNull();
+    expect(m('supp-intervals').confidence).toBe('reported'); expect(String(m('supp-intervals').value)).toContain('spark plugs 100k');
+    expect(colors.find((c) => c.id === 'wimbledon-white')!.code).toBeNull();
+    expect(['dark-matter-gray', 'eruption-green', 'brittany-blue'].map((id) => colors.find((c) => c.id === id)!.code)).toEqual(['HY', 'FA', 'EB']);
   });
 });
 

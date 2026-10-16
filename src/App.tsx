@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router';
 import { needsOnboarding } from './lib/onboarding';
+import { checkReminders } from './lib/notify';
 import { loadSettings, resolveTheme, saveSettings, type Settings } from './lib/units';
 import { SettingsContext } from './components/SettingsContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -38,6 +39,9 @@ export const PAGES = {
   Timeline: () => import('./pages/Timeline'),
   YearCompare: () => import('./pages/YearCompare'),
   Welcome: () => import('./pages/Welcome'),
+  Dyno: () => import('./pages/Dyno'),
+  Tires: () => import('./pages/Tires'),
+  Share: () => import('./pages/Share'),
 };
 const L = Object.fromEntries(Object.entries(PAGES).map(([k, f]) => [k, lazy(f)])) as Record<keyof typeof PAGES, React.LazyExoticComponent<() => JSX.Element>>;
 
@@ -59,6 +63,8 @@ export const NAV = [
   { to: '/drag', label: 'Drag Strip Log' },
   { to: '/gps', label: 'GPS Meter (approx.)' },
   { to: '/fuel', label: 'Fuel & Cost' },
+  { to: '/dyno', label: 'Dyno Log' },
+  { to: '/tires', label: 'Tire & Wheel Calc' },
   { to: '/gearing', label: 'Gear & Speed Calc' },
   { to: '/tools', label: 'Performance Tools' },
   { to: '/mods', label: 'Mods & Tuning' },
@@ -97,6 +103,8 @@ export default function App() {
   }, []);
   // First run only: send a brand-new user (no intro done, empty Garage) from Home to the intro.
   useEffect(() => { if (loc.pathname === '/' && needsOnboarding()) navigate('/welcome', { replace: true }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Local maintenance notifications (opt-in, permission-gated) are checked once per app open.
+  useEffect(() => { checkReminders().catch(() => undefined); }, []);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
   useEffect(() => { saveSettings(settings); }, [settings]);
   useEffect(() => { setMenu(false); window.scrollTo(0, 0); }, [loc.pathname]);
@@ -149,6 +157,9 @@ export default function App() {
           <Route path="/timeline" element={<L.Timeline />} />
           <Route path="/diff" element={<L.YearCompare />} />
           <Route path="/welcome" element={<L.Welcome />} />
+          <Route path="/dyno" element={<L.Dyno />} />
+          <Route path="/tires" element={<L.Tires />} />
+          <Route path="/share/:data" element={<L.Share />} />
           <Route path="*" element={<Home />} />
         </Routes>
         </Suspense>

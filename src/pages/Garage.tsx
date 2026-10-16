@@ -15,6 +15,7 @@ import { loadDrag } from '../lib/drag';
 import { EtTrend, LapTrend } from '../components/Trends';
 import { formatLapTime, lapStats, parseLaps } from '../lib/laptime';
 import { drawShareCard } from '../lib/shareCard';
+import { ShareLink } from '../components/ShareLink';
 
 function Log({ title, items, onAdd, onDelete }: { title: string; items: LogEntry[]; onAdd: (e: LogEntry) => void; onDelete: (id: string) => void }) {
   const u = useUnits();
@@ -56,7 +57,7 @@ function Reminders({ g, setG }: { g: GarageState; setG: React.Dispatch<React.Set
     <section className="card" id="maintenance">
       <h2>Maintenance reminders</h2>
       <div className="form-label"><UnitInput label="Current odometer" kind="distance" value={odo} onChange={(v) => setG({ ...g, odometer: v === null ? '' : String(Math.round(v)) })} digits={0} /></div>
-      <Note>Intervals are <strong>user-set</strong>. The defaults are placeholders, not Ford's schedule — the 2020–22 GT500 service intervals are not sourced in this app. Check your owner's manual and oil-life monitor. <Link to="/ownership">Fluids &amp; specs →</Link></Note>
+      <Note>Defaults follow the 2021 GT500 owner-manual supplement <span className="badge badge-reported">reported</span> (2020 and 2022 unconfirmed) and stay editable. Oil uses the 1 yr / 10,000 mi maximum — follow the oil-life monitor, 3,000 mi for severe use, and after each track weekend (≈ 4 hours). Existing reminders are not changed. <Link to="/ownership">Fluids &amp; specs →</Link></Note>
       <ul className="rows">
         {g.reminders.map((r) => {
           const st = reminderStatus(r, odo, now);
@@ -107,6 +108,9 @@ function ShareCard({ g }: { g: GarageState }) {
       <canvas ref={ref} className="share-canvas" width={1080} height={1080} role="img" aria-label={`Share card: ${data.title}, ${data.year || 'year not set'}, ${data.colorName || 'color not set'}, ${data.modsCount} mods, best lap ${bestLap || 'none'}`} />
       <button className="btn" onClick={download}>Download PNG</button>
       <Note>Generic silhouette, no logos. Uses your nickname, year, color, mods count and best logged lap.</Note>
+      <h3>Share as a link</h3>
+      <ShareLink label="Create car link" payload={{ v: 1, k: 'car', year: (['2020', '2021', '2022'].includes(g.year) ? g.year : '') as '', color: g.color, nickname: g.nickname, mods: g.mods.map((m) => m.title) }} />
+      <Note>Nickname, year, color and mod titles only — never your VIN, costs or notes. The link opens a read-only view with "Import to my Garage".</Note>
     </section>
   );
 }

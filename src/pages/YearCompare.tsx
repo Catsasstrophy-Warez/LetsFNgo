@@ -27,11 +27,11 @@ export default function YearCompare() {
       <section className="card">
         <h2>Colors by year</h2>
         <div className="tbl-wrap" tabIndex={0} role="region" aria-label="Colors by year table">
-          <table className="tbl diff">
+          <table className="tbl diff stack">
             <thead><tr><th scope="col">Color</th>{YEARS.map((y) => <th scope="col" key={y}>{y}</th>)}<th scope="col">Ref.</th></tr></thead>
             <tbody>{cols.map(({ item: c, years }) => (
               <tr key={c.id}><th scope="row"><span className="dot" style={{ background: c.swatch }} aria-hidden /> {c.name}{c.code && <span className="muted small"> {c.code}</span>}{c.yearsNote && <div className="small muted">{c.yearsNote}</div>}</th>
-                {YEARS.map((y) => <td key={y}><Yes on={years[y]} year={y} /></td>)}<td><Cite c={c.confidence} url={c.source} /></td></tr>
+                {YEARS.map((y) => <td key={y} data-label={String(y)}><Yes on={years[y]} year={y} /></td>)}<td data-label="Ref."><Cite c={c.confidence} url={c.source} /></td></tr>
             ))}</tbody>
           </table>
         </div>
@@ -39,11 +39,11 @@ export default function YearCompare() {
       <section className="card">
         <h2>Packages by year</h2>
         <div className="tbl-wrap" tabIndex={0} role="region" aria-label="Packages by year table">
-          <table className="tbl diff">
+          <table className="tbl diff stack">
             <thead><tr><th scope="col">Package</th>{YEARS.map((y) => <th scope="col" key={y}>{y}</th>)}<th scope="col">Price</th><th scope="col">Ref.</th></tr></thead>
             <tbody>{pkgs.map(({ item: p, years }) => (
               <tr key={p.id}><th scope="row">{p.name}{p.note && <div className="small muted">{p.note}</div>}</th>
-                {YEARS.map((y) => <td key={y}><Yes on={years[y]} year={y} /></td>)}<td>{usd(p.price.value)}</td><td><Cite c={p.confidence} url={p.source} /></td></tr>
+                {YEARS.map((y) => <td key={y} data-label={String(y)}><Yes on={years[y]} year={y} /></td>)}<td data-label="Price">{usd(p.price.value)}</td><td data-label="Ref."><Cite c={p.confidence} url={p.source} /></td></tr>
             ))}</tbody>
           </table>
         </div>
@@ -51,11 +51,11 @@ export default function YearCompare() {
       <section className="card">
         <h2>Prices by year</h2>
         <div className="tbl-wrap" tabIndex={0} role="region" aria-label="Prices by year table">
-          <table className="tbl diff">
+          <table className="tbl diff stack">
             <thead><tr><th scope="col">Item</th>{YEARS.map((y) => <th scope="col" key={y}>{y}</th>)}</tr></thead>
             <tbody>{priceGrid().map((r) => (
               <tr key={r.kind}><th scope="row">{KIND_LABEL[r.kind]}</th>
-                {YEARS.map((y) => <td key={y}>{r.cells[y].length ? r.cells[y].map((p) => <div key={p.id}><strong>{usd(p.value)}</strong> <span className="small muted">{p.label}</span> <Cite c={p.confidence} url={p.source} /></div>) : <span className="muted">Not sourced</span>}</td>)}</tr>
+                {YEARS.map((y) => <td key={y} data-label={String(y)}>{r.cells[y].length ? r.cells[y].map((p) => <div key={p.id}><strong>{usd(p.value)}</strong> <span className="small muted">{p.label}</span> <Cite c={p.confidence} url={p.source} /></div>) : <span className="muted">Not sourced</span>}</td>)}</tr>
             ))}</tbody>
           </table>
         </div>

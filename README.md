@@ -2,7 +2,7 @@
 
 An unofficial, mobile-first PWA reference for the 2020–2022 Ford Mustang Shelby GT500: specs by system, model years and Shelby American editions, colors, packages and pricing, performance, a working VIN decoder, ownership/recalls, a local "Garage", mods, competitor comparison, embedded media, community links and a full source list.
 
-Every fact carries a source URL and a confidence level (`confirmed` / `reported` / `unverified`). Conflicting figures (e.g. curb weight) are shown with every sourced value, and unknowns are `null` with a note — nothing is invented. Content comes from `reports/Shelby GT500 2020 to 2022.md` and `research_notes/` (rounds 1–3). The Compare spec-sheet table uses round-3 figures, each with its own source. Rows from low-quality or database-only sources (Redeye, Jailbreak) are unverified and hidden until you ask to see them.
+Every fact carries a source URL and a confidence level (`confirmed` / `reported` / `unverified`). Conflicting figures (e.g. curb weight) are shown with every sourced value, and unknowns are `null` with a note — nothing is invented. Content comes from `reports/Shelby GT500 2020 to 2022.md` and `research_notes/` (rounds 1–5; round 5 adds paint codes FA/HY/EB, the 2021 base MSRP, the re-extracted 2021 service schedule and stock dyno baselines). The Compare spec-sheet table uses round-3 figures, each with its own source. Rows from low-quality or database-only sources (Redeye, Jailbreak) are unverified and hidden until you ask to see them.
 
 ## Run
 
@@ -19,7 +19,7 @@ npm run lint
 npm run e2e        # Playwright (Chromium) + axe-core: every route in dark and light themes, onboarding, timer, GPS meter (mocked geolocation), timeline, planner; needs `npm run build` first
 ```
 
-CI (`.github/workflows/ci.yml`, Node 20) runs `npm ci`, typecheck, lint, unit tests and build on every push and pull request. Routing uses `react-router` 7 (`HashRouter`); `npm audit` reports 0 vulnerabilities.
+CI (`.github/workflows/ci.yml`, Node 20) has two jobs on every push and pull request: `build` (`npm ci`, typecheck, lint, unit tests, build) and `e2e` (`npx playwright install --with-deps chromium` for the pinned @playwright/test version, build, then the Playwright + axe suite; the HTML report is uploaded as the `playwright-report` artifact on failure). Routing uses `react-router` 7 (`HashRouter`); `npm audit` reports 0 vulnerabilities.
 
 ## Layout
 
@@ -30,7 +30,12 @@ CI (`.github/workflows/ci.yml`, Node 20) runs `npm ci`, typecheck, lint, unit te
 - `src/lib/laptime.ts` — `m:ss.sss` lap parsing, best/average/theoretical-best (sum of best sectors); `refLaps.ts` matches Laguna Seca / VIR to sourced reference laps
 - `src/lib/planner.ts` — build-plan totals; sums only price ranges a source lists (`cost` on `ModStage`) and never combines horsepower
 - `src/lib/garage.ts` — Garage, plans, track and reminder types, localStorage keys, due-soon/overdue logic
-- `src/lib/backup.ts` — JSON export/import (`app: "gt500-companion"`, `schema: 3`; v1 files migrate with empty drag/fuel and default settings; v2 files gain `onboarding` marked done), 2 MB import cap, reset-all
+- `src/lib/backup.ts` — JSON export/import (`app: "gt500-companion"`, `schema: 4`; v1 files migrate with empty drag/fuel and default settings; v2 files gain `onboarding` marked done; v3 files gain empty `dyno`, notifications off and the default Home layout), 2 MB import cap, reset-all
+- `src/lib/dyno.ts` — dyno pulls (`gt500.dyno.v1`), SAE J1349 and STD (J607) correction factors from dry-air pressure and temperature, conversion between them, curve parsing (≤ 400 points); `src/data/dyno.ts` — sourced stock baselines (`dynoBaselines`) with a dyno-type/correction caveat
+- `src/lib/share.ts` — versioned base64url share links (`#/share/<payload>`, ≤ 2,000 chars, strict allow-list decode; never includes a VIN)
+- `src/lib/notify.ts` — opt-in local maintenance notifications (`gt500.notify.v1`) via `ServiceWorkerRegistration.showNotification`, checked on app open, one alert per due point
+- `src/lib/tires.ts` — tire diameter, revs/mile, speedometer error, effective final drive and speed per gear (uses `gearing.ts`)
+- `src/lib/roi.ts` — cost per wheel-hp from a sourced `cost` and sourced `gain` only; `src/lib/dashboard.ts` — Home card order/visibility (`gt500.home.v1`)
 - `src/lib/timer.ts` — pure stopwatch (start/pause/lap with a 1 s double-tap guard), laps written as Track-log text
 - `src/lib/gps.ts` — GPS meter math: haversine, Doppler-or-derived speed, launch detection, interpolated 0–60 / 60–130 / ¼-mile timing, accuracy (±10 m) and gap (2.5 s) refusal; synthetic traces for tests
 - `src/lib/compat.ts` — Build-planner compatibility rules derived only from sourced records (DCT clutch rating vs sourced wheel torque, E85 fuel parts each source lists, one blower/turbo replacement, race-fuel results) and order-of-ops by sourced stage
@@ -57,12 +62,18 @@ CI (`.github/workflows/ci.yml`, Node 20) runs `npm ci`, typecheck, lint, unit te
 - **Fuel & Cost** (`/fuel`): fill-ups (93 / E85 / blend), mpg and cost-per-mile charts, ownership cost summary.
 - **Color Visualizer** (`/visualizer`), **Trivia Quiz** (`/quiz`), **Print Spec Sheet** (`/print`, uses `@media print`).
 - **Settings** (`/settings`): units, theme, and data management (export / import / reset all). Garage links there.
-- **Garage** adds maintenance reminders (miles and/or months, due soon within 500 mi / 30 days). Default intervals are user-set placeholders — Ford's 2020–22 GT500 schedule is not sourced here. It also has the share-card PNG and backup/restore.
+- **Garage** adds maintenance reminders (miles and/or months, due soon within 500 mi / 30 days). Default intervals come from the 2021 GT500 owner-manual supplement (reported; 2020/2022 unconfirmed) and remain editable. It also has the share-card PNG and backup/restore.
 - **Session Timer** (`/timer`): big touch buttons, lap splits, Screen Wake Lock while running (falls back with a note where unsupported); saves laps straight into the Track log.
 - **GPS Meter** (`/gps`, approximate): permission-gated, only starts when you tap **Arm GPS**; shows live accuracy and refuses to report when any fix in the run is worse than ±10 m or fixes are > 2.5 s apart; handles permission denied. Results save to the Drag log labelled "GPS estimate" and are excluded from strip stats. No CSP change is needed for geolocation.
 - **Ownership Timeline** (`/timeline`): every dated entry from Garage service and mods, Track, Drag and Fuel logs with type/year filters and a yearly summary.
 - **Year & Rival Compare** (`/diff`): 2020 vs 2021 vs 2022 colors, packages and prices (conflicts kept), and a GT500-vs-any-rival head-to-head using only sourced values; hidden unverified sheets stay hidden unless requested.
-- **Build Planner** shows sourced compatibility warnings and a suggested order.
+- **Build Planner** shows sourced compatibility warnings and a suggested order, a cost-per-hp view ("insufficient data" unless a mod has both a sourced price and a sourced gain — currently none does), and a share-as-link button.
+- **Dyno Log** (`/dyno`): whp/wtq, dyno type, correction, weather, Garage mods snapshot, optional curve points drawn as an SVG overlay of up to 5 pulls; SAE ↔ STD converter; sourced stock baselines (664–723 whp across sources).
+- **Tire & Wheel Calc** (`/tires`): stock vs alternate size.
+- **Shared links** (`#/share/…`): read-only plan or car view with Import to Build Planner / Garage. Create them from the Planner or Garage.
+- **Notifications** (Settings): permission-gated; falls back to an explanation where unsupported or blocked. There is no push server, so alerts only appear when the app is opened.
+- **Home** can be customized (reorder / hide cards), saved on the device.
+- **Year & Rival Compare** tables become stacked cards under 600 px.
 - **Welcome** (`/welcome`): a skippable 3-step first-run intro (year/color, optional VIN, units) that seeds the Garage; shown only when the intro was never completed and the Garage is empty; re-run from Settings.
 - Accessibility: the e2e suite runs axe-core (WCAG 2.1 A/AA) on every route in both themes and requires 0 serious/critical violations. Fixes from the audit: dark-theme button/active-link contrast (`--accent-btn`), video placeholder accessible names, focusable scrollable tables.
 - Home shows a Garage summary and the next maintenance due. All tools appear in the menu and in Search.

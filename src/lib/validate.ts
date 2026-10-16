@@ -6,6 +6,7 @@
 import { DEFAULT_REMINDERS, EMPTY_GARAGE, type GarageState, type LogEntry, type Plan, type Reminder, type TrackSession } from './garage';
 import type { GpsRun, Timeslip } from './drag';
 import type { FillUp } from './fuel';
+import { MAX_CURVE_POINTS, type CurvePoint, type DynoPull } from './dyno';
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -109,4 +110,56 @@ export function normOnboarding(v: unknown): Onboarding | null {
   if (!isObj(v) || typeof v.done !== 'boolean') return null;
   const c = str(v.completed);
   return c === BAD ? null : { done: v.done, completed: c };
+}
+
+const DYNO_TYPES = ['dynojet', 'mustang', 'hub', 'other'] as const;
+const CORRS = ['sae', 'std', 'uncorrected'] as const;
+const inRange = (x: number | null, lo: number, hi: number) => x === null || (x >= lo && x <= hi);
+
+/** Dyno pull: enums allow-listed, power/torque/rpm range-checked, curve capped. */
+export function normDyno(v: unknown): DynoPull | null {
+  if (!isObj(v)) return null;
+  if (!DYNO_TYPES.includes(v.dynoType as never) || !CORRS.includes(v.correction as never)) return null;
+  const w = v.weather ?? {};
+  if (!isObj(w)) return null;
+  if (w.pressureIsStation !== undefined && typeof w.pressureIsStation !== 'boolean') return null;
+  if (v.mods !== undefined && !(Array.isArray(v.mods) && v.mods.every((x) => typeof x === 'string'))) return null;
+  const rawCurve = v.curve ?? [];
+  if (!Array.isArray(rawCurve) || rawCurve.length > MAX_CURVE_POINTS) return null;
+  const curve: CurvePoint[] = [];
+  for (const c of rawCurve) {
+    if (!isObj(c)) return null;
+    const p = build<CurvePoint>({ rpm: reqNum(c.rpm), hp: num(c.hp), tq: num(c.tq) });
+    if (!p || p.rpm <= 0 || p.rpm > 12000 || !inRange(p.hp, 0, 5000) || !inRange(p.tq, 0, 5000)) return null;
+    curve.push(p);
+  }
+  const weather = build<Omit<DynoPull['weather'], 'pressureIsStation'>>({ tempF: num(w.tempF), pressureInHg: num(w.pressureInHg), humidity: num(w.humidity), elevationFt: num(w.elevationFt) });
+  if (weather && (!inRange(weather.humidity, 0, 100) || !inRange(weather.pressureInHg, 1, 40))) return null;
+  const d = build<Omit<DynoPull, 'weather' | 'mods' | 'curve' | 'dynoType' | 'correction'>>({
+    id: req(v.id), date: req(v.date), shop: str(v.shop), whp: reqNum(v.whp), wtq: num(v.wtq), notes: str(v.notes),
+  });
+  if (!d || !weather || d.whp <= 0 || d.whp > 5000 || !inRange(d.wtq, 0, 5000)) return null;
+  return { ...d, dynoType: v.dynoType as DynoPull['dynoType'], correction: v.correction as DynoPull['correction'], weather: { ...weather, pressureIsStation: w.pressureIsStation === true }, mods: [...((v.mods as string[] | undefined) ?? [])], curve: curve.sort((a, b) => a.rpm - b.rpm) };
+}
+
+/** Local notification preference and which reminder due-keys were already announced. */
+export interface NotifyPrefs { enabled: boolean; sent: Record<string, string> }
+export const DEFAULT_NOTIFY: NotifyPrefs = { enabled: false, sent: {} };
+export function normNotify(v: unknown): NotifyPrefs | null {
+  if (!isObj(v) || typeof v.enabled !== 'boolean') return null;
+  const s = v.sent ?? {};
+  if (!isObj(s)) return null;
+  const sent: Record<string, string> = {};
+  for (const [k, x] of Object.entries(s).slice(0, 200)) { if (typeof x !== 'string') return null; sent[k] = x; }
+  return { enabled: v.enabled, sent };
+}
+
+/** Home dashboard layout: card order and hidden cards, unknown ids dropped, missing ids appended. */
+export interface DashLayout { order: string[]; hidden: string[] }
+export function normDash(v: unknown, known: readonly string[]): DashLayout | null {
+  if (!isObj(v) || !Array.isArray(v.order) || !Array.isArray(v.hidden)) return null;
+  if (![...v.order, ...v.hidden].every((x) => typeof x === 'string')) return null;
+  const order = [...new Set((v.order as string[]).filter((x) => known.includes(x)))];
+  for (const k of known) if (!order.includes(k)) order.push(k);
+  return { order, hidden: [...new Set((v.hidden as string[]).filter((x) => known.includes(x)))] };
 }

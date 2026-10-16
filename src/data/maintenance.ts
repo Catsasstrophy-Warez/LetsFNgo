@@ -1,7 +1,5 @@
 import type { MaintenanceItem } from './types';
 
-const OM = 'https://www.ford.com/support/owner-manuals/'; // where to verify; figure not retrieved
-const MISSING = 'Not sourced — needs the 2020–22 owner\'s manual and GT500 supplement.';
 const LMR = 'https://lmr.com/products/2020-2022-shelby-gt500-oil-change-oil-life-reset';
 const MC_DCT = 'https://www.motorcraft.com/us/en_us/home/our-products/chemicals-and-lubricants/transmission-fluid/gt500-dual-clutch-transmission-fluids.html';
 /** 2021 Mustang (CZG) GT500 owner-manual supplement, edition 202012 — third-party copy; may not match 2020/2022. */
@@ -30,18 +28,19 @@ export const maintenance: MaintenanceItem[] = [
   { id: 'dct-cap', group: 'Fluids', item: 'DCT fluid capacity', value: '8.0 qt total (drain/fill ≈ 3–4 qt per owners)', source: LMR, confidence: 'unverified', note: 'ALLDATA via LMR; not confirmed by Ford.' },
   { id: 'coolant', group: 'Fluids', item: 'Engine coolant type & capacity', value: 'Motorcraft Yellow Prediluted VC-13DL-G (WSS-M97B57-A2) · 15.2 qt (14.4 L)', source: SUPP21, confidence: 'reported', note: SUPP_NOTE },
   { id: 'ic-coolant', group: 'Fluids', item: 'Intercooler coolant', value: 'Motorcraft Yellow VC-13DL-G (WSS-M97B57-A2) · 2.5 qt (2.4 L)', source: SUPP21, confidence: 'reported', note: SUPP_NOTE },
-  { id: 'diff-fluid', group: 'Fluids', item: 'Rear differential fluid', value: null, source: OM, confidence: 'unverified', note: MISSING },
+  { id: 'diff-fluid', group: 'Fluids', item: 'Rear differential fluid interval', value: 'Every 150,000 mi; every 500 mi of track use or on an axle over-temperature warning', source: SUPP21, confidence: 'reported', note: SUPP_NOTE },
   { id: 'brake-fluid', group: 'Fluids', item: 'Brake fluid', value: 'Motorcraft DOT 4 LV High Performance (WSS-M6C65-A2) · change every 3 years', source: SUPP21, confidence: 'reported', note: `${SUPP_NOTE} The supplement also says to replace it before track use.` },
   {
     id: 'plugs', group: 'Fluids', item: 'Spark plugs', value: 'SP-581, gap 0.037 ± 0.002 in (0.95 ± 0.05 mm)', source: SUPP21, confidence: 'reported',
-    note: `${SUPP_NOTE} Replacement interval is ambiguous in the PDF text.`,
+    note: `${SUPP_NOTE} Replace every 100,000 mi (round-5 re-extraction resolves the earlier 50k vs 100k ambiguity; 50k is the fuel filter).`,
     conflicts: [
       { value: 'SP-581, 0.037 in', source: SUPP21, confidence: 'reported', context: '2021 GT500 supplement' },
       { value: '≈ 0.035–0.039 in', source: 'https://lmr.com/products/2015-2025-mustang-spark-plug-gap-specs', confidence: 'unverified', context: 'Search snippet, column alignment uncertain' },
     ],
   },
-  { id: 'intervals', group: 'Service', item: 'Oil change interval', value: 'Intelligent Oil-Life Monitor', source: LMR, confidence: 'reported', note: 'Maximum interval not found.' },
-  { id: 'supp-intervals', group: 'Service', item: 'Supplement service intervals', value: 'Oil: oil-life monitor, max 1 yr / 10,000 mi; every 4 hr track time. Cabin filter & DCT side filter ~20k; engine air filter 30k; DCT fluid + side filter 40k; coolant 10 yr / 200k then 5 yr / 100k; rear axle fluid every 500 mi of track use', source: SUPP21, confidence: 'unverified', note: 'From the 2021 supplement, but the PDF table columns were misaligned when extracted, so rows may be paired with the wrong interval. Verify in the PDF before relying on any figure.' },
+  { id: 'intervals', group: 'Service', item: 'Oil change interval', value: 'Intelligent Oil-Life Monitor, max 1 yr / 10,000 mi (severe 3,000 mi)', source: SUPP21, confidence: 'reported', note: SUPP_NOTE },
+  { id: 'supp-intervals', group: 'Service', item: 'Normal service schedule (2021 supplement)', value: 'Oil & filter: oil-life monitor, max 1 yr / 10,000 mi (severe use 3,000 mi) · brake fluid 3 yr · cabin air filter 20k · DCT side filter + fluid top-off 20k · engine air filter 30k · DCT fluid + side filter 40k · fuel filter 50k · spark plugs 100k · differential fluid 150k · coolant first 10 yr / 200k, then every 5 yr / 100k', source: SUPP21, confidence: 'reported', note: `${SUPP_NOTE} Re-extracted with pdftotext -layout in round 5, which fixed the column alignment. The 20k service also inspects the intercooler, intercooler coolant and supercharger belt.` },
+  { id: 'track-intervals', group: 'Service', item: 'Track-use service (2021 supplement)', value: 'Oil & filter after one track weekend or ≈ 4 hours · rear axle fluid every 500 mi of track use or on an over-temperature warning · replace brake fluid with DOT 4 LV (dry boiling point > 500 °F) before an event', source: SUPP21, confidence: 'reported', note: SUPP_NOTE },
   { id: 'first-oil', group: 'Service', item: 'First oil change (owner practice)', value: '500–1,000 mi', source: 'https://forums.shelby.com/topic/46409-first-oil-change/', confidence: 'unverified' },
   { id: 'break-in', group: 'Service', item: 'Break-in', value: '100 mi before extended WOT; 1,000 mi before track use', source: 'https://www.mustang6g.com/forums/threads/gt500-break-in-period.127991/', confidence: 'unverified', note: 'From the 2014 GT500 supplement — not confirmed for 2020+.' },
   { id: 'w-b2b', group: 'Warranty', item: 'Bumper-to-bumper', value: '3 yr / 36,000 mi', source: AG, confidence: 'reported', note: 'Ford standard terms; no GT500-specific warranty guide retrieved.' },

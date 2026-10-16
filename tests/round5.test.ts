@@ -163,7 +163,7 @@ describe('year diff and head-to-head', () => {
     const msrp = priceGrid().find((r) => r.kind === 'msrp')!;
     expect(msrp.cells[2022].length).toBe(prices.filter((p) => p.kind === 'msrp' && p.year === 2022).length);
     expect(msrp.cells[2022].length).toBeGreaterThanOrEqual(2);
-    expect(msrp.cells[2021][0].value).toBeNull();
+    expect(msrp.cells[2021][0].value).toBe(70300);
   });
   it('head-to-head uses sourced values only and hides unverified sheets by default', () => {
     const h = headToHead('superstock')!;
@@ -180,9 +180,9 @@ describe('year diff and head-to-head', () => {
 
 describe('backup schema 3', () => {
   it('migrates v2 with onboarding done and round-trips gps runs', () => {
-    expect(SCHEMA_VERSION).toBe(3);
-    expect(migrate({ schema: 2 })).toMatchObject({ schema: 3, onboarding: { done: true } });
-    expect(migrate({ schema: 1 })).toMatchObject({ schema: 3, drag: [], onboarding: { done: true } });
+    expect(SCHEMA_VERSION).toBe(4);
+    expect(migrate({ schema: 2 })).toMatchObject({ schema: 4, onboarding: { done: true } });
+    expect(migrate({ schema: 1 })).toMatchObject({ schema: 4, drag: [], onboarding: { done: true } });
     const w = { tempF: null, pressureInHg: null, humidity: null, elevationFt: null, pressureIsStation: false };
     const slip = { id: 'g', date: '2026-01-01', track: '', rt: null, sixty: null, threeThirty: null, eighthEt: null, eighthMph: null, quarterEt: null, quarterMph: null, da: null, weather: w, mods: [], notes: 'GPS estimate', gps: { kind: 'quarter', seconds: 11.2, trapMph: 125, accuracyM: 2.5 } };
     const b = JSON.parse(JSON.stringify(makeBackup(EMPTY_GARAGE, [], [], [slip as never], [], undefined, 'x', { done: true, completed: '2026-01-01' })));

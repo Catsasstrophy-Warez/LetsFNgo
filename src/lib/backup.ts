@@ -6,6 +6,10 @@ import { QUIZ_KEY } from './quiz';
 import { DEFAULT_ONBOARDING, normFill, normGarage, normOnboarding, normPlan, normSlip, normTrack, type Onboarding } from './validate';
 import { ONBOARDING_KEY, loadOnboarding } from './onboarding';
 import { remove, save } from './storage';
+import { DYNO_KEY, loadDyno, type DynoPull } from './dyno';
+import { NOTIFY_KEY, loadNotify } from './notify';
+import { DASH_KEY, DEFAULT_DASH, loadDash, normDashboard } from './dashboard';
+import { DEFAULT_NOTIFY, normDyno, normNotify, type DashLayout, type NotifyPrefs } from './validate';
 
 /**
  * Schema history:
@@ -13,8 +17,10 @@ import { remove, save } from './storage';
  *  2 — adds drag (timeslips), fuel (fill-ups) and settings. v1 files migrate with empty drag/fuel and default settings.
  *  3 — adds onboarding (first-run intro state) and the optional `gps` field on timeslips (GPS-meter estimates).
  *      v2 files migrate with onboarding marked done (an existing user never sees the intro again).
+ *  4 — adds dyno pulls, notification preference (permission itself is never restored) and Home layout.
+ *      v3 files migrate with no pulls, notifications off and the default Home layout.
  */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 export const APP_ID = 'gt500-companion';
 /** Largest backup file accepted for import. */
 export const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
@@ -22,14 +28,17 @@ export const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 export interface Backup {
   app: typeof APP_ID; schema: number; exported: string;
   garage: GarageState; plans: Plan[]; track: TrackSession[]; drag: Timeslip[]; fuel: FillUp[]; settings: Settings; onboarding: Onboarding;
+  dyno: DynoPull[]; notify: NotifyPrefs; dashboard: DashLayout;
 }
 
-export function makeBackup(garage: GarageState, plans: Plan[], track: TrackSession[], drag: Timeslip[] = [], fuel: FillUp[] = [], settings: Settings = normalizeSettings({}), exported = new Date().toISOString(), onboarding: Onboarding = { ...DEFAULT_ONBOARDING }): Backup {
-  return { app: APP_ID, schema: SCHEMA_VERSION, exported, garage, plans, track, drag, fuel, settings, onboarding };
+export function makeBackup(garage: GarageState, plans: Plan[], track: TrackSession[], drag: Timeslip[] = [], fuel: FillUp[] = [], settings: Settings = normalizeSettings({}), exported = new Date().toISOString(), onboarding: Onboarding = { ...DEFAULT_ONBOARDING },
+  extra: { dyno?: DynoPull[]; notify?: NotifyPrefs; dashboard?: DashLayout } = {}): Backup {
+  return { app: APP_ID, schema: SCHEMA_VERSION, exported, garage, plans, track, drag, fuel, settings, onboarding,
+    dyno: extra.dyno ?? [], notify: extra.notify ?? { ...DEFAULT_NOTIFY, sent: {} }, dashboard: extra.dashboard ?? { ...DEFAULT_DASH, order: [...DEFAULT_DASH.order] } };
 }
 
 /** Everything currently stored on this device. */
-export const currentBackup = () => makeBackup(loadGarage(), loadPlans(), loadTrack(), loadDrag(), loadFuel(), loadSettings(), undefined, loadOnboarding());
+export const currentBackup = () => makeBackup(loadGarage(), loadPlans(), loadTrack(), loadDrag(), loadFuel(), loadSettings(), undefined, loadOnboarding(), { dyno: loadDyno(), notify: loadNotify(), dashboard: loadDash() });
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -46,6 +55,7 @@ export function migrate(v: Obj): Obj {
   let o = v;
   if (o.schema === 1) o = { ...o, schema: 2, drag: o.drag ?? [], fuel: o.fuel ?? [], settings: o.settings ?? {} };
   if (o.schema === 2) o = { ...o, schema: 3, onboarding: o.onboarding ?? { done: true, completed: '' } };
+  if (o.schema === 3) o = { ...o, schema: 4, dyno: o.dyno ?? [], notify: o.notify ?? { enabled: false, sent: {} }, dashboard: o.dashboard ?? { order: [...DEFAULT_DASH.order], hidden: [] } };
   return o;
 }
 
@@ -67,10 +77,16 @@ export function validateBackup(raw: unknown): { ok: true; data: Backup; migrated
   if (!isObj(v.settings)) errs.push('"settings" must be an object');
   const onboarding = normOnboarding(v.onboarding);
   if (!onboarding) errs.push('"onboarding" is malformed');
+  const dyno = strictList(v.dyno, 'dyno', normDyno, errs);
+  const notify = normNotify(v.notify);
+  if (!notify) errs.push('"notify" is malformed');
+  const dashboard = normDashboard(v.dashboard);
+  if (!dashboard) errs.push('"dashboard" is malformed');
   if (errs.length) return { ok: false, errors: errs };
   return {
     ok: true, migratedFrom: from < SCHEMA_VERSION ? from : null,
-    data: { app: APP_ID, schema: SCHEMA_VERSION, exported: typeof v.exported === 'string' ? v.exported : '', garage: garage ?? { ...EMPTY_GARAGE }, plans, track, drag, fuel, settings: normalizeSettings(v.settings), onboarding: onboarding ?? { ...DEFAULT_ONBOARDING } },
+    data: { app: APP_ID, schema: SCHEMA_VERSION, exported: typeof v.exported === 'string' ? v.exported : '', garage: garage ?? { ...EMPTY_GARAGE }, plans, track, drag, fuel, settings: normalizeSettings(v.settings), onboarding: onboarding ?? { ...DEFAULT_ONBOARDING },
+      dyno, notify: notify ?? { ...DEFAULT_NOTIFY, sent: {} }, dashboard: dashboard ?? { ...DEFAULT_DASH } },
   };
 }
 
@@ -84,9 +100,10 @@ export function restoreBackup(b: Backup): boolean {
   return [
     save(KEYS.garage, b.garage), save(KEYS.plans, b.plans), save(KEYS.track, b.track),
     save(DRAG_KEY, b.drag), save(FUEL_KEY, b.fuel), save(SETTINGS_KEY, b.settings), save(ONBOARDING_KEY, b.onboarding),
+    save(DYNO_KEY, b.dyno), save(NOTIFY_KEY, b.notify), save(DASH_KEY, b.dashboard),
   ].every(Boolean);
 }
 
 /** Every key this app writes. */
-export const ALL_KEYS = [KEYS.garage, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, 'gt500.theme'];
+export const ALL_KEYS = [KEYS.garage, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, DYNO_KEY, NOTIFY_KEY, DASH_KEY, 'gt500.theme'];
 export function resetAll(): void { ALL_KEYS.forEach(remove); }

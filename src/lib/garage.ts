@@ -26,12 +26,21 @@ export const uid = () => Math.random().toString(36).slice(2, 10);
 /** Local calendar date (YYYY-MM-DD), not UTC. */
 export const today = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-/** Starter reminders. Every interval is a placeholder the owner should edit — none is a Ford figure. */
+/**
+ * Starter reminders from the 2021 GT500 owner-manual supplement (reported; 2020/2022 unconfirmed — see
+ * data/maintenance.ts). Every interval stays editable. Oil uses the maximum; the oil-life monitor may call earlier.
+ */
 export const DEFAULT_REMINDERS: Reminder[] = [
-  { id: 'r-oil', item: 'Engine oil & filter', everyMiles: 5000, everyMonths: 12, lastMiles: null, lastDate: '' },
-  { id: 'r-dct', item: 'DCT fluid (XT-14-L)', everyMiles: 20000, everyMonths: null, lastMiles: null, lastDate: '' },
-  { id: 'r-brake', item: 'Brake fluid flush', everyMiles: null, everyMonths: 24, lastMiles: null, lastDate: '' },
-  { id: 'r-tires', item: 'Tire inspection / rotation check', everyMiles: 5000, everyMonths: 6, lastMiles: null, lastDate: '' },
+  { id: 'r-oil', item: 'Engine oil & filter (max; severe use 3,000 mi)', everyMiles: 10000, everyMonths: 12, lastMiles: null, lastDate: '' },
+  { id: 'r-brake', item: 'Brake fluid (DOT 4 LV)', everyMiles: null, everyMonths: 36, lastMiles: null, lastDate: '' },
+  { id: 'r-cabin', item: 'Cabin air filter', everyMiles: 20000, everyMonths: null, lastMiles: null, lastDate: '' },
+  { id: 'r-dct-top', item: 'DCT side filter + fluid top-off', everyMiles: 20000, everyMonths: null, lastMiles: null, lastDate: '' },
+  { id: 'r-air', item: 'Engine air filter', everyMiles: 30000, everyMonths: null, lastMiles: null, lastDate: '' },
+  { id: 'r-dct', item: 'DCT fluid (XT-14-L) + side filter', everyMiles: 40000, everyMonths: null, lastMiles: null, lastDate: '' },
+  { id: 'r-fuel', item: 'Fuel filter', everyMiles: 50000, everyMonths: null, lastMiles: null, lastDate: '' },
+  { id: 'r-plugs', item: 'Spark plugs', everyMiles: 100000, everyMonths: null, lastMiles: null, lastDate: '' },
+  { id: 'r-diff', item: 'Differential fluid', everyMiles: 150000, everyMonths: null, lastMiles: null, lastDate: '' },
+  { id: 'r-coolant', item: 'Engine coolant (first change)', everyMiles: 200000, everyMonths: 120, lastMiles: null, lastDate: '' },
 ];
 
 export const EMPTY_GARAGE: GarageState = { vin: '', year: '', color: '', nickname: '', odometer: '', mods: [], service: [], reminders: DEFAULT_REMINDERS };

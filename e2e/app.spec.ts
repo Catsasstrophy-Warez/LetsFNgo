@@ -8,7 +8,7 @@ const shot = async (page: Page, name: string, project: string) => { if (SHOTS) a
 
 const ROUTES = ['/', '/specs', '/years', '/colors', '/visualizer', '/packages', '/performance', '/vin', '/ownership', '/garage', '/planner',
   '/timeline', '/track', '/timer', '/drag', '/gps', '/fuel', '/gearing', '/tools', '/mods', '/compare', '/diff', '/media', '/community',
-  '/quiz', '/print', '/sources', '/settings', '/search', '/welcome'];
+  '/quiz', '/print', '/sources', '/settings', '/search', '/welcome', '/dyno', '/tires'];
 
 /** Seed a returning user so Home does not redirect to the intro, with some data so log pages render content. */
 async function seed(page: Page, theme: 'dark' | 'light') {
@@ -40,7 +40,7 @@ for (const theme of ['dark', 'light'] as const) {
       for (const v of res.violations.filter((x) => x.impact === 'serious' || x.impact === 'critical')) {
         failures.push(`${r} [${v.impact}] ${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`);
       }
-      if (['/timer', '/gps', '/timeline', '/diff', '/planner', '/welcome'].includes(r)) await shot(page, `${theme}${r.replace(/\//g, '-')}`, info.project.name);
+      if (['/timer', '/gps', '/timeline', '/diff', '/planner', '/welcome', '/dyno', '/tires', '/'].includes(r)) await shot(page, `${theme}${r.replace(/\//g, '-')}`, info.project.name);
     }
     expect(failures, failures.join('\n')).toEqual([]);
   });
@@ -156,4 +156,77 @@ test('timeline filters and planner warnings', async ({ page }, info) => {
   await goto(page, '/diff');
   await page.getByLabel('Rival').selectOption('superstock');
   await expect(page.getByRole('cell', { name: /807 hp/ })).toBeVisible();
+});
+
+test('dyno log: save a pull with a curve and see the overlay', async ({ page }, info) => {
+  await seed(page, 'dark');
+  await goto(page, '/dyno');
+  await page.getByLabel('Peak whp').fill('682');
+  await page.getByLabel(/Peak wheel torque/).fill('590');
+  await page.getByLabel(/Curve points/).fill('3000, 300, 520\n5000, 520, 560\n7000, 682, 510');
+  await page.getByRole('button', { name: 'Save pull' }).click();
+  await expect(page.locator('.chart-svg polyline')).toHaveCount(2);
+  await expect(page.locator('.rows strong', { hasText: '682 whp' })).toBeVisible();
+  await shot(page, 'dyno-pull', info.project.name);
+  const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(axe.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => v.id)).toEqual([]);
+});
+
+test('share link opens read-only and imports a plan', async ({ page }, info) => {
+  await seed(page, 'dark');
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']).catch(() => undefined);
+  await goto(page, '/planner');
+  await page.evaluate(() => { (navigator as { share?: unknown }).share = undefined; });
+  await page.getByRole('button', { name: 'Share plan as link' }).click();
+  const url = await page.getByLabel('Share link').inputValue();
+  expect(url).toMatch(/#\/share\/[A-Za-z0-9_-]+$/);
+  await page.goto(url);
+  await expect(page.getByRole('heading', { name: 'Shared build plan' })).toBeVisible();
+  await shot(page, 'share-plan', info.project.name);
+  await page.getByRole('button', { name: 'Import to my Build Planner' }).click();
+  await expect(page.getByText('Plan added')).toBeVisible();
+  const plans = await page.evaluate(() => JSON.parse(localStorage.getItem('gt500.plans.v1') || '[]'));
+  expect(plans.map((p: { name: string }) => p.name)).toContain('Big (shared)');
+  await page.goto('./#/share/not-valid!!');
+  await expect(page.getByRole('alert')).toContainText(/damaged|read/);
+});
+
+test('home customization persists; year compare stacks on phones', async ({ page }, info) => {
+  await seed(page, 'light');
+  await goto(page, '/');
+  await page.getByRole('button', { name: 'Customize Home' }).click();
+  await page.getByRole('button', { name: 'Move Tools up' }).click();
+  await page.getByRole('button', { name: 'Move Tools up' }).click();
+  await page.getByRole('checkbox', { name: 'Confidence legend' }).uncheck();
+  await shot(page, 'home-customize', info.project.name);
+  await page.reload();
+  await expect(page.locator('.dash-slot').first()).toContainText('Tools');
+  await expect(page.locator('.legend')).toHaveCount(0);
+  await goto(page, '/diff');
+  const display = await page.locator('.tbl.diff tbody tr').first().evaluate((e) => getComputedStyle(e).display);
+  expect(display).toBe(info.project.name === 'mobile' ? 'block' : 'table-row');
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await shot(page, 'diff-stacked', info.project.name);
+});
+
+test('notifications: permission-gated toggle shows a due reminder', async ({ browser, baseURL }, info) => {
+  const ctx = await browser.newContext({ baseURL, viewport: { width: 390, height: 844 } });
+  await ctx.grantPermissions(['notifications']);
+  const page = await ctx.newPage();
+  await page.addInitScript(() => {
+    localStorage.setItem('gt500.onboarding.v1', JSON.stringify({ done: true, completed: '2026-01-01' }));
+    localStorage.setItem('gt500.garage.v1', JSON.stringify({ odometer: '10900', reminders: [{ id: 'r1', item: 'Oil', everyMiles: 10000, everyMonths: null, lastMiles: 1000, lastDate: '' }] }));
+    const shown: string[] = [];
+    (window as unknown as { __shown: string[] }).__shown = shown;
+    class N { static permission = 'granted'; static requestPermission = async () => 'granted'; constructor(t: string) { shown.push(t); } }
+    (window as unknown as { Notification: unknown }).Notification = N;
+    ServiceWorkerRegistration.prototype.showNotification = async function (t: string) { shown.push(t); };
+  });
+  await page.goto('./#/settings');
+  await page.getByLabel(/Notify me/).check();
+  await expect(page.getByRole('status').filter({ hasText: /On\./ })).toContainText('1 reminder');
+  expect(await page.evaluate(() => (window as unknown as { __shown: string[] }).__shown)).toEqual(['Due soon: Oil']);
+  await shot(page, 'settings-notify', info.project.name);
+  await ctx.close();
 });

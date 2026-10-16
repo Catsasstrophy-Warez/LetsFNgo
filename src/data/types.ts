@@ -130,6 +130,8 @@ export interface ModStage extends Sourced {
   status?: 'excluded';
   /** Parts price range in USD, only where the cited source lists one. */
   cost?: { min: number; max: number };
+  /** Wheel-horsepower gain over stock, only where the cited source states it or both figures on the same dyno. */
+  gain?: { whp: number; basis: string };
 }
 
 export interface Competitor extends Sourced {
@@ -196,4 +198,19 @@ export interface AudioClip extends Sourced {
   license: string;
   licenseUrl: string;
   freesoundId: string;
+}
+
+/** A sourced stock dyno baseline (wheel figures) for comparing your own pulls. */
+export interface DynoBaseline extends Sourced {
+  id: string;
+  label: string;
+  /** Peak rpm or gear details where the source gives them. */
+  context?: string;
+  year: ModelYear | null;
+  whp: number;
+  wtq: number | null;
+  dyno: 'dynojet' | 'mustang' | 'hub' | 'other';
+  correction: 'sae' | 'std' | 'uncorrected' | 'unknown';
+  fuel: string | null;
+  date: string | null;
 }

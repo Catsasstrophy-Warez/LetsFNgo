@@ -6,6 +6,8 @@ import { KEYS, addModsToGarage, loadPlans, today, uid, type Plan } from '../lib/
 import { plannable, summarizePlan } from '../lib/planner';
 import { checkPlan, orderOfOps } from '../lib/compat';
 import { warrantyNote } from '../data/mods';
+import { costPerHp } from '../lib/roi';
+import { ShareLink } from '../components/ShareLink';
 
 const money = (n: number) => `$${Math.round(n).toLocaleString('en-US')}`;
 
@@ -98,10 +100,35 @@ export default function Planner() {
               <button className="btn" onClick={() => { addModsToGarage(sum.mods.map((m) => ({ title: m.stage.replace(/^[\d·\s]+/, '') + ' (planned)', notes: `${m.parts}. From plan "${active.name}". Source: ${m.source}` }))); setFlash(`Added ${sum.mods.length} to the Garage mods log.`); }}>Add to Garage mods log</button>
             )}
             {flash && <p className="ok-t" role="status">{flash} <Link to="/garage">Open Garage →</Link></p>}
+            {sum.mods.length > 0 && <ShareLink label="Share plan as link" payload={{ v: 1, k: 'plan', name: active.name, modIds: active.modIds }} />}
           </section>
+          {sum.mods.length > 0 && <RoiView mods={sum.mods} />}
         </>
       )}
       <div className="card warn">{warrantyNote.text} <Cite c={warrantyNote.confidence} url={warrantyNote.source} /></div>
     </>
+  );
+}
+
+function RoiView({ mods }: { mods: ReturnType<typeof summarizePlan>['mods'] }) {
+  const rows = costPerHp(mods);
+  return (
+    <section className="card" aria-labelledby="roi-h">
+      <h2 id="roi-h">Cost per horsepower</h2>
+      <ul className="rows">
+        {rows.map((r) => (
+          <li key={r.mod.id}>
+            <div className="sub">{r.mod.stage}</div>
+            {r.ok ? (
+              <p><strong>{r.perHpMin === r.perHpMax ? money(r.perHpMin) : `${money(r.perHpMin)}–${money(r.perHpMax)}`} per whp</strong> <span className="muted">· +{r.gainWhp} whp for {r.costMin === r.costMax ? money(r.costMin) : `${money(r.costMin)}–${money(r.costMax)}`}</span></p>
+            ) : (
+              <p className="muted"><span className="badge badge-unverified">insufficient data</span> no sourced {r.missing.join(' or ')}</p>
+            )}
+            {r.mod.gain && <p className="small muted">Gain basis: {r.mod.gain.basis} <Cite c={r.mod.confidence} url={r.mod.source} /></p>}
+          </li>
+        ))}
+      </ul>
+      <Note>Uses only a price range and a horsepower gain that sources state for that mod. Nothing is estimated, and per-mod gains are not added up. Labor and tuning are excluded.</Note>
+    </section>
   );
 }
