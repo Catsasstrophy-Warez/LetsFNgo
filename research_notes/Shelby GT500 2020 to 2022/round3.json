@@ -1,0 +1,337 @@
+{
+  "competitors": [
+    {
+      "model": "2020 Ford Mustang Shelby GT500",
+      "hp": 760,
+      "lbft": 625,
+      "curbWeightLb": 4171,
+      "zeroToSixty_s": 3.3,
+      "zeroToSixtyPublication": "Ford claim (prepped surface), not a magazine test",
+      "quarterMile": "10.7 s @ 133 mph (Ford claim)",
+      "baseMsrp": null,
+      "msrpModelYear": null,
+      "source": "https://www.musclecarsandtrucks.com/2020-ford-mustang-shelby-gt500-0-60-quarter-mile-times-revealed/",
+      "confidence": "reported",
+      "notes": "Car and Driver estimated 3.5 s / 11.0 s on clean pavement per https://autos.yahoo.com/ford-reveals-acceleration-times-760-100000786.html. No C&D/MT tested sheet retrieved (sites block fetching)."
+    },
+    {
+      "model": "2017-18 Chevrolet Camaro ZL1 (10AT)",
+      "hp": 650,
+      "lbft": null,
+      "curbWeightLb": null,
+      "zeroToSixty_s": 3.5,
+      "zeroToSixtyPublication": "MotorTrend (via Consumer Guide)",
+      "quarterMile": "11.5 s @ 125 mph (MotorTrend); Chevy claim 11.4 @ 127",
+      "baseMsrp": null,
+      "msrpModelYear": null,
+      "source": "https://blog.consumerguide.com/2017-2018-chevrolet-camaro-zl1/",
+      "confidence": "reported",
+      "notes": "Base price ~$62,000 for 2017 per https://autos.yahoo.com/2017-chevrolet-camaro-zl1-650-160254299.html (headline; unverified exact MSRP)."
+    },
+    {
+      "model": "2018 Chevrolet Camaro ZL1 1LE",
+      "hp": 650,
+      "lbft": null,
+      "curbWeightLb": 3820,
+      "zeroToSixty_s": null,
+      "zeroToSixtyPublication": null,
+      "quarterMile": null,
+      "baseMsrp": null,
+      "msrpModelYear": null,
+      "source": "https://blog.consumerguide.com/?p=61265",
+      "confidence": "reported",
+      "notes": "3,820 lb is Chevrolet figure, ~60 lb lighter than ZL1 coupe; 6MT only. No tested 0-60/quarter found."
+    },
+    {
+      "model": "Dodge Challenger SRT Hellcat (717 hp)",
+      "hp": null,
+      "lbft": null,
+      "curbWeightLb": null,
+      "zeroToSixty_s": null,
+      "zeroToSixtyPublication": null,
+      "quarterMile": null,
+      "baseMsrp": null,
+      "msrpModelYear": null,
+      "source": null,
+      "confidence": "unverified",
+      "notes": "No sourced figures retrieved this round."
+    },
+    {
+      "model": "Dodge Challenger SRT Hellcat Redeye",
+      "hp": null,
+      "lbft": null,
+      "curbWeightLb": null,
+      "zeroToSixty_s": 3.4,
+      "zeroToSixtyPublication": null,
+      "quarterMile": "10.8 s @ 131 mph",
+      "baseMsrp": null,
+      "msrpModelYear": null,
+      "source": "https://water.washtenawcd.gov/how-fast-is-a-red-eye.html",
+      "confidence": "unverified",
+      "notes": "Low-quality source; do not display without better citation."
+    },
+    {
+      "model": "2023 Dodge Challenger SRT Hellcat Redeye Jailbreak (narrow)",
+      "hp": 797,
+      "lbft": 707,
+      "curbWeightLb": 4415,
+      "zeroToSixty_s": 4.3,
+      "zeroToSixtyPublication": "Motor Matchup database (not a test)",
+      "quarterMile": "12.0 s @ 129 mph (database estimate)",
+      "baseMsrp": null,
+      "msrpModelYear": null,
+      "source": "https://www.motormatchup.com/catalog/Dodge/Challenger/2023/SRT-Hellcat-Redeye-Jailbreak-RWD",
+      "confidence": "unverified",
+      "notes": null
+    },
+    {
+      "model": "2020 Dodge Challenger SRT Super Stock",
+      "hp": 807,
+      "lbft": 707,
+      "curbWeightLb": 4451,
+      "zeroToSixty_s": 3.25,
+      "zeroToSixtyPublication": "Dodge claim",
+      "quarterMile": "10.5 s @ 131 mph (Dodge claim)",
+      "baseMsrp": null,
+      "msrpModelYear": null,
+      "source": "https://www.jdpower.com/automotive-news/2020-dodge-challenger-srt-super-stock-horsepower-0-60-and-quarter-mile-numbers-are-official",
+      "confidence": "reported",
+      "notes": "Curb weight from comparison table at https://moparinsiders.com/?p=30589."
+    },
+    {
+      "model": "2020 Chevrolet Corvette C8 Stingray Z51",
+      "hp": null,
+      "lbft": null,
+      "curbWeightLb": 3647,
+      "zeroToSixty_s": null,
+      "zeroToSixtyPublication": null,
+      "quarterMile": null,
+      "baseMsrp": null,
+      "msrpModelYear": null,
+      "source": "https://www.thedrive.com/news/30470/2020-chevrolet-corvette-c8-stingray-nearly-200-pounds-heavier-than-outgoing-c7",
+      "confidence": "reported",
+      "notes": "3,647 lb = Car and Driver test car weight as reported by The Drive. 0-60 2.9 s / 1/4 11.2 s cited by https://corvsport.com/?p=119343 (2022, unattributed -> unverified)."
+    },
+    {
+      "model": "2023 Chevrolet Corvette C8 Z06 coupe",
+      "hp": null,
+      "lbft": null,
+      "curbWeightLb": 3666,
+      "zeroToSixty_s": 2.6,
+      "zeroToSixtyPublication": "Car and Driver (Oct 2022, reproduced on forum)",
+      "quarterMile": "10.5 s @ 131 mph",
+      "baseMsrp": null,
+      "msrpModelYear": null,
+      "source": "https://canadiancorvetteforums.com/threads/car-and-driver-review-of-the-c8-z06-october-26-2022-best-corvette-ever.60646/latest",
+      "confidence": "reported",
+      "notes": "Price sources conflict (2LZ coupe $115,595 per dupontregistry); left baseMsrp null."
+    },
+    {
+      "model": "2020 Porsche 911 Carrera S (992)",
+      "hp": 443,
+      "lbft": null,
+      "curbWeightLb": null,
+      "zeroToSixty_s": 3.2,
+      "zeroToSixtyPublication": "Edmunds (Aug 2019)",
+      "quarterMile": "11.3 s @ 122.1 mph (Edmunds)",
+      "baseMsrp": null,
+      "msrpModelYear": null,
+      "source": "https://edmunds.com/porsche/911/2020/review",
+      "confidence": "reported",
+      "notes": null
+    },
+    {
+      "model": "2022 Porsche 911 GT3 (992), 6MT",
+      "hp": null,
+      "lbft": null,
+      "curbWeightLb": 3126,
+      "zeroToSixty_s": 3.3,
+      "zeroToSixtyPublication": "Car and Driver (via Stuttcars)",
+      "quarterMile": "11.5 s @ 124 mph",
+      "baseMsrp": null,
+      "msrpModelYear": null,
+      "source": "https://www.stuttcars.com/porsche-of-the-day-2022-porsche-911-gt3/",
+      "confidence": "reported",
+      "notes": "Curb weight 3,126 lb manual / 3,164 lb PDK per https://www.autoblog.com/2021/06/24/porsche-911-gt3-review ."
+    }
+  ],
+  "gapFills": [
+    {
+      "item": "Engine bore x stroke",
+      "value": "94 mm x 93 mm (3.701 x 3.661 in); 9.5:1 CR",
+      "source": "https://www.cjponyparts.com/resources/news/2020-shelby-gt500",
+      "confidence": "reported",
+      "notes": "Secondary sources only; matches belief. Also https://fordauthority.com/2019/06/2020-shelby-gt500-predator-engine-details-surface/amp"
+    },
+    {
+      "item": "Spark plug gap",
+      "value": "~0.035-0.039 in (2020-22 GT500)",
+      "source": "https://lmr.com/products/2015-2025-mustang-spark-plug-gap-specs",
+      "confidence": "unverified",
+      "notes": "From search snippet; page 403'd; column alignment uncertain. Part number not found."
+    },
+    {
+      "item": "Heritage Edition count (2022)",
+      "value": 225,
+      "source": "https://www.mustangspecs.com/for-sale-2022-ford-mustang-shelby-gt500-heritage-edition-7/",
+      "confidence": "reported",
+      "notes": "Conflicts: Barrett-Jackson says ~255 (https://barrett-jackson.com/Events/Event/Details/2022-FORD-SHELBY-GT500-HERITAGE-EDITION-266929); mustangspecs guide says Ford never confirmed quota."
+    },
+    {
+      "item": "Heritage Edition pricing",
+      "value": "Heritage pkg (vinyl stripes) +$2,140; hand-painted stripes +$10,000; base $76,695",
+      "source": "https://www.mustangspecs.com/?p=52472",
+      "confidence": "reported"
+    },
+    {
+      "item": "2021/2022 production totals",
+      "value": null,
+      "source": null,
+      "confidence": "unverified",
+      "notes": "Ford doesn't publish; mustangattitude.com data explorer blocked by bot check."
+    },
+    {
+      "item": "Paint codes (Wimbledon White, Dark Matter Gray, Eruption Green, Brittany Blue)",
+      "value": null,
+      "source": null,
+      "confidence": "unverified"
+    },
+    {
+      "item": "2021 base MSRP",
+      "value": null,
+      "source": null,
+      "confidence": "unverified"
+    },
+    {
+      "item": "Recaro/Convenience option prices",
+      "value": null,
+      "source": null,
+      "confidence": "unverified"
+    },
+    {
+      "item": "Coolant / brake fluid spec",
+      "value": null,
+      "source": null,
+      "confidence": "unverified"
+    }
+  ],
+  "videos": [
+    {
+      "id": "y_6LYSWmiqE",
+      "url": "https://www.youtube.com/watch?v=y_6LYSWmiqE",
+      "title": "HOT LAP - 2020 Shelby GT500 Ford Mustang - Ride Along w/ Pro Race Driver at Autobahn Race Track",
+      "channel": "Car_Revs_Daily Drive Reviews",
+      "category": "onboard",
+      "source": "youtube oembed",
+      "confidence": "confirmed"
+    },
+    {
+      "id": "-p4URxmolhE",
+      "url": "https://www.youtube.com/watch?v=-p4URxmolhE",
+      "title": "800hp Shelby GT500 CFTP 2:21.098 COTA New Personal Best!",
+      "channel": "ShelbyFlyer",
+      "category": "onboard",
+      "source": "youtube oembed",
+      "confidence": "confirmed"
+    },
+    {
+      "id": "yXX0qfQ9rPk",
+      "url": "https://www.youtube.com/watch?v=yXX0qfQ9rPk",
+      "title": "2020 Ford Mustang Shelby GT500 at Lightning Lap 2021",
+      "channel": "Car and Driver",
+      "category": "onboard",
+      "source": "youtube oembed",
+      "confidence": "confirmed"
+    },
+    {
+      "id": "hbVCAoawnJk",
+      "url": "https://www.youtube.com/watch?v=hbVCAoawnJk",
+      "title": "2020 Shelby Mustang GT500 Road America 2:21 Lap September 28, 2022",
+      "channel": "Middleton Motorsports",
+      "category": "onboard",
+      "source": "youtube oembed",
+      "confidence": "confirmed"
+    },
+    {
+      "id": "8D8EB0wuP3U",
+      "url": "https://www.youtube.com/watch?v=8D8EB0wuP3U",
+      "title": "2020 Shelby GT500 Road America 2:29 Lap POV",
+      "channel": "Middleton Motorsports",
+      "category": "onboard",
+      "source": "youtube oembed",
+      "confidence": "confirmed"
+    },
+    {
+      "id": "YKvJEhhsWCY",
+      "url": "https://www.youtube.com/watch?v=YKvJEhhsWCY",
+      "title": "Road America: 760hp 2020 Shelby GT500 CFTP!",
+      "channel": "ShelbyFlyer",
+      "category": "onboard",
+      "source": "youtube oembed",
+      "confidence": "confirmed"
+    },
+    {
+      "id": "MDIP59Hn4Z4",
+      "url": "https://www.youtube.com/watch?v=MDIP59Hn4Z4",
+      "title": "SPIED!!! 2020 Shelby GT500 vs GT350 On Track at Grattan Raceway - Does it set a Record Lap Time?",
+      "channel": "REVan Evan",
+      "category": "track",
+      "source": "youtube oembed",
+      "confidence": "confirmed"
+    },
+    {
+      "id": "KmJtf32xThQ",
+      "url": "https://www.youtube.com/watch?v=KmJtf32xThQ",
+      "title": "2020+ Shelby GT500 X-Pipe Cold Start & Exhaust Sound | Lethal Performance",
+      "channel": "Shelby_Moe5.2 ",
+      "category": "exhaust",
+      "source": "youtube oembed",
+      "confidence": "confirmed"
+    },
+    {
+      "id": "7li5ylxE93E",
+      "url": "https://www.youtube.com/watch?v=7li5ylxE93E",
+      "title": "2020 Ford Mustang Shelby GT500 Exhaust Sound And Revs",
+      "channel": "Street Production 303",
+      "category": "exhaust",
+      "source": "youtube oembed",
+      "confidence": "confirmed"
+    },
+    {
+      "id": "zOqdQUOTjV0",
+      "url": "https://www.youtube.com/watch?v=zOqdQUOTjV0",
+      "title": "Listen to the 2020 Ford Mustang Shelby GT500's Four Exhaust Modes",
+      "channel": "RoadandTrack",
+      "category": "exhaust",
+      "source": "youtube oembed",
+      "confidence": "confirmed"
+    },
+    {
+      "id": "cA1lrbNpYrY",
+      "url": "https://www.youtube.com/watch?v=cA1lrbNpYrY",
+      "title": "Twister Orange 2020 Ford Mustang Shelby GT500 Exhaust Sound",
+      "channel": "DPCcars",
+      "category": "exhaust",
+      "source": "youtube oembed",
+      "confidence": "confirmed"
+    },
+    {
+      "id": "28HVbXybY9E",
+      "url": "https://www.youtube.com/watch?v=28HVbXybY9E",
+      "title": "The BEST Sounding 2020 GT500 Video YET!!! Lethal Track Exhaust plus Resonator Delete",
+      "channel": "Palm Beach Dyno",
+      "category": "exhaust",
+      "source": "youtube oembed",
+      "confidence": "confirmed"
+    },
+    {
+      "id": "mcQWMHYCrO8",
+      "url": "https://www.youtube.com/watch?v=mcQWMHYCrO8",
+      "title": "2020 Ford Mustang Shelby GT500 \u2014 Jason Cammisa on the Icons [UHD 4K]",
+      "channel": "ISSIMI Official",
+      "category": "review",
+      "source": "youtube oembed",
+      "confidence": "confirmed"
+    }
+  ]
+}
