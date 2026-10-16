@@ -1,4 +1,4 @@
-import type { MediaItem } from './types';
+import type { AudioClip, CommonsPhoto, MediaItem } from './types';
 
 /** YouTube IDs and channels verified via oEmbed on 2026-10-16. Embed only — never re-host. */
 export const media: MediaItem[] = [
@@ -28,9 +28,27 @@ export const media: MediaItem[] = [
 ];
 
 export const licensingNotes = [
-  { text: 'No openly licensed GT500-specific images, audio or 3D models were found (Wikimedia Commons search returned nothing).', source: 'https://commons.wikimedia.org/w/index.php?search=Shelby+GT500+2020&ns14=1', confidence: 'confirmed' as const },
+  { text: 'Round 1 found no openly licensed GT500 images; round 2 found CC BY-SA 4.0 photos on Wikimedia Commons (shown above with credit). No GT500-specific CC audio or 3D models were found.', source: 'https://commons.wikimedia.org/w/index.php?search=Shelby+GT500+2020&ns14=1', confidence: 'confirmed' as const },
   { text: 'Ford\'s From the Road terms: Ford "grants no license" to its intellectual property.', source: 'https://www.fromtheroad.ford.com/us/en/terms-and-conditions.html', confidence: 'confirmed' as const },
   { text: 'Ford Archives licenses stills from $250 (publications) and from $100 per image per social post.', source: 'https://fordimages.archivea.com/pages/copyright-licensing', confidence: 'confirmed' as const },
   { text: '"Shelby", "GT500" and the Cobra emblem are trademarks (Cobra owned by Ford, licensed to Shelby). This app uses plain-text nominative references only and no logos. Sources date from 2001–2008; not legal advice.', source: 'https://www.iptrademarkattorney.com/los-angeles-trademark-shelby-car-racing-motorsports-automobiles-lawyer/', confidence: 'reported' as const },
   { text: 'Ripping audio from YouTube breaches its terms and the creator\'s copyright; a standalone sound feature needs a commissioned or licensed recording.', source: 'https://freesound.org/apiv2/search/text/?query=mustang', confidence: 'reported' as const },
+];
+
+/** Wikimedia Commons photos — CC BY-SA 4.0, license/author confirmed via Commons API in round 2. Hotlinked, not re-hosted. */
+export const photos: CommonsPhoto[] = [
+  { id: 'p1', title: "2020 Shelby GT500, Grabber Lime", author: "Joe.sanchez1631", license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/', thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/2020-shelby-gt500-grabber-lime.jpg/960px-2020-shelby-gt500-grabber-lime.jpg', source: 'https://commons.wikimedia.org/wiki/File:2020-shelby-gt500-grabber-lime.jpg', confidence: 'confirmed' },
+  { id: 'p2', title: "2020 GT500 coupe, Cleveland Auto Show", author: "Syntaxlord", license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/', thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/2020_Ford_Mustang_Shelby_GT500_Coupe%2C_Cleveland_Auto_Show.jpg/960px-2020_Ford_Mustang_Shelby_GT500_Coupe%2C_Cleveland_Auto_Show.jpg', source: 'https://commons.wikimedia.org/wiki/File:2020_Ford_Mustang_Shelby_GT500_Coupe,_Cleveland_Auto_Show.jpg', confidence: 'confirmed' },
+  { id: 'p3', title: "2020 GT500 coupe, Cleveland Auto Show (rear)", author: "Syntaxlord", license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/', thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/2020_Ford_Mustang_Shelby_GT500_Coupe%2C_Cleveland_Auto_Show_%28Rear%29.jpg/960px-2020_Ford_Mustang_Shelby_GT500_Coupe%2C_Cleveland_Auto_Show_%28Rear%29.jpg', source: 'https://commons.wikimedia.org/wiki/File:2020_Ford_Mustang_Shelby_GT500_Coupe,_Cleveland_Auto_Show_(Rear).jpg', confidence: 'confirmed' },
+  { id: 'p4', title: "2020 GT500", author: "MrWalkr", license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/', thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/2020_Ford_Mustang_Shelby_GT500_GT101.jpg/960px-2020_Ford_Mustang_Shelby_GT500_GT101.jpg', source: 'https://commons.wikimedia.org/wiki/File:2020_Ford_Mustang_Shelby_GT500_GT101.jpg', confidence: 'confirmed' },
+  { id: 'p5', title: "2020 GT500 in Oxford White", author: "Ethan Llamas", license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/', thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/2020_Ford_Mustang_Shelby_GT500_in_Oxford_White%2C_05-31-2024.jpg/960px-2020_Ford_Mustang_Shelby_GT500_in_Oxford_White%2C_05-31-2024.jpg', source: 'https://commons.wikimedia.org/wiki/File:2020_Ford_Mustang_Shelby_GT500_in_Oxford_White,_05-31-2024.jpg', confidence: 'confirmed' },
+  { id: 'p6', title: "2020\u20132022 GT500, red, Golden Super Cruise", author: "Xnatedawgx", license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/', thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/2020%E2%80%932022_Ford_Mustang_Shelby_GT500%2C_red%2C_Golden_Super_Cruise_2026-05-02.jpg/960px-2020%E2%80%932022_Ford_Mustang_Shelby_GT500%2C_red%2C_Golden_Super_Cruise_2026-05-02.jpg', source: 'https://commons.wikimedia.org/wiki/File:2020%E2%80%932022_Ford_Mustang_Shelby_GT500,_red,_Golden_Super_Cruise_2026-05-02.jpg', confidence: 'confirmed' },
+  { id: 'p7', title: "2020\u20132022 GT500, white, Golden Super Cruise", author: "Xnatedawgx", license: 'CC BY-SA 4.0', licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/', thumb: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/2020%E2%80%932022_Ford_Mustang_Shelby_GT500%2C_white%2C_Golden_Super_Cruise_2026-05-02.jpg/960px-2020%E2%80%932022_Ford_Mustang_Shelby_GT500%2C_white%2C_Golden_Super_Cruise_2026-05-02.jpg', source: 'https://commons.wikimedia.org/wiki/File:2020%E2%80%932022_Ford_Mustang_Shelby_GT500,_white,_Golden_Super_Cruise_2026-05-02.jpg', confidence: 'confirmed' },
+];
+
+/** Freesound clips — generic Mustang / muscle-car sounds, NOT GT500 recordings. */
+export const audio: AudioClip[] = [
+  { id: 'a1', title: 'Mustang Engine Rev', author: 'Acekat13X31', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0/', freesoundId: '517882', source: 'https://freesound.org/people/Acekat13X31/sounds/517882/', confidence: 'confirmed', note: 'Generic Mustang — not a GT500.' },
+  { id: 'a2', title: 'Muscle Car Revving', author: 'FlaxGod', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/', freesoundId: '653226', source: 'https://freesound.org/people/FlaxGod/sounds/653226/', confidence: 'confirmed', note: 'Generic muscle car — not a GT500.' },
+  { id: 'a3', title: 'mustang 8.wav', author: 'VacekH', license: 'CC0', licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/', freesoundId: '205509', source: 'https://freesound.org/people/VacekH/sounds/205509/', confidence: 'confirmed', note: 'Generic Mustang — not a GT500.' },
 ];

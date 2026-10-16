@@ -44,6 +44,15 @@ export const packages: OptionPackage[] = [
     note: 'Not a conflict: two stripe options. Carscoops labels the $2,140 option "painted", likely a wording error.',
   },
   {
+    id: 'extra-paint', name: 'Extra-cost paint (Twister Orange / Rapid Red)', years: [2020], source: 'https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/', confidence: 'unverified',
+    price: { value: null, source: 'https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/', confidence: 'unverified', note: 'Snippet lists $495 and $395; which color carries which price is ambiguous.' },
+    priceConflicts: [
+      { value: 495, source: 'https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/', confidence: 'unverified' },
+      { value: 395, source: 'https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/', confidence: 'unverified' },
+    ],
+    contents: [], contentsConfidence: 'reported',
+  },
+  {
     id: 'convenience', name: 'Convenience Package / Recaro seats / stripe options', years: [], source: 'https://mustangattitude.com/mustang/2022shelby.shtml', confidence: 'unverified',
     price: { value: null, source: 'https://mustangattitude.com/mustang/2022shelby.shtml', confidence: 'unverified', note: 'Not found — source blocked.' },
     contents: [], contentsConfidence: 'unverified',

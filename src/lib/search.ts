@@ -6,7 +6,7 @@ const ROUTES: Record<string, string> = {
   specs: '/specs', modelYears: '/years', colors: '/colors', packages: '/packages', prices: '/packages',
   marketSales: '/packages', production: '/years', performance: '/performance', recalls: '/ownership',
   maintenance: '/ownership', vinPositions: '/vin', modStages: '/mods', competitors: '/compare',
-  communities: '/community', media: '/media', notes: '/sources',
+  communities: '/community', media: '/media', photos: '/media', audio: '/media', notes: '/sources',
 };
 
 function flatten(v: unknown): string {

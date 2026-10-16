@@ -11,13 +11,13 @@ import { vinPositions } from './vin';
 import { modStages, warrantyNote } from './mods';
 import { competitors } from './competitors';
 import { communities } from './communities';
-import { media, licensingNotes } from './media';
+import { media, licensingNotes, photos, audio } from './media';
 import type { Sourced } from './types';
 
 /** Every collection of sourced records, keyed by name. Used by search, Sources page and tests. */
 export const collections: Record<string, Sourced[]> = {
   specs, modelYears, colors, packages, prices, marketSales, production, performance,
-  recalls, maintenance, vinPositions, modStages, competitors, communities, media,
+  recalls, maintenance, vinPositions, modStages, competitors, communities, media, photos, audio,
   notes: [performanceWarning, warrantyNote, ...licensingNotes],
 };
 

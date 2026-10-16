@@ -1,6 +1,6 @@
 import { modelYears } from '../data/modelYears';
 import { production } from '../data/production';
-import { Cite, Note, fmt } from '../components/Facts';
+import { Cite, Conflicts, Note, fmt } from '../components/Facts';
 
 export default function ModelYears() {
   return (
@@ -26,7 +26,7 @@ export default function ModelYears() {
           {production.map((p) => (
             <div key={p.id} className={`fact ${p.value === null ? 'unknown' : ''}`}>
               <dt>{p.label} <span className="muted">({p.scope})</span></dt>
-              <dd><span className="val">{fmt(p.value)}</span> <Cite c={p.confidence} url={p.source} />{p.note && <Note>{p.note}</Note>}</dd>
+              <dd><span className="val">{fmt(p.value)}</span> <Cite c={p.confidence} url={p.source} />{p.conflicts && <><div className="conflict-tag">Sources disagree</div><Conflicts values={p.conflicts} /></>}{p.note && <Note>{p.note}</Note>}</dd>
             </div>
           ))}
         </dl>

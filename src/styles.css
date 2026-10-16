@@ -71,8 +71,8 @@ code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
 .hero { text-align: center; padding: .5rem 0 1rem; }
 .car-art { width: 100%; max-width: 520px; height: auto; display: block; margin: 0 auto; }
-.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; margin-bottom: 1rem; }
-@media (min-width: 640px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1rem; }
+@media (min-width: 640px) { .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: .8rem; }
 .stat-v { font-size: 1.7rem; font-weight: 800; }
 .stat-v small { font-size: .8rem; margin-left: .25rem; color: var(--muted); font-weight: 600; }
@@ -135,3 +135,10 @@ textarea.input { min-height: 70px; }
 .srclist { margin: 0; padding-left: 1rem; font-size: .82rem; overflow-wrap: anywhere; }
 .clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: .85rem; }
 .footer { margin-top: 2rem; font-size: .78rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 1rem; }
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .75rem; margin-bottom: 1rem; }
+.photo { margin: 0; padding: .5rem; }
+.photo img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 10px; display: block; background: var(--surface-2); }
+.photo figcaption { margin-top: .4rem; }
+.fs-embed { border: 0; border-radius: 10px; }
+.thumb-fail { aspect-ratio: 4 / 3; display: grid; place-items: center; text-align: center; padding: 1rem; border-radius: 10px; background: var(--surface-2); color: var(--muted); font-size: .85rem; }
+.stat { min-width: 0; } .stat .cite { white-space: normal; overflow-wrap: anywhere; } .fact { min-width: 0; }

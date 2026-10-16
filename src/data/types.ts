@@ -83,6 +83,7 @@ export interface MarketSale extends Sourced {
 
 export interface ProductionFact extends SourcedValue {
   id: string;
+  conflicts?: SourcedValue[];
   label: string;
   scope: string;
 }
@@ -100,7 +101,8 @@ export interface PerformanceRecord extends Sourced {
 export interface RecallIssue extends Sourced {
   id: string;
   title: string;
-  kind: 'recall' | 'service-action' | 'tsb' | 'owner-report' | 'vendor-claim';
+  kind: 'recall' | 'nhtsa-recall' | 'service-action' | 'tsb' | 'complaint' | 'owner-report' | 'vendor-claim';
+  years?: string;
   campaign: string | null;
   summary: string;
 }
@@ -108,6 +110,10 @@ export interface RecallIssue extends Sourced {
 export interface MaintenanceItem extends SourcedValue {
   id: string;
   item: string;
+  group: 'Fluids' | 'Service' | 'Warranty' | 'Ownership';
+  unit?: string;
+  conflicts?: SourcedValue[];
+  warning?: string;
 }
 
 export interface ModStage extends Sourced {
@@ -126,6 +132,17 @@ export interface Competitor extends Sourced {
   lap: string | null;
   price: string | null;
   verdict: string;
+  /** Spec-sheet numbers from round-2 notes, written from memory — always 'unverified'. */
+  sheet?: CompetitorSheet;
+}
+
+export interface CompetitorSheet extends Sourced {
+  hp: number | null;
+  torque: number | null;
+  weightLb: number | null;
+  zeroTo60: number | null;
+  quarterMile: number | null;
+  priceUsd: number | null;
 }
 
 export interface Community extends Sourced {
@@ -146,4 +163,23 @@ export interface MediaItem extends Sourced {
 export interface VinPosition extends Sourced {
   positions: string;
   meaning: string;
+}
+
+export interface CommonsPhoto extends Sourced {
+  id: string;
+  title: string;
+  author: string;
+  license: string;
+  licenseUrl: string;
+  /** Hotlinked thumbnail on upload.wikimedia.org. */
+  thumb: string;
+}
+
+export interface AudioClip extends Sourced {
+  id: string;
+  title: string;
+  author: string;
+  license: string;
+  licenseUrl: string;
+  freesoundId: string;
 }
