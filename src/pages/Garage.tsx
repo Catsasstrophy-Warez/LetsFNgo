@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { partsForReminder } from '../data/parts';
 import { Link } from 'react-router';
 import { decodeVin } from '../lib/vin';
 import { colors } from '../data/colors';
@@ -57,7 +58,7 @@ function Reminders({ g, setG }: { g: GarageState; setG: React.Dispatch<React.Set
     <section className="card" id="maintenance">
       <h2>Maintenance reminders</h2>
       <div className="form-label"><UnitInput label="Current odometer" kind="distance" value={odo} onChange={(v) => setG({ ...g, odometer: v === null ? '' : String(Math.round(v)) })} digits={0} /></div>
-      <Note>Defaults follow the 2021 GT500 owner-manual supplement <span className="badge badge-reported">reported</span> (2020 and 2022 unconfirmed) and stay editable. Oil uses the 1 yr / 10,000 mi maximum — follow the oil-life monitor, 3,000 mi for severe use, and after each track weekend (≈ 4 hours). Existing reminders are not changed. <Link to="/ownership">Fluids &amp; specs →</Link></Note>
+      <Note>Defaults follow the 2021 GT500 owner-manual supplement <span className="badge badge-reported">reported</span> (2020 and 2022 unconfirmed) and stay editable. Oil uses the 1 yr / 10,000 mi maximum — follow the oil-life monitor, 3,000 mi for severe use, and after each track weekend (≈ 4 hours). Existing reminders are not changed. <Link to="/ownership">Fluids &amp; specs →</Link> · <Link to="/parts">Parts &amp; fluids catalog →</Link> · <Link to="/guides/track-service">Track-day maintenance guide →</Link></Note>
       <ul className="rows">
         {g.reminders.map((r) => {
           const st = reminderStatus(r, odo, now);
@@ -76,6 +77,7 @@ function Reminders({ g, setG }: { g: GarageState; setG: React.Dispatch<React.Set
               <p className="muted small">
                 {st.dueMiles !== null && <>Due at {st.dueMiles.toLocaleString('en-US')} mi{st.milesLeft !== null && ` (${st.milesLeft >= 0 ? `${st.milesLeft.toLocaleString('en-US')} to go` : `${(-st.milesLeft).toLocaleString('en-US')} over`})`}. </>}
                 {st.dueDate && <>Due by {st.dueDate}{st.daysLeft !== null && ` (${st.daysLeft >= 0 ? `${st.daysLeft} days` : `${-st.daysLeft} days late`})`}. </>}
+                {partsForReminder(r.id).filter((p) => p.kind !== 'avoid').length > 0 && <>Parts: {partsForReminder(r.id).filter((p) => p.kind !== 'avoid').map((p, i) => <span key={p.id}>{i ? ', ' : ''}<Link to={`/parts?q=${encodeURIComponent(p.number)}`} className="mono">{p.number}</Link></span>)}. </>}
                 <button className="link-btn" onClick={() => upd(r.id, { lastDate: now, lastMiles: odo ?? r.lastMiles })}>Mark done today</button>{' · '}
                 <button className="link-btn danger" onClick={() => setG((s) => ({ ...s, reminders: s.reminders.filter((x) => x.id !== r.id) }))} aria-label={`Remove ${r.item}`}>Remove</button>
               </p>

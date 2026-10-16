@@ -62,7 +62,8 @@ export interface ReminderStatus { state: DueState; dueMiles: number | null; dueD
 
 function addMonths(iso: string, months: number): string {
   const [y, m, d] = iso.split('-').map(Number);
-  const dt = new Date(Date.UTC(y, m - 1 + months, 1));
+  const dt = new Date(0);
+  dt.setUTCFullYear(y, m - 1 + months, 1); // setUTCFullYear, not Date.UTC: Date.UTC maps years 0–99 to 1900–1999
   const last = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 1, 0)).getUTCDate();
   dt.setUTCDate(Math.min(d, last));
   return dt.toISOString().slice(0, 10);
@@ -72,8 +73,9 @@ const dayDiff = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse
 
 /** Due state from the last service and current odometer/date. Whichever limit comes first wins. */
 export function reminderStatus(r: Reminder, odometer: number | null, now: string, soonMiles = 500, soonDays = 30): ReminderStatus {
-  const dueMiles = r.everyMiles && r.lastMiles !== null ? r.lastMiles + r.everyMiles : null;
-  const dueDate = r.everyMonths && /^\d{4}-\d{2}-\d{2}$/.test(r.lastDate) ? addMonths(r.lastDate, r.everyMonths) : null;
+  // Zero or negative intervals (typed "-3", "0") mean "no interval", not "already overdue".
+  const dueMiles = r.everyMiles && r.everyMiles > 0 && r.lastMiles !== null ? r.lastMiles + r.everyMiles : null;
+  const dueDate = r.everyMonths && r.everyMonths > 0 && /^\d{4}-\d{2}-\d{2}$/.test(r.lastDate) ? addMonths(r.lastDate, r.everyMonths) : null;
   const milesLeft = dueMiles !== null && odometer !== null ? dueMiles - odometer : null;
   const daysLeft = dueDate ? dayDiff(now, dueDate) : null;
   let state: DueState = 'unknown';

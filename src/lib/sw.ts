@@ -4,6 +4,7 @@
  */
 type Listener = (waiting: boolean) => void;
 let waitingWorker: ServiceWorker | null = null;
+let reloadArmed = false, reloaded = false;
 const listeners = new Set<Listener>();
 
 export function onUpdateReady(f: Listener): () => void { listeners.add(f); f(!!waitingWorker); return () => { listeners.delete(f); }; }
@@ -29,10 +30,13 @@ export function watchRegistration(reg: RegLike, hasController: () => boolean): v
 export function applyUpdate(container: Pick<ServiceWorkerContainer, 'addEventListener'> | undefined = typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined, reload = () => location.reload()): boolean {
   const w = waitingWorker;
   if (!w || !container) return false;
-  let done = false;
-  container.addEventListener('controllerchange', () => { if (!done) { done = true; reload(); } });
+  // Register the reload listener only once: repeated taps on Reload must not reload the page twice.
+  if (!reloadArmed) {
+    reloadArmed = true;
+    container.addEventListener('controllerchange', () => { if (!reloaded) { reloaded = true; reload(); } });
+  }
   w.postMessage({ type: 'SKIP_WAITING' });
   return true;
 }
 
-export function _resetForTests() { waitingWorker = null; listeners.clear(); }
+export function _resetForTests() { waitingWorker = null; listeners.clear(); reloadArmed = false; reloaded = false; }

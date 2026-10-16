@@ -22,7 +22,7 @@ async function render(name: string, units: Units = 'imperial', path = '/', route
   const { PAGES } = await import('../src/App');
   const { default: Page } = name === 'Home' ? await import('../src/pages/Home') : await PAGES[name as keyof typeof PAGES]();
   return renderToString(
-    <SettingsContext.Provider value={{ settings: { units, theme: 'dark' }, setSettings: () => undefined }}>
+    <SettingsContext.Provider value={{ settings: { units, theme: 'dark', lang: 'en' }, setSettings: () => undefined }}>
       <MemoryRouter initialEntries={[path]}><Routes><Route path={route} element={<Page />} /></Routes></MemoryRouter>
     </SettingsContext.Provider>,
   ).replace(/<!-- -->/g, '');

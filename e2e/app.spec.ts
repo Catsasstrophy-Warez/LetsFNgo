@@ -8,7 +8,7 @@ const shot = async (page: Page, name: string, project: string) => { if (SHOTS) a
 
 const ROUTES = ['/', '/specs', '/years', '/colors', '/visualizer', '/packages', '/performance', '/vin', '/ownership', '/garage', '/planner',
   '/timeline', '/track', '/timer', '/drag', '/gps', '/fuel', '/gearing', '/tools', '/mods', '/compare', '/diff', '/media', '/community',
-  '/quiz', '/print', '/sources', '/settings', '/search', '/welcome', '/dyno', '/tires'];
+  '/quiz', '/print', '/sources', '/settings', '/search', '/welcome', '/dyno', '/tires', '/parts', '/guides', '/guides/track-service', '/guides/dct-fluid'];
 
 /** Seed a returning user so Home does not redirect to the intro, with some data so log pages render content. */
 async function seed(page: Page, theme: 'dark' | 'light') {
@@ -40,7 +40,7 @@ for (const theme of ['dark', 'light'] as const) {
       for (const v of res.violations.filter((x) => x.impact === 'serious' || x.impact === 'critical')) {
         failures.push(`${r} [${v.impact}] ${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`);
       }
-      if (['/timer', '/gps', '/timeline', '/diff', '/planner', '/welcome', '/dyno', '/tires', '/'].includes(r)) await shot(page, `${theme}${r.replace(/\//g, '-')}`, info.project.name);
+      if (['/timer', '/gps', '/timeline', '/diff', '/planner', '/welcome', '/dyno', '/tires', '/', '/parts', '/guides', '/guides/track-service', '/sources', '/settings'].includes(r)) await shot(page, `${theme}${r.replace(/\//g, '-')}`, info.project.name);
     }
     expect(failures, failures.join('\n')).toEqual([]);
   });
@@ -228,5 +228,82 @@ test('notifications: permission-gated toggle shows a due reminder', async ({ bro
   await expect(page.getByRole('status').filter({ hasText: /On\./ })).toContainText('1 reminder');
   expect(await page.evaluate(() => (window as unknown as { __shown: string[] }).__shown)).toEqual(['Due soon: Oil']);
   await shot(page, 'settings-notify', info.project.name);
+  await ctx.close();
+});
+
+test('parts catalog: search, copy to clipboard, linked from maintenance reminders', async ({ page, context }, info) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await seed(page, 'dark');
+  await goto(page, '/garage');
+  await page.locator('#maintenance').getByRole('link', { name: 'FL-2087' }).first().click();
+  await expect(page).toHaveURL(/#\/parts\?q=FL-2087/);
+  await expect(page.getByRole('heading', { name: 'Parts & Fluids' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy FL-2087' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Copy SP-581' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Copy FL-2087' }).click();
+  await expect(page.getByRole('button', { name: 'Copy FL-2087' })).toHaveText('Copied');
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('FL-2087');
+  await page.getByLabel('Search parts').fill('coolant');
+  await expect(page.getByRole('button', { name: 'Copy VC-13DL-G' })).toBeVisible();
+  await shot(page, 'parts-search', info.project.name);
+});
+
+test('guide checklist ticks persist for the session', async ({ page }, info) => {
+  await seed(page, 'light');
+  await goto(page, '/guides');
+  await page.getByRole('link', { name: /DCT fluid/ }).click();
+  await expect(page.getByRole('heading', { name: /DCT fluid/ })).toBeVisible();
+  const boxes = page.getByRole('checkbox');
+  await boxes.nth(0).check(); await boxes.nth(2).check();
+  await expect(page.getByText('2 of 4 done')).toBeVisible();
+  await page.reload();
+  await expect(page.getByText('2 of 4 done')).toBeVisible();
+  await expect(boxes.nth(0)).toBeChecked();
+  await shot(page, 'guide-dct', info.project.name);
+  await page.getByRole('button', { name: 'Clear ticks' }).click();
+  await expect(page.getByText('0 of 4 done')).toBeVisible();
+});
+
+test('language picker switches navigation and Settings to Spanish', async ({ page }, info) => {
+  await seed(page, 'dark');
+  await goto(page, '/settings');
+  await page.getByRole('radio', { name: 'Español' }).click();
+  await expect(page.getByRole('heading', { name: 'Ajustes', level: 1 })).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  await expect(page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Piezas y fluidos' })).toHaveCount(1);
+  const res = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(res.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical')).toEqual([]);
+  await shot(page, 'settings-es', info.project.name);
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Ajustes', level: 1 })).toBeVisible();
+  await page.getByRole('radio', { name: 'English' }).click();
+  await expect(page.getByRole('heading', { name: 'Settings', level: 1 })).toBeVisible();
+});
+
+test('sources page downloads all facts as CSV and JSON', async ({ page }) => {
+  await seed(page, 'dark');
+  await goto(page, '/sources');
+  const [csv] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download CSV' }).click()]);
+  expect(csv.suggestedFilename()).toMatch(/^gt500-facts-\d{4}-\d{2}-\d{2}\.csv$/);
+  const text = await (await import('node:fs/promises')).readFile((await csv.path())!, 'utf8');
+  expect(text.split('\r\n')[0]).toBe('collection,id,path,label,value,source,confidence,note');
+  expect(text).toContain('FL-2087');
+  const [json] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download JSON' }).click()]);
+  const data = JSON.parse(await (await import('node:fs/promises')).readFile((await json.path())!, 'utf8'));
+  expect(data.count).toBeGreaterThan(300);
+  expect(data.facts.every((f: { source: string; confidence: string }) => f.source && f.confidence !== undefined)).toBe(true);
+});
+
+test('hovering a menu link prefetches its route chunk', async ({ browser, baseURL }, info) => {
+  // No service worker → no offline warm-up, so the only thing that can fetch the chunk is the prefetch.
+  const ctx = await browser.newContext({ baseURL, serviceWorkers: 'block', ...(info.project.name === 'mobile' ? { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true } : {}) });
+  const page = await ctx.newPage();
+  await seed(page, 'dark');
+  await goto(page, '/');
+  const requested: string[] = [];
+  page.on('request', (r) => { if (r.url().includes('/assets/Quiz-')) requested.push(r.url()); });
+  if (info.project.name === 'mobile') await page.getByRole('button', { name: 'Menu' }).click();
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Trivia Quiz' }).hover();
+  await expect.poll(() => requested.length).toBeGreaterThan(0);
   await ctx.close();
 });

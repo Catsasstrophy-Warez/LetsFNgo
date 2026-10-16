@@ -1,10 +1,10 @@
 import type { MaintenanceItem } from './types';
 
-const LMR = 'https://lmr.com/products/2020-2022-shelby-gt500-oil-change-oil-life-reset';
-const MC_DCT = 'https://www.motorcraft.com/us/en_us/home/our-products/chemicals-and-lubricants/transmission-fluid/gt500-dual-clutch-transmission-fluids.html';
+export const LMR = 'https://lmr.com/products/2020-2022-shelby-gt500-oil-change-oil-life-reset';
+export const MC_DCT = 'https://www.motorcraft.com/us/en_us/home/our-products/chemicals-and-lubricants/transmission-fluid/gt500-dual-clutch-transmission-fluids.html';
 /** 2021 Mustang (CZG) GT500 owner-manual supplement, edition 202012 — third-party copy; may not match 2020/2022. */
-const SUPP21 = 'https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf';
-const SUPP_NOTE = 'From the 2021 GT500 owner-manual supplement (third-party copy); 2020 and 2022 supplements were not found.';
+export const SUPP21 = 'https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf';
+export const SUPP_NOTE = 'From the 2021 GT500 owner-manual supplement (third-party copy); 2020 and 2022 supplements were not found.';
 const AG = 'https://AutoGuide.com/buyers-guide/ford-warranty/';
 
 export const maintenance: MaintenanceItem[] = [

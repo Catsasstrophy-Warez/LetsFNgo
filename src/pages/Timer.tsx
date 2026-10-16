@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { createWakeLock, type Sentinel, type WakeState } from '../lib/wakelock';
 import { Link } from 'react-router';
 import { Note } from '../components/Facts';
 import { KEYS, loadTrack, today, uid } from '../lib/garage';
@@ -8,35 +9,18 @@ import { bestLap, clock, currentLap, elapsed, lap, lapsToText, newWatch, pause, 
 
 const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
-type WakeState = 'unsupported' | 'off' | 'on' | 'failed';
-interface Sentinel { release: () => Promise<void>; addEventListener?: (t: 'release', f: () => void) => void }
-
 /** Keep the screen on while the watch runs, where the Screen Wake Lock API exists. Falls back silently. */
 function useWakeLock(active: boolean): WakeState {
   const supported = typeof navigator !== 'undefined' && 'wakeLock' in navigator;
   const [state, setState] = useState<WakeState>(supported ? 'off' : 'unsupported');
-  const sentinel = useRef<Sentinel | null>(null);
   useEffect(() => {
     if (!supported) return;
-    let cancelled = false;
-    const acquire = async () => {
-      if (!active || document.visibilityState !== 'visible' || sentinel.current) return;
-      try {
-        const s = await (navigator as unknown as { wakeLock: { request: (t: 'screen') => Promise<Sentinel> } }).wakeLock.request('screen');
-        if (cancelled) { s.release().catch(() => undefined); return; }
-        sentinel.current = s; setState('on');
-        s.addEventListener?.('release', () => { sentinel.current = null; if (!cancelled) setState('off'); });
-      } catch { if (!cancelled) setState('failed'); }
-    };
-    const onVis = () => { acquire(); };
-    if (active) acquire();
+    const req = () => (navigator as unknown as { wakeLock: { request: (t: 'screen') => Promise<Sentinel> } }).wakeLock.request('screen');
+    const lock = createWakeLock(req, setState, () => document.visibilityState === 'visible');
+    lock.set(active);
+    const onVis = () => { lock.acquire(); };
     document.addEventListener('visibilitychange', onVis);
-    return () => {
-      cancelled = true;
-      document.removeEventListener('visibilitychange', onVis);
-      sentinel.current?.release().catch(() => undefined); sentinel.current = null;
-      setState('off');
-    };
+    return () => { document.removeEventListener('visibilitychange', onVis); lock.dispose(); setState('off'); };
   }, [active, supported]);
   return state;
 }

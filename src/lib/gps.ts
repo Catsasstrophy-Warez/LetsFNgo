@@ -44,6 +44,15 @@ export function speeds(fixes: Fix[]): number[] {
   });
 }
 
+/**
+ * Order fixes by time and drop repeats: browsers can redeliver a cached fix with the same timestamp, which made
+ * derived speed read 0 for one sample and a moving car look like a fresh launch. Non-finite fixes are dropped too.
+ */
+export function cleanFixes(fixes: Fix[]): Fix[] {
+  const ok = fixes.filter((f) => [f.t, f.lat, f.lon, f.accuracy].every(Number.isFinite)).sort((a, b) => a.t - b.t);
+  return ok.filter((f, i) => i === 0 || f.t > ok[i - 1].t);
+}
+
 /** Cumulative distance (m) along the trace. */
 export function cumulative(fixes: Fix[]): number[] {
   const out = [0];
@@ -71,7 +80,8 @@ export type GpsResult =
  * below 60 mph for 60–130). Refuses when any fix in the timed window is worse than `maxAcc` metres,
  * when fixes are too sparse, or when the target is not reached.
  */
-export function analyzeRun(kind: RunKind, fixes: Fix[], maxAcc = MAX_ACCURACY_M): GpsResult {
+export function analyzeRun(kind: RunKind, rawFixes: Fix[], maxAcc = MAX_ACCURACY_M): GpsResult {
+  const fixes = cleanFixes(rawFixes);
   if (fixes.length < 3) return { ok: false, reason: 'Not enough GPS fixes.' };
   const ts = fixes.map((f) => f.t);
   const v = speeds(fixes);

@@ -214,3 +214,46 @@ export interface DynoBaseline extends Sourced {
   fuel: string | null;
   date: string | null;
 }
+
+/** A part number or fluid spec, only where a cited source names it. Linked back to maintenance facts and Garage reminders. */
+export interface PartNumber extends Sourced {
+  id: string;
+  /** The number exactly as the source prints it (e.g. "FL-2087"). */
+  number: string;
+  brand: string;
+  description: string;
+  category: 'Filter' | 'Fluid' | 'Ignition' | 'Fluid spec' | 'Performance part';
+  /** 'avoid' marks a number a source says is wrong for this car. */
+  kind: 'part' | 'spec' | 'avoid';
+  /** Related `maintenance` fact ids. */
+  maintenanceIds: string[];
+  /** Default Garage reminder ids this part is used for. */
+  reminderIds: string[];
+}
+
+/** One step of a how-to guide. Every step carries its own source and confidence. */
+export interface GuideStep extends Sourced {
+  text: string;
+  /** Related maintenance fact id, if the step restates one. */
+  factId?: string;
+}
+
+export interface GuideWarning extends Sourced { text: string }
+
+/**
+ * A step-by-step guide. `status: 'planned'` is an empty slot: the topic is wanted but no source backs a procedure
+ * yet, so it has no steps. A guide's own confidence is never higher than its weakest step.
+ */
+export interface Guide extends Sourced {
+  id: string;
+  title: string;
+  summary: string;
+  status: 'ready' | 'planned';
+  appliesTo: string;
+  /** Tools a source lists. Empty means none are sourced — never guessed. */
+  tools: string[];
+  warnings: GuideWarning[];
+  steps: GuideStep[];
+  /** Related `partNumbers` ids. */
+  partIds: string[];
+}

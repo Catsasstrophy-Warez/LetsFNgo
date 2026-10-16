@@ -1,12 +1,13 @@
 import { load, save } from './storage';
+import { normLang, type Lang } from './i18n';
 
 export type Units = 'imperial' | 'metric';
 export type ThemePref = 'dark' | 'light' | 'system';
-export interface Settings { units: Units; theme: ThemePref }
+export interface Settings { units: Units; theme: ThemePref; lang: Lang }
 
 export const SETTINGS_KEY = 'gt500.settings.v1';
 const LEGACY_THEME_KEY = 'gt500.theme';
-export const DEFAULT_SETTINGS: Settings = { units: 'imperial', theme: 'dark' };
+export const DEFAULT_SETTINGS: Settings = { units: 'imperial', theme: 'dark', lang: 'en' };
 
 /** Read settings, migrating the pre-settings `gt500.theme` key once. */
 export function loadSettings(): Settings {
@@ -22,6 +23,7 @@ export function normalizeSettings(v: unknown): Settings {
   return {
     units: o.units === 'metric' ? 'metric' : 'imperial',
     theme: o.theme === 'light' || o.theme === 'system' ? o.theme : 'dark',
+    lang: normLang(o.lang),
   };
 }
 
@@ -86,6 +88,23 @@ export function fromDisplay(kind: Kind, v: number, u: Units): number {
 }
 
 export const unitLabel = (kind: Kind, u: Units) => UNIT_LABEL[kind][u];
+
+/** Text shown in a unit input for an imperial base value ('' when unknown or not convertible, e.g. 0 mpg in L/100 km). */
+export function formatUnitInput(kind: Kind | null, v: number | null, u: Units, digits: number): string {
+  if (v === null || !Number.isFinite(v)) return '';
+  const d = kind ? toDisplay(kind, v, u) : v;
+  return Number.isFinite(d) ? String(Number(d.toFixed(digits))) : '';
+}
+
+/** Parse typed text in display units back to the imperial base; null for blank, non-numeric or non-convertible input. */
+export function parseUnitInput(kind: Kind | null, text: string, u: Units): number | null {
+  const s = text.trim().replace(/,/g, '');
+  if (s === '') return null;
+  const n = Number(s);
+  if (!Number.isFinite(n)) return null;
+  const b = kind ? fromDisplay(kind, n, u) : n;
+  return Number.isFinite(b) ? b : null;
+}
 
 /** Format an imperial base value in the chosen units, e.g. fmtQty('speed', 133, 'metric') → "214 km/h". */
 export function fmtQty(kind: Kind, v: number | null | undefined, u: Units, digits = 0): string {

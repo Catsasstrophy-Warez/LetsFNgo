@@ -6,7 +6,7 @@ const ROUTES: Record<string, string> = {
   specs: '/specs', modelYears: '/years', colors: '/colors', packages: '/packages', prices: '/packages',
   marketSales: '/packages', production: '/years', performance: '/performance', recalls: '/ownership',
   maintenance: '/ownership', vinPositions: '/vin', modStages: '/mods', competitors: '/compare',
-  communities: '/community', media: '/media', photos: '/media', audio: '/media', notes: '/sources',
+  communities: '/community', partNumbers: '/parts', guides: '/guides', media: '/media', photos: '/media', audio: '/media', notes: '/sources',
 };
 
 function flatten(v: unknown): string {
@@ -18,7 +18,7 @@ function flatten(v: unknown): string {
 const index = Object.entries(collections).flatMap(([collection, recs]) =>
   recs.map((r) => {
     const o = r as unknown as Record<string, unknown>;
-    const title = String(o.label ?? o.name ?? o.title ?? o.item ?? o.stage ?? o.positions ?? o.text ?? collection);
+    const title = String(o.label ?? o.name ?? o.title ?? o.number ?? o.item ?? o.stage ?? o.positions ?? o.text ?? collection);
     return { collection, title, text: flatten(r), route: ROUTES[collection] ?? '/', source: r.source };
   }),
 );

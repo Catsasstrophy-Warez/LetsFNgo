@@ -302,3 +302,15 @@ textarea.input { min-height: 70px; }
 .dash-edit li { align-items: center; }
 fieldset.plain { border: 0; padding: 0; margin: 0 0 .5rem; }
 .tbl caption { text-align: left; font-weight: 600; padding: .4rem 0; }
+
+/* Parts & guides (round 7) */
+.part-no { font-size: 1.1rem; letter-spacing: .02em; }
+.small-btn { padding: 6px 12px; min-height: 36px; }
+.parts-list li.avoid { border-left: 3px solid var(--bad, #c0392b); padding-left: 10px; }
+.guide-steps { padding-left: 1.4em; display: grid; gap: 12px; }
+.guide-steps li.done .check span { text-decoration: line-through; opacity: .75; }
+.guide-steps .cite { display: inline-block; margin-top: 4px; }
+/* Lighthouse fixes: 24px touch targets on the source list; reserve space while a route chunk loads so the footer does not shift (CLS). */
+.srclist li { padding: 3px 0; }
+.srclist a { display: inline-block; min-height: 24px; line-height: 24px; }
+.route-loading { min-height: 100vh; }

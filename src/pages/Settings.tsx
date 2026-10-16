@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { saveOnboarding } from '../lib/onboarding';
-import { useSettings } from '../components/SettingsContext';
+import { useSettings, useT } from '../components/SettingsContext';
+import { LANGS, type Lang } from '../lib/i18n';
 import { Note } from '../components/Facts';
 import { MAX_IMPORT_BYTES, SCHEMA_VERSION, currentBackup, parseBackup, resetAll, restoreBackup } from '../lib/backup';
 import { today } from '../lib/garage';
@@ -80,29 +81,35 @@ export function Notifications() {
 
 export default function Settings() {
   const { settings, setSettings } = useSettings();
+  const t = useT();
   const { hash } = useLocation();
   const nav = useNavigate();
   useEffect(() => { if (hash) document.getElementById(hash.slice(1))?.scrollIntoView(); }, [hash]);
   return (
     <>
-      <h1>Settings</h1>
+      <h1>{t('settings.title')}</h1>
       <section className="card">
-        <h2>Units</h2>
-        <Seg<Units> label="Units" value={settings.units} options={[['imperial', 'Imperial (mi, mph, lb, °F)'], ['metric', 'Metric (km, km/h, kg, °C)']]} onChange={(units) => setSettings({ ...settings, units })} />
-        <Note>Applies to Specs, Gear &amp; Speed, Performance Tools, Garage, Drag Strip and Fuel logs and the print sheet. Data is stored in imperial units and converted for display, so switching never changes what you logged.</Note>
+        <h2>{t('settings.units')}</h2>
+        <Seg<Units> label={t('settings.units')} value={settings.units} options={[['imperial', t('settings.imperial')], ['metric', t('settings.metric')]]} onChange={(units) => setSettings({ ...settings, units })} />
+        <Note>{t('settings.unitsNote')}</Note>
       </section>
       <section className="card">
-        <h2>Theme</h2>
-        <Seg<ThemePref> label="Theme" value={settings.theme} options={[['dark', 'Dark'], ['light', 'Light'], ['system', 'Match device']]} onChange={(theme) => setSettings({ ...settings, theme })} />
+        <h2>{t('settings.theme')}</h2>
+        <Seg<ThemePref> label={t('settings.theme')} value={settings.theme} options={[['dark', t('settings.dark')], ['light', t('settings.light')], ['system', t('settings.system')]]} onChange={(theme) => setSettings({ ...settings, theme })} />
+      </section>
+      <section className="card" id="language">
+        <h2>{t('settings.language')}</h2>
+        <Seg<Lang> label={t('settings.language')} value={settings.lang} options={LANGS.map(([v, l]) => [v, l])} onChange={(lang) => setSettings({ ...settings, lang })} />
+        <Note>{t('settings.languageNote')}</Note>
       </section>
       <section className="card">
-        <h2>Intro</h2>
-        <p className="muted">Run the 3-step first-run intro again (year, color, VIN, units). It only fills values you choose.</p>
-        <button className="btn ghost" onClick={() => { saveOnboarding({ done: false, completed: '' }); nav('/welcome'); }}>Run intro again</button>
+        <h2>{t('settings.intro')}</h2>
+        <p className="muted">{t('settings.introText')}</p>
+        <button className="btn ghost" onClick={() => { saveOnboarding({ done: false, completed: '' }); nav('/welcome'); }}>{t('settings.introBtn')}</button>
       </section>
       <Notifications />
       <DataManagement />
-      <p className="muted small">Looking for your car? <Link to="/garage">Garage →</Link></p>
+      <p className="muted small">{t('settings.carLink')} <Link to="/garage">{t('nav.garage')} →</Link></p>
     </>
   );
 }
