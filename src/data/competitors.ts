@@ -2,35 +2,34 @@ import type { Competitor, CompetitorSheet } from './types';
 
 const CD3 = 'https://fordauthority.com/2020/02/2020-shelby-gt500-vs-camaro-zl1-1le-vs-challenger-hellcat-redeye-at-the-drag-strip';
 
-/** Round-2 spec-sheet numbers were written from memory by the researcher — every one is 'unverified'. */
-const sheet = (hp: number, torque: number, weightLb: number, zeroTo60: number, quarterMile: number, priceUsd: number, source: string): CompetitorSheet =>
-  ({ hp, torque, weightLb, zeroTo60, quarterMile, priceUsd, source, confidence: 'unverified', note: 'Written from memory in round-2 notes; not checked against the source.' });
+type SheetIn = Omit<CompetitorSheet, 'zeroTo60By' | 'quarterMile' | 'priceUsd'> & Partial<Pick<CompetitorSheet, 'zeroTo60By' | 'quarterMile' | 'priceUsd'>>;
+/** Round-3 figures. Base MSRPs were not sourced, so price is null throughout. */
+const sheet = (s: SheetIn): CompetitorSheet => ({ zeroTo60By: null, quarterMile: null, priceUsd: null, ...s });
 
 const WC = 'https://en.wikipedia.org/wiki/Dodge_Challenger';
-const WV = 'https://en.wikipedia.org/wiki/Chevrolet_Corvette_(C8)';
 const WP = 'https://en.wikipedia.org/wiki/Porsche_911_(992)';
 
-export const SHEET_CAVEAT = 'Spec-sheet rows (hp, torque, weight, 0–60, ¼ mile, price) came from round-2 notes written from memory and are unverified. Tested results above them come from cited comparison tests.';
-
+export const SHEET_CAVEAT = 'Round-3 figures, each with its own source and confidence. Most are manufacturer claims or test numbers quoted by secondary sites (Car and Driver and MotorTrend pages could not be fetched), and model years differ by row. Blank cells were not found. Rows from low-quality or database-only sources are hidden by default.';
 export const competitors: Competitor[] = [
   { id: 'gt500', name: 'Shelby GT500 (2020)', power: '760 hp / 625 lb-ft', quarterMile: '11.4 s @ 132 mph (C/D)', lap: '1:28.15 (Throttle House, worn tires)', price: '$94,665 as tested (C/D)', verdict: 'Quickest at the drag strip.', source: CD3, confidence: 'reported',
-    sheet: sheet(760, 625, 4170, 3.3, 10.7, 72900, 'https://en.wikipedia.org/wiki/Ford_Mustang_(sixth_generation)') },
+    sheet: sheet({ model: '2020 Mustang Shelby GT500', hp: 760, torque: 625, weightLb: 4171, zeroTo60: 3.3, zeroTo60By: 'Ford claim (prepped surface)', quarterMile: '10.7 s @ 133 mph (Ford claim)', source: 'https://www.musclecarsandtrucks.com/2020-ford-mustang-shelby-gt500-0-60-quarter-mile-times-revealed/', confidence: 'reported', note: 'Car and Driver estimated 3.5 s / 11.0 s on clean pavement. Weight differs from the Specs page range (4,006–4,225 lb).' }) },
   { id: 'zl1', name: 'Chevrolet Camaro ZL1 1LE', power: null, quarterMile: '11.5 s @ 124 mph (C/D)', lap: '1:27.20 (Throttle House)', price: '$73,995 as tested (C/D)', verdict: 'Matched or beat the GT500 on road courses for less money.', source: 'https://fordauthority.com/2020/01/2020-ford-mustang-shelby-gt500-v-2019-chevrolet-camaro-zl1-1le', confidence: 'reported',
-    sheet: sheet(650, 650, 3900, 3.5, 11.4, 71500, 'https://en.wikipedia.org/wiki/Chevrolet_Camaro_(sixth_generation)') },
-  { id: 'hellcat', name: 'Dodge Challenger SRT Hellcat', power: null, quarterMile: null, lap: '1:32.59 (Throttle House)', price: null, verdict: 'Lap time from the Throttle House test.', source: 'https://www.carscoops.com/?p=1967930', confidence: 'reported',
-    sheet: sheet(717, 656, 4450, 3.6, 11.2, 60000, WC) },
+    sheet: sheet({ model: '2018 Camaro ZL1 1LE (6MT)', hp: 650, torque: null, weightLb: 3820, zeroTo60: null, source: 'https://blog.consumerguide.com/?p=61265', confidence: 'reported', note: 'Chevrolet weight figure. No tested 0–60 or ¼ mile found.' }) },
+  { id: 'zl1-auto', name: 'Chevrolet Camaro ZL1 (10-speed auto)', power: '650 hp', quarterMile: '11.5 s @ 125 mph (MotorTrend)', lap: null, price: null, verdict: 'Spec-sheet reference only; not in a GT500 comparison test.', source: 'https://blog.consumerguide.com/2017-2018-chevrolet-camaro-zl1/', confidence: 'reported',
+    sheet: sheet({ model: '2017–18 Camaro ZL1 (10AT)', hp: 650, torque: null, weightLb: null, zeroTo60: 3.5, zeroTo60By: 'MotorTrend (via Consumer Guide)', quarterMile: '11.5 s @ 125 mph (MotorTrend); Chevy claim 11.4 @ 127', source: 'https://blog.consumerguide.com/2017-2018-chevrolet-camaro-zl1/', confidence: 'reported', note: 'About $62,000 base for 2017 per a headline; exact MSRP unverified.' }) },
+  { id: 'hellcat', name: 'Dodge Challenger SRT Hellcat', power: null, quarterMile: null, lap: '1:32.59 (Throttle House)', price: null, verdict: 'Lap time from the Throttle House test.', source: 'https://www.carscoops.com/?p=1967930', confidence: 'reported', note: 'No sourced spec-sheet figures found in round 3.' },
   { id: 'redeye', name: 'Dodge Challenger SRT Hellcat Redeye', power: '797 hp', quarterMile: '11.6 s @ 128 mph (C/D)', lap: null, price: null, verdict: 'Most power of the C/D trio, slowest in the test.', source: 'https://de.motor1.com/news/393206/gt500-hellcat-camaro-drag-race/', confidence: 'reported',
-    sheet: sheet(797, 707, 4450, 3.4, 10.8, 73000, WC) },
+    sheet: sheet({ model: 'Challenger SRT Hellcat Redeye', hp: null, torque: null, weightLb: null, zeroTo60: 3.4, quarterMile: '10.8 s @ 131 mph', source: 'https://water.washtenawcd.gov/how-fast-is-a-red-eye.html', confidence: 'unverified', hidden: true, note: 'Low-quality source; shown only on request.' }) },
   { id: 'jailbreak', name: 'Dodge Challenger SRT Hellcat Redeye Jailbreak', power: null, quarterMile: null, lap: null, price: null, verdict: 'No tested comparison found.', source: WC, confidence: 'unverified',
-    sheet: sheet(807, 707, 4450, 3.4, 10.8, 78000, WC) },
+    sheet: sheet({ model: '2023 Challenger SRT Hellcat Redeye Jailbreak (narrow)', hp: 797, torque: 707, weightLb: 4415, zeroTo60: 4.3, zeroTo60By: 'Motor Matchup database (not a test)', quarterMile: '12.0 s @ 129 mph (database estimate)', source: 'https://www.motormatchup.com/catalog/Dodge/Challenger/2023/SRT-Hellcat-Redeye-Jailbreak-RWD', confidence: 'unverified', hidden: true, note: 'Database figures, not a test.' }) },
   { id: 'superstock', name: 'Dodge Challenger SRT Super Stock', power: null, quarterMile: null, lap: null, price: null, verdict: 'No tested comparison found.', source: WC, confidence: 'unverified',
-    sheet: sheet(807, 707, 4400, 3.25, 10.5, 83000, WC) },
+    sheet: sheet({ model: '2020 Challenger SRT Super Stock', hp: 807, torque: 707, weightLb: 4451, zeroTo60: 3.25, zeroTo60By: 'Dodge claim', quarterMile: '10.5 s @ 131 mph (Dodge claim)', source: 'https://www.jdpower.com/automotive-news/2020-dodge-challenger-srt-super-stock-horsepower-0-60-and-quarter-mile-numbers-are-official', confidence: 'reported', note: 'Curb weight from a Mopar Insiders comparison table (moparinsiders.com/?p=30589).' }) },
   { id: 'z51', name: 'Chevrolet Corvette Stingray Z51 (C8)', power: null, quarterMile: null, lap: null, price: null, verdict: 'Compared in Throttle House and MotorTrend videos (see Media).', source: 'https://www.youtube.com/watch?v=-gZLTLmZBGM', confidence: 'reported',
-    sheet: sheet(495, 470, 3650, 2.9, 11.2, 65000, WV) },
+    sheet: sheet({ model: '2020 Corvette C8 Stingray Z51', hp: null, torque: null, weightLb: 3647, zeroTo60: null, source: 'https://www.thedrive.com/news/30470/2020-chevrolet-corvette-c8-stingray-nearly-200-pounds-heavier-than-outgoing-c7', confidence: 'reported', note: 'Car and Driver test-car weight as reported by The Drive. An unattributed 2.9 s / 11.2 s claim was not used.' }) },
   { id: 'z06', name: 'Chevrolet Corvette Z06 (C8)', power: '670 hp / 460 lb-ft', quarterMile: '10.6 s', lap: '3 s quicker than GT500 Track Pack at Buttonwillow', price: null, verdict: 'Quicker on track.', source: 'https://www.corvsport.com/comparing-the-c8-z06-to-a-shelby-gt500/', confidence: 'reported',
-    sheet: sheet(670, 460, 3450, 2.6, 10.5, 106000, WV) },
+    sheet: sheet({ model: '2023 Corvette C8 Z06 coupe', hp: null, torque: null, weightLb: 3666, zeroTo60: 2.6, zeroTo60By: 'Car and Driver (Oct 2022, reproduced on a forum)', quarterMile: '10.5 s @ 131 mph', source: 'https://canadiancorvetteforums.com/threads/car-and-driver-review-of-the-c8-z06-october-26-2022-best-corvette-ever.60646/latest', confidence: 'reported', note: 'Price sources conflict; left blank.' }) },
   { id: '911s', name: 'Porsche 911 Carrera S (992)', power: null, quarterMile: null, lap: null, price: null, verdict: 'No tested comparison found.', source: WP, confidence: 'unverified',
-    sheet: sheet(443, 390, 3380, 3.3, 11.2, 114000, WP) },
+    sheet: sheet({ model: '2020 911 Carrera S (992)', hp: 443, torque: null, weightLb: null, zeroTo60: 3.2, zeroTo60By: 'Edmunds (Aug 2019)', quarterMile: '11.3 s @ 122.1 mph (Edmunds)', source: 'https://edmunds.com/porsche/911/2020/review', confidence: 'reported' }) },
   { id: 'gt3', name: 'Porsche 911 GT3 (992)', power: null, quarterMile: null, lap: null, price: null, verdict: 'No tested comparison found.', source: WP, confidence: 'unverified',
-    sheet: sheet(502, 346, 3160, 3.2, 11.0, 162000, WP) },
+    sheet: sheet({ model: '2022 911 GT3 (992), 6MT', hp: null, torque: null, weightLb: 3126, zeroTo60: 3.3, zeroTo60By: 'Car and Driver (via Stuttcars)', quarterMile: '11.5 s @ 124 mph', source: 'https://www.stuttcars.com/porsche-of-the-day-2022-porsche-911-gt3/', confidence: 'reported', note: 'Weight 3,126 lb manual / 3,164 lb PDK (Autoblog).' }) },
 ];

@@ -134,17 +134,23 @@ export interface Competitor extends Sourced {
   lap: string | null;
   price: string | null;
   verdict: string;
-  /** Spec-sheet numbers from round-2 notes, written from memory — always 'unverified'. */
+  /** Round-3 spec-sheet figures, each with its own source. */
   sheet?: CompetitorSheet;
 }
 
 export interface CompetitorSheet extends Sourced {
+  /** Exact model the figures describe (may differ from the comparison-test car). */
+  model: string;
   hp: number | null;
   torque: number | null;
   weightLb: number | null;
   zeroTo60: number | null;
-  quarterMile: number | null;
+  /** Who produced the 0–60 figure (claim, magazine, database). */
+  zeroTo60By: string | null;
+  quarterMile: string | null;
   priceUsd: number | null;
+  /** Low-quality or database-only rows: kept for transparency, hidden by default. */
+  hidden?: boolean;
 }
 
 export interface Community extends Sourced {
@@ -158,7 +164,7 @@ export interface MediaItem extends Sourced {
   youtubeId: string;
   title: string;
   credit: string;
-  category: 'Official' | 'Review' | 'Comparison' | 'Track' | 'Drag / Dyno' | 'Stock sound' | 'Aftermarket sound';
+  category: 'Official' | 'Review' | 'Comparison' | 'Track' | 'Drag / Dyno' | 'Onboard' | 'Stock sound' | 'Aftermarket sound';
   modified?: boolean;
 }
 

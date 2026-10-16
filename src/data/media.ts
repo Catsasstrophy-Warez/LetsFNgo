@@ -25,6 +25,20 @@ export const media: MediaItem[] = [
   { id: 'v21', youtubeId: 'wHBzoyuWgUo', title: "Shelby GT500 Exhaust Sound (flyby)", credit: "Charged and Confused", category: 'Stock sound', source: 'https://www.youtube.com/watch?v=wHBzoyuWgUo', confidence: 'confirmed' },
   { id: 'v22', youtubeId: 'RV2Wz-_-DjI', title: "2020 Shelby GT500 Flyby", credit: "Muscle Everyday", category: 'Stock sound', source: 'https://www.youtube.com/watch?v=RV2Wz-_-DjI', confidence: 'confirmed' },
   { id: 'v23', youtubeId: '8Gnm1nLwNiE', title: "Borla ATAK Exhaust Cold Start", credit: "Iconic Shelby", category: 'Aftermarket sound', modified: true, source: 'https://www.youtube.com/watch?v=8Gnm1nLwNiE', confidence: 'confirmed' },
+  // Round 3 additions (oEmbed-verified; upload dates not verified).
+  { id: 'r3v1', youtubeId: "y_6LYSWmiqE", title: "HOT LAP - 2020 Shelby GT500 Ford Mustang - Ride Along w/ Pro Race Driver at Autobahn Race Track", credit: "Car_Revs_Daily Drive Reviews", category: 'Onboard', source: 'https://www.youtube.com/watch?v=y_6LYSWmiqE', confidence: 'confirmed' },
+  { id: 'r3v2', youtubeId: "-p4URxmolhE", title: "800hp Shelby GT500 CFTP 2:21.098 COTA New Personal Best!", credit: "ShelbyFlyer", category: 'Onboard', modified: true, source: 'https://www.youtube.com/watch?v=-p4URxmolhE', confidence: 'confirmed' },
+  { id: 'r3v3', youtubeId: "yXX0qfQ9rPk", title: "2020 Ford Mustang Shelby GT500 at Lightning Lap 2021", credit: "Car and Driver", category: 'Onboard', source: 'https://www.youtube.com/watch?v=yXX0qfQ9rPk', confidence: 'confirmed' },
+  { id: 'r3v4', youtubeId: "hbVCAoawnJk", title: "2020 Shelby Mustang GT500 Road America 2:21 Lap September 28, 2022", credit: "Middleton Motorsports", category: 'Onboard', source: 'https://www.youtube.com/watch?v=hbVCAoawnJk', confidence: 'confirmed' },
+  { id: 'r3v5', youtubeId: "8D8EB0wuP3U", title: "2020 Shelby GT500 Road America 2:29 Lap POV", credit: "Middleton Motorsports", category: 'Onboard', source: 'https://www.youtube.com/watch?v=8D8EB0wuP3U', confidence: 'confirmed' },
+  { id: 'r3v6', youtubeId: "YKvJEhhsWCY", title: "Road America: 760hp 2020 Shelby GT500 CFTP!", credit: "ShelbyFlyer", category: 'Onboard', source: 'https://www.youtube.com/watch?v=YKvJEhhsWCY', confidence: 'confirmed' },
+  { id: 'r3v7', youtubeId: "MDIP59Hn4Z4", title: "SPIED!!! 2020 Shelby GT500 vs GT350 On Track at Grattan Raceway - Does it set a Record Lap Time?", credit: "REVan Evan", category: 'Track', source: 'https://www.youtube.com/watch?v=MDIP59Hn4Z4', confidence: 'confirmed' },
+  { id: 'r3v8', youtubeId: "KmJtf32xThQ", title: "2020+ Shelby GT500 X-Pipe Cold Start & Exhaust Sound | Lethal Performance", credit: "Shelby_Moe5.2", category: 'Aftermarket sound', modified: true, source: 'https://www.youtube.com/watch?v=KmJtf32xThQ', confidence: 'confirmed' },
+  { id: 'r3v9', youtubeId: "7li5ylxE93E", title: "2020 Ford Mustang Shelby GT500 Exhaust Sound And Revs", credit: "Street Production 303", category: 'Stock sound', source: 'https://www.youtube.com/watch?v=7li5ylxE93E', confidence: 'confirmed' },
+  { id: 'r3v10', youtubeId: "zOqdQUOTjV0", title: "Listen to the 2020 Ford Mustang Shelby GT500's Four Exhaust Modes", credit: "RoadandTrack", category: 'Stock sound', source: 'https://www.youtube.com/watch?v=zOqdQUOTjV0', confidence: 'confirmed' },
+  { id: 'r3v11', youtubeId: "cA1lrbNpYrY", title: "Twister Orange 2020 Ford Mustang Shelby GT500 Exhaust Sound", credit: "DPCcars", category: 'Stock sound', source: 'https://www.youtube.com/watch?v=cA1lrbNpYrY', confidence: 'confirmed' },
+  { id: 'r3v12', youtubeId: "28HVbXybY9E", title: "The BEST Sounding 2020 GT500 Video YET!!! Lethal Track Exhaust plus Resonator Delete", credit: "Palm Beach Dyno", category: 'Aftermarket sound', modified: true, source: 'https://www.youtube.com/watch?v=28HVbXybY9E', confidence: 'confirmed' },
+  { id: 'r3v13', youtubeId: "mcQWMHYCrO8", title: "2020 Ford Mustang Shelby GT500 \u2014 Jason Cammisa on the Icons [UHD 4K]", credit: "ISSIMI Official", category: 'Review', source: 'https://www.youtube.com/watch?v=mcQWMHYCrO8', confidence: 'confirmed' },
 ];
 
 export const licensingNotes = [

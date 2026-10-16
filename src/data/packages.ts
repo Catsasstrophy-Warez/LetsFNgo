@@ -38,7 +38,8 @@ export const packages: OptionPackage[] = [
   {
     id: 'heritage-pkg', name: 'Heritage Edition Package', years: [2022], source: 'https://www.motorauthority.com/news/1134161_2022-ford-mustang-shelby-gt500-heritage-edition-gets-retro-look', confidence: 'confirmed',
     price: { value: 2140, source: 'https://www.motorauthority.com/news/1134161_2022-ford-mustang-shelby-gt500-heritage-edition-gets-retro-look', confidence: 'confirmed', context: 'Vinyl stripes' },
-    priceConflicts: [{ value: 12140, source: 'https://www.motorauthority.com/news/1134161_2022-ford-mustang-shelby-gt500-heritage-edition-gets-retro-look', confidence: 'confirmed', context: 'Hand-painted stripes' }],
+    priceConflicts: [{ value: 12140, source: 'https://www.motorauthority.com/news/1134161_2022-ford-mustang-shelby-gt500-heritage-edition-gets-retro-look', confidence: 'confirmed', context: 'Hand-painted stripes (total)' },
+      { value: 10000, source: 'https://www.mustangspecs.com/?p=52472', confidence: 'reported', context: 'Hand-painted stripes, added cost per mustangspecs' }],
     contents: ['Brittany Blue paint', 'Wimbledon White over-the-top stripes (vinyl or hand-painted)'],
     contentsConfidence: 'confirmed',
     note: 'Not a conflict: two stripe options. Carscoops labels the $2,140 option "painted", likely a wording error.',

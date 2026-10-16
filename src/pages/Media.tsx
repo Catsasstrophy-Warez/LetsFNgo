@@ -5,7 +5,7 @@ import type { MediaItem } from '../data/types';
 import { YouTube } from '../components/YouTube';
 import { Cite } from '../components/Facts';
 
-const CATS: MediaItem['category'][] = ['Official', 'Review', 'Comparison', 'Track', 'Drag / Dyno', 'Stock sound', 'Aftermarket sound'];
+const CATS: MediaItem['category'][] = ['Official', 'Review', 'Comparison', 'Track', 'Onboard', 'Drag / Dyno', 'Stock sound', 'Aftermarket sound'];
 
 export default function Media() {
   const [cat, setCat] = useState<MediaItem['category']>('Official');

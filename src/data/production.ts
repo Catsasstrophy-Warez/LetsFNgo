@@ -18,8 +18,14 @@ export const production: ProductionFact[] = [
   { id: 'cftp-total', label: 'CFTP cars 2020–2022', scope: '2020–2022', value: '~1,000', source: 'https://www.automotiveaddicts.com/89664/how-many-shelby-gt500-cars-were-manufactured-over-the-years', confidence: 'unverified', note: 'Ford says it does not track builds by package.' },
   { id: 'y2021', label: '2021 built', scope: '2021', value: null, source: 'https://www.mustang6g.com/forums/threads/build-statistics-for-2020-2022-run.179732/latest', confidence: 'unverified', note: 'Unknown — build-statistics thread blocked during research.' },
   { id: 'y2022', label: '2022 built', scope: '2022', value: null, source: 'https://mustangattitude.com/mustang/2022shelby.shtml', confidence: 'unverified', note: 'Unknown — Data Explorer blocked during research.' },
-  { id: 'heritage', label: 'Heritage Edition', scope: '2022', value: 'approx. 225–255 (unconfirmed)', source: 'https://www.mustangspecs.com/mustang-of-the-day-2022-ford-mustang-shelby-gt500-heritage-edition/', confidence: 'unverified', note: 'Conflict: ~225 (mustangspecs) vs ~255 (Barrett-Jackson listing).' },
-  { id: 'heritage-bj', label: 'Heritage Edition (Barrett-Jackson)', scope: '2022', value: '~255', source: 'https://barrett-jackson.com/Events/Event/Details/2022-FORD-SHELBY-GT500-HERITAGE-EDITION-266929', confidence: 'unverified' },
+  {
+    id: 'heritage', label: 'Heritage Edition', scope: '2022', value: 225, source: 'https://www.mustangspecs.com/for-sale-2022-ford-mustang-shelby-gt500-heritage-edition-7/', confidence: 'reported',
+    note: 'Disputed: a Barrett-Jackson listing says ~255, and a mustangspecs guide says Ford never confirmed a quota.',
+    conflicts: [
+      { value: 225, source: 'https://www.mustangspecs.com/for-sale-2022-ford-mustang-shelby-gt500-heritage-edition-7/', confidence: 'reported', context: 'mustangspecs' },
+      { value: '~255', source: 'https://barrett-jackson.com/Events/Event/Details/2022-FORD-SHELBY-GT500-HERITAGE-EDITION-266929', confidence: 'unverified', context: 'Barrett-Jackson listing' },
+    ],
+  },
   { id: 'kr', label: 'Shelby GT500KR (limit)', scope: 'Shelby American', value: 180, source: 'https://en.wikipedia.org/wiki/Shelby_Mustang', confidence: 'reported' },
   { id: 'colors', label: 'Color / package splits', scope: '2020–2022', value: null, source: 'https://www.aol.com/ford-mustang-shelby-gt500s-10-214500277.html', confidence: 'unverified', note: 'Ford does not publish them.' },
 ];

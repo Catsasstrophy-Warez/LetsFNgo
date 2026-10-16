@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { specs } from '../src/data/specs';
 import { competitors } from '../src/data/competitors';
 import { recalls } from '../src/data/recalls';
-import { photos, audio } from '../src/data/media';
+import { photos, audio, media } from '../src/data/media';
+import { production } from '../src/data/production';
+import { prices } from '../src/data/pricing';
+import { packages } from '../src/data/packages';
 import { maintenance } from '../src/data/maintenance';
 import { colors } from '../src/data/colors';
 
@@ -11,8 +14,28 @@ describe('round 2 data', () => {
     expect(specs.find((s) => s.id === 'gear-ratios')!.value).toContain('3.14 / 2.05 / 1.43 / 1.10 / 0.86 / 0.68 / 0.56');
     expect(specs.find((s) => s.id === 'top-speed')!.value).toBe(180);
   });
-  it('marks every competitor spec sheet unverified', () => {
-    for (const c of competitors) if (c.sheet) expect(c.sheet.confidence).toBe('unverified');
+  it('uses sourced round-3 competitor sheets; unverified rows are hidden', () => {
+    const sheets = competitors.flatMap((c) => (c.sheet ? [c.sheet] : []));
+    expect(sheets.length).toBe(10);
+    for (const s of sheets) {
+      expect(s.note ?? '').not.toMatch(/from memory/i);
+      if (s.confidence === 'unverified') expect(s.hidden).toBe(true);
+      else expect(s.hidden).toBeFalsy();
+    }
+    expect(competitors.find((c) => c.id === 'redeye')!.sheet!.hidden).toBe(true);
+    expect(competitors.find((c) => c.id === 'jailbreak')!.sheet!.hidden).toBe(true);
+    expect(competitors.find((c) => c.id === 'hellcat')!.sheet).toBeUndefined();
+    expect(sheets.every((s) => s.priceUsd === null)).toBe(true);
+  });
+  it('round-3 gap fills', () => {
+    expect(specs.find((s) => s.id === 'bore-stroke')).toMatchObject({ value: expect.stringContaining('94 × 93 mm'), confidence: 'reported' });
+    expect(maintenance.find((m) => m.id === 'plugs')).toMatchObject({ value: expect.stringContaining('0.035–0.039'), confidence: 'unverified' });
+    const h = production.find((p) => p.id === 'heritage')!;
+    expect(h.value).toBe(225); expect(h.conflicts!.map((c) => c.value)).toContain('~255');
+    expect(prices.find((p) => p.id === 'p22-heritage')!.value).toBe(76695);
+    expect(packages.find((p) => p.id === 'heritage-pkg')!.priceConflicts!.some((c) => c.value === 10000)).toBe(true);
+    expect(media.filter((m) => m.id.startsWith('r3v')).length).toBe(13);
+    expect(media.filter((m) => m.category === 'Onboard').length).toBe(6);
   });
   it('lists NHTSA campaigns with VIN-check framing', () => {
     const n = recalls.filter((r) => r.kind === 'nhtsa-recall');

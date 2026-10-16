@@ -28,7 +28,7 @@ export const maintenance: MaintenanceItem[] = [
   { id: 'ic-coolant', group: 'Fluids', item: 'Intercooler coolant', value: null, source: OM, confidence: 'unverified', note: MISSING },
   { id: 'diff-fluid', group: 'Fluids', item: 'Rear differential fluid', value: null, source: OM, confidence: 'unverified', note: MISSING },
   { id: 'brake-fluid', group: 'Fluids', item: 'Brake fluid', value: null, source: OM, confidence: 'unverified', note: MISSING },
-  { id: 'plugs', group: 'Fluids', item: 'Spark plugs & gap', value: null, source: OM, confidence: 'unverified', note: MISSING },
+  { id: 'plugs', group: 'Fluids', item: 'Spark plug gap', value: '≈ 0.035–0.039', unit: 'in', source: 'https://lmr.com/products/2015-2025-mustang-spark-plug-gap-specs', confidence: 'unverified', note: 'From a search snippet (page blocked); column alignment uncertain. Plug part number not found — check the owner\'s manual.' },
   { id: 'intervals', group: 'Service', item: 'Oil change interval', value: 'Intelligent Oil-Life Monitor', source: LMR, confidence: 'reported', note: 'Maximum interval not found.' },
   { id: 'first-oil', group: 'Service', item: 'First oil change (owner practice)', value: '500–1,000 mi', source: 'https://forums.shelby.com/topic/46409-first-oil-change/', confidence: 'unverified' },
   { id: 'break-in', group: 'Service', item: 'Break-in', value: '100 mi before extended WOT; 1,000 mi before track use', source: 'https://www.mustang6g.com/forums/threads/gt500-break-in-period.127991/', confidence: 'unverified', note: 'From the 2014 GT500 supplement — not confirmed for 2020+.' },

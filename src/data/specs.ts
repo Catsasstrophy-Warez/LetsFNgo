@@ -17,7 +17,7 @@ export const specs: SpecFact[] = [
   { id: 'compression', system: 'Engine', label: 'Compression ratio', value: '9.5:1', source: TREMEC, confidence: 'confirmed' },
   { id: 'boost', system: 'Engine', label: 'Max boost', value: 12, unit: 'psi (approx.)', source: FA_ENGINE, confidence: 'reported' },
   { id: 'intercooler', system: 'Engine', label: 'Intercooler', value: 'Bar-and-plate, above the rotors', source: 'https://themustangsource.com/?p=31080', confidence: 'reported' },
-  { id: 'bore-stroke', system: 'Engine', label: 'Bore × stroke', value: null, source: 'https://www.cjponyparts.com/resources/news/2020-shelby-gt500', confidence: 'unverified', note: 'Not verified — source page was blocked during research.' },
+  { id: 'bore-stroke', system: 'Engine', label: 'Bore × stroke', value: '94 × 93 mm (3.701 × 3.661 in)', source: 'https://www.cjponyparts.com/resources/news/2020-shelby-gt500', confidence: 'reported', note: 'Secondary sources only (also Ford Authority); no Ford spec sheet retrieved.' },
   { id: 'trans', system: 'Drivetrain', label: 'Transmission', value: 'Tremec TR-9070 7-speed dual-clutch', source: 'https://whichcar.com.au/news/2020-ford-mustang-shelby-gt500-performance-figures', confidence: 'confirmed' },
   {
     id: 'shift', system: 'Drivetrain', label: 'Shift time', value: '< 100', unit: 'ms', source: TREMEC, confidence: 'confirmed', context: 'TREMEC',
