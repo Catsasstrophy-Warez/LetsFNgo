@@ -1,0 +1,66 @@
+{
+  "gear_ratios": [
+    {"gear":"1","ratio":3.14,"source":"https://tremec.com/wp-content/uploads/2023/05/Product.Sheet_TR-9070.DCT_.pdf","confidence":"confirmed"},
+    {"gear":"2","ratio":2.05,"source":"https://tremec.com/wp-content/uploads/2023/05/Product.Sheet_TR-9070.DCT_.pdf","confidence":"confirmed"},
+    {"gear":"3","ratio":1.43,"source":"https://tremec.com/wp-content/uploads/2023/05/Product.Sheet_TR-9070.DCT_.pdf","confidence":"confirmed"},
+    {"gear":"4","ratio":1.10,"source":"https://tremec.com/wp-content/uploads/2023/05/Product.Sheet_TR-9070.DCT_.pdf","confidence":"confirmed"},
+    {"gear":"5","ratio":0.86,"source":"https://tremec.com/wp-content/uploads/2023/05/Product.Sheet_TR-9070.DCT_.pdf","confidence":"confirmed"},
+    {"gear":"6","ratio":0.68,"source":"https://tremec.com/wp-content/uploads/2023/05/Product.Sheet_TR-9070.DCT_.pdf","confidence":"confirmed"},
+    {"gear":"7","ratio":0.56,"source":"https://tremec.com/wp-content/uploads/2023/05/Product.Sheet_TR-9070.DCT_.pdf","confidence":"confirmed"},
+    {"gear":"R","ratio":2.76,"source":"https://tremec.com/wp-content/uploads/2023/05/Product.Sheet_TR-9070.DCT_.pdf","confidence":"confirmed"},
+    {"gear":"final_drive","ratio":3.73,"source":"https://whichcar.com.au/news/2020-ford-mustang-shelby-gt500-performance-figures","confidence":"reported"}
+  ],
+  "specs": [
+    {"item":"top_speed_mph","value":180,"note":"electronically limited","source":"https://www.motorauthority.com/news/1125737_first-drive-review-2020-ford-mustang-shelby-gt500-boasts-drag-car-speed-road-racer-moves","confidence":"reported"},
+    {"item":"wheels","value":"20x11 front / 20x11.5 rear (carbon)","source":"https://www.pistonheads.com/buy/listing/10496139","confidence":"reported"},
+    {"item":"tires","value":"305/30R20 front / 315/30R20 rear","source":"https://www.pistonheads.com/buy/listing/10496139","confidence":"reported"},
+    {"item":"curb_weight_lb","value":4225,"note":"dealer training manual; conflicts with 4006 measured","source":"https://www.motorauthority.com/news/1124390_2020-ford-mustang-shelby-gt500-specs-deep-dive","confidence":"unverified"}
+  ],
+  "drive_modes": [
+    {"mode":"Normal","effect":"default","source":"https://blog.consumerguide.com/shelby-gt500-gallery/","confidence":"reported"},
+    {"mode":"Weather","effect":"not documented","source":"https://blog.consumerguide.com/shelby-gt500-gallery/","confidence":"reported"},
+    {"mode":"Sport","effect":"not documented","source":"https://blog.consumerguide.com/shelby-gt500-gallery/","confidence":"reported"},
+    {"mode":"Drag","effect":"launch control (left-foot brake + full throttle)","source":"https://fox11online.com/news/auto-matters/2020-ford-mustang-shelby-gt500-ford-delivers-fastest-production-mustang-ever-first-look","confidence":"reported"},
+    {"mode":"Track","effect":"stiffer steering, firmer MagneRide, most aggressive shift program","source":"https://www.motorauthority.com/news/1125737_first-drive-review-2020-ford-mustang-shelby-gt500-boasts-drag-car-speed-road-racer-moves","confidence":"reported"},
+    {"mode":"Exhaust: Quiet/Normal/Sport/Track","effect":"valved exhaust","source":"https://www.carscoops.com/?p=1770890","confidence":"reported"}
+  ],
+  "colors": [
+    {"year":2020,"name":"Twister Orange Tri-Coat","code":"CA","extra_cost":true,"source":"https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/","confidence":"reported"},
+    {"year":2020,"name":"Rapid Red Metallic Tinted Clearcoat","code":"D4","extra_cost":true,"source":"https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/","confidence":"reported"},
+    {"year":2020,"name":"Velocity Blue","code":"E7","source":"https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/","confidence":"reported"},
+    {"year":2020,"name":"Grabber Lime","code":"F9","source":"https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/","confidence":"reported"},
+    {"year":2020,"name":"Ford Performance Blue","code":"FM","source":"https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/","confidence":"reported"},
+    {"year":2020,"name":"Shadow Black","code":"G1","source":"https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/","confidence":"reported"},
+    {"year":2020,"name":"Magnetic","code":"J7","source":"https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/","confidence":"reported"},
+    {"year":2020,"name":"Iconic Silver","code":"JS","source":"https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/","confidence":"reported"},
+    {"year":2020,"name":"Kona Blue","code":"L6","source":"https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/","confidence":"reported"},
+    {"year":2020,"name":"Race Red","code":"PQ","source":"https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/","confidence":"reported"},
+    {"year":2020,"name":"Oxford White","code":"YZ","source":"https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/","confidence":"reported"},
+    {"year":2021,"name":"Grabber Yellow","code":"CB","source":"https://www.mustangattitude.com/mustang/2021shelby.shtml","confidence":"reported"},
+    {"year":2021,"name":"Antimatter Blue","code":"HX","source":"https://www.mustangattitude.com/mustang/2021shelby.shtml","confidence":"reported"},
+    {"year":2021,"name":"Carbonized Gray","code":"M7","source":"https://www.mustangattitude.com/mustang/2021shelby.shtml","confidence":"reported"},
+    {"year":2022,"name":"Code Orange","code":"CN","source":"https://www.mustangattitude.com/mustang/2022shelby.shtml","confidence":"reported"},
+    {"year":2022,"name":"Eruption Green","code":null,"source":"https://fordauthority.com/2021/12/2022-ford-mustang-shelby-gt500-gains-new-eruption-green-color-first-look/","confidence":"unverified"},
+    {"year":2022,"name":"Brittany Blue (Heritage Edition)","code":null,"source":"https://www.motorauthority.com/news/1134161_2022-ford-mustang-shelby-gt500-heritage-edition-gets-retro-look","confidence":"reported"}
+  ],
+  "options": [
+    {"year":2020,"name":"Carbon Fiber Track Pack","price":18500,"source":"https://jalopnik.com/the-2020-ford-mustang-shelby-gt500-will-start-at-70-30-1835940835","confidence":"reported"},
+    {"year":2020,"name":"Extra-cost paint (Twister Orange / Rapid Red)","price":"495 / 395","source":"https://fordauthority.com/2019/09/2020-ford-mustang-shelby-gt500-colors/","confidence":"unverified"},
+    {"year":2021,"name":"Carbon Fiber Handling Package","price":10000,"source":"https://www.musclecarsandtrucks.com/2021-ford-mustang-shelby-gt500-carbon-fiber-handling-package-costs-10000/","confidence":"reported"},
+    {"year":2022,"name":"Heritage Edition (vinyl stripes)","price":2140,"source":"https://www.motorauthority.com/news/1134161_2022-ford-mustang-shelby-gt500-heritage-edition-gets-retro-look","confidence":"reported"},
+    {"year":2022,"name":"Heritage Edition (painted stripes)","price":12140,"source":"https://www.motorauthority.com/news/1134161_2022-ford-mustang-shelby-gt500-heritage-edition-gets-retro-look","confidence":"reported"}
+  ],
+  "production": [
+    {"year":2020,"scope":"total","count":5860,"source":"https://www.mustang6g.com/forums/goto/post?id=3548209","confidence":"reported"},
+    {"year":2020,"scope":"Ford Performance Blue (listed as 'Fast Pitch Blue')","count":843,"source":"https://www.mustang6g.com/forums/goto/post?id=3548209","confidence":"unverified"},
+    {"year":2020,"scope":"Shadow Black","count":829,"source":"https://www.mustang6g.com/forums/goto/post?id=3548209","confidence":"unverified"},
+    {"year":2020,"scope":"Rapid Red","count":775,"source":"https://www.mustang6g.com/forums/goto/post?id=3548209","confidence":"unverified"},
+    {"year":2020,"scope":"Oxford White","count":737,"source":"https://www.mustang6g.com/forums/goto/post?id=3548209","confidence":"unverified"},
+    {"year":2020,"scope":"Grabber Lime","count":376,"source":"https://legendarymotorcar.com/inventory/2020-shelby-gt500-2955","confidence":"unverified"},
+    {"year":2020,"scope":"Race Red","count":298,"source":"https://www.mustang6g.com/forums/goto/post?id=3548209","confidence":"unverified"}
+  ],
+  "lap_times": [
+    {"track":"WeatherTech Raceway Laguna Seca","time":"1:33.84","driver":"Randy Pobst","publication":"MotorTrend Best Driver's Car 2020","car":"2020 GT500 CFTP","source":"https://www.musclecarsandtrucks.com/randy-pobst-blasts-the-ford-mustang-shelby-gt500-around-laguna-seca/","confidence":"reported"},
+    {"track":"VIR Grand Course","time":"2:44.6","driver":null,"publication":"Car and Driver Lightning Lap 2021","car":"2020 GT500","source":"https://www.thechicagogarage.com/posts/4217307","confidence":"reported"}
+  ]
+}
