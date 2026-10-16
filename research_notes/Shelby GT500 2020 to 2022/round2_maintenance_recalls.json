@@ -1,0 +1,256 @@
+{
+ "vehicle": "2020-2022 Ford Mustang Shelby GT500",
+ "retrieved": "2026-10-16",
+ "fluids": [
+  {
+   "item": "engine oil",
+   "spec": "5W-50 full synthetic",
+   "capacity_qt": 11.5,
+   "filter": "Motorcraft FL-2087",
+   "source": "https://lmr.com/products/2020-2022-shelby-gt500-oil-change-oil-life-reset",
+   "confidence": "reported",
+   "note": "conflicting 10 qt/FL2062 per ALLDATA list; 11 qt pan per Ford media"
+  },
+  {
+   "item": "DCT fluid",
+   "spec": "Motorcraft XT-14-L GT500 Dual Clutch fluid",
+   "capacity_qt": 8.0,
+   "source": "https://www.motorcraft.com/us/en_us/home/our-products/chemicals-and-lubricants/transmission-fluid/gt500-dual-clutch-transmission-fluids.html",
+   "confidence": "confirmed",
+   "note": "fluid type confirmed by Motorcraft; 8.0 qt capacity is unverified (ALLDATA via LMR); drain/fill ~3-4 qt per owners"
+  },
+  {
+   "item": "engine coolant",
+   "spec": null,
+   "capacity_qt": null,
+   "source": null,
+   "confidence": "unverified"
+  },
+  {
+   "item": "intercooler coolant",
+   "spec": null,
+   "capacity_qt": null,
+   "source": null,
+   "confidence": "unverified"
+  },
+  {
+   "item": "rear differential",
+   "spec": null,
+   "source": null,
+   "confidence": "unverified"
+  },
+  {
+   "item": "brake fluid",
+   "spec": null,
+   "source": null,
+   "confidence": "unverified"
+  },
+  {
+   "item": "spark plugs",
+   "spec": null,
+   "gap": null,
+   "source": null,
+   "confidence": "unverified"
+  }
+ ],
+ "intervals": [
+  {
+   "item": "oil change",
+   "interval": "Intelligent Oil-Life Monitor (max not found)",
+   "source": "https://lmr.com/products/2020-2022-shelby-gt500-oil-change-oil-life-reset",
+   "confidence": "reported"
+  },
+  {
+   "item": "break-in",
+   "interval": "no extended WOT first 100 mi; no track before 1,000 mi (2014 supplement quoted)",
+   "source": "https://www.mustang6g.com/forums/threads/gt500-break-in-period.127991/",
+   "confidence": "unverified"
+  },
+  {
+   "item": "first oil change (owner practice)",
+   "interval": "500-1,000 mi",
+   "source": "https://forums.shelby.com/topic/46409-first-oil-change/",
+   "confidence": "unverified"
+  }
+ ],
+ "warranty": [
+  {
+   "item": "bumper-to-bumper",
+   "term": "3 yr/36,000 mi",
+   "source": "https://AutoGuide.com/buyers-guide/ford-warranty/",
+   "confidence": "reported"
+  },
+  {
+   "item": "powertrain",
+   "term": "5 yr/60,000 mi",
+   "source": "https://AutoGuide.com/buyers-guide/ford-warranty/",
+   "confidence": "reported"
+  },
+  {
+   "item": "corrosion perforation",
+   "term": "5 yr/unlimited mi",
+   "source": "https://AutoGuide.com/buyers-guide/ford-warranty/",
+   "confidence": "reported"
+  },
+  {
+   "item": "non-perforating corrosion",
+   "term": "3 yr/36,000 mi",
+   "source": "https://www.consumerreports.org/money/warranties-guarantees/your-guide-to-car-warranties-a1088768196/",
+   "confidence": "reported"
+  },
+  {
+   "item": "emissions",
+   "term": null,
+   "source": null,
+   "confidence": "unverified"
+  },
+  {
+   "item": "carbon fiber wheels",
+   "term": null,
+   "source": null,
+   "confidence": "unverified"
+  }
+ ],
+ "recalls": [
+  {
+   "nhtsa_campaign": "20V306000",
+   "model_years": "2020",
+   "summary": "forward camera misalignment",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2020",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "20V573000",
+   "model_years": "2020",
+   "summary": "brake pedal bracket fracture (auto trans)",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2020",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "20V263000",
+   "model_years": "2020",
+   "summary": "Not In Park chime short",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2020",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "20V575000",
+   "model_years": "2020",
+   "summary": "rearview camera connection",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2020",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "22V382000",
+   "model_years": "2020",
+   "summary": "5.0L manual PCM - not GT500",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2020",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "23V727000",
+   "model_years": "2020-2022",
+   "summary": "brake fluid level warning (FMVSS 135)",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2020",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "25V689000",
+   "model_years": "2021-2022",
+   "summary": "re-recall of 23V727",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2021",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "21V980000",
+   "model_years": "2021",
+   "summary": "side curtain air bag inflator",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2021",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "22V083000",
+   "model_years": "2021-2022",
+   "summary": "knee air bag weld",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2021",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "22V334000",
+   "model_years": "2022",
+   "summary": "IPMA camera",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2022",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "23V070000",
+   "model_years": "2022",
+   "summary": "auto trans park bolt (Ford 23S06)",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2022",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "24V493000",
+   "model_years": "2022",
+   "summary": "EPAS torque sensor calibration",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2022",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "25V096000",
+   "model_years": "2022",
+   "summary": "re-recall of 24V493",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2022",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "25V442000",
+   "model_years": "2020-2022",
+   "summary": "backup camera software",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2020",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "25V455000",
+   "model_years": "2021-2022",
+   "summary": "fuel pump",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2021",
+   "confidence": "confirmed"
+  },
+  {
+   "nhtsa_campaign": "25V695000",
+   "model_years": "2020",
+   "summary": "rear camera",
+   "gt500_applicability": "not verified (Mustang-wide listing)",
+   "source": "https://api.nhtsa.gov/recalls/recallsByVehicle?make=ford&model=mustang&modelYear=2020",
+   "confidence": "confirmed"
+  },
+  {
+   "ford_campaign": "20C21",
+   "summary": "DRL BCM software, 833 GT350/GT500",
+   "source": "https://www.collisionrepairmag.com/?p=43555",
+   "confidence": "reported"
+  },
+  {
+   "ford_campaign": "TSB / possibly 22E08",
+   "summary": "2020 GT500/GT350 secondary timing chain tensioner not activated",
+   "source": "https://themustangsource.com/?p=37802",
+   "confidence": "reported"
+  }
+ ]
+}
