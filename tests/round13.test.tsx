@@ -279,9 +279,10 @@ describe('bug fixes (round 13)', () => {
 describe('competitor prices (round 11 research)', () => {
   it('carries year, destination flag, source and confidence; 1LE stays 2018-only', () => {
     const p = (id: string) => competitors.find((c) => c.id === id)!.prices!;
-    expect(p('zl1-auto').map((x) => [x.modelYear, x.value, x.destinationIncluded])).toEqual([[2020, 63000, false], [2020, 69000, false], [2022, 64395, true]]);
+    expect(p('zl1-auto').map((x) => [x.modelYear, x.value, x.destinationIncluded])).toEqual([[2020, 63000, false], [2020, 69000, false], [2022, 64395, true], [2022, 69000, true]]);
     expect(p('hellcat')[0]).toMatchObject({ modelYear: 2020, value: 58995 });
-    expect(p('redeye').map((x) => x.value)).toEqual([70595, 76595, 81060]);
+    expect(p('redeye').map((x) => x.value)).toEqual([70595, 76595, 81060, 76430, 78225]);
+    expect(p('hellcat').filter((x) => x.modelYear > 2020).every((x) => x.confidence === 'unverified')).toBe(true);
     expect(p('redeye')[1].confidence).toBe('unverified');
     expect(p('jailbreak')).toEqual([expect.objectContaining({ modelYear: 2022, value: 995 })]);
     expect(p('zl1').every((x) => x.modelYear === 2018)).toBe(true);

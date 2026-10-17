@@ -8,7 +8,7 @@ export const SUPP_NOTE = 'From the 2021 GT500 owner-manual supplement (third-par
 const AG = 'https://AutoGuide.com/buyers-guide/ford-warranty/';
 
 export const maintenance: MaintenanceItem[] = [
-  { id: 'oil-type', group: 'Fluids', item: 'Engine oil', value: 'Motorcraft SAE 5W-50 full synthetic (WSS-M2C931-E1, API SP)', source: 'https://www.motorcraft.com/content/dam/ford-motorcraft/es_mx/inicio/ecatalog/pdf/f-t-sae-5W-50-full-synthetic-motor-oil.pdf', note: 'Source link dead as of 2026-10-16.', confidence: 'confirmed' },
+  { id: 'oil-type', group: 'Fluids', item: 'Engine oil', value: 'Motorcraft SAE 5W-50 full synthetic (WSS-M2C931-E1, API SP)', source: 'https://fcsdchemicalsandlubricants.com/products/motor-oil/productdetails?id=69', note: 'Previous source URL: https://www.motorcraft.com/content/dam/ford-motorcraft/es_mx/inicio/ecatalog/pdf/f-t-sae-5W-50-full-synthetic-motor-oil.pdf', confidence: 'confirmed' },
   {
     id: 'oil-cap', group: 'Fluids', item: 'Engine oil capacity', value: '10–11.5', unit: 'qt', source: LMR, confidence: 'unverified',
     note: 'Sources conflict; check the owner\'s manual before relying on any figure.',
