@@ -18,6 +18,7 @@ test('Track day planner and lap timer show the Laguna Seca noise limit', async (
   const csp = cspErrors(page);
   await seed(page);
   await page.goto('./#/trackdays');
+  await expect(page.locator('main h1').first()).toBeVisible();
   await trackSelect(page).selectOption('weathertech-raceway-laguna-seca');
   await expect(page.getByTestId('noise-limit')).toContainText('Noise limit: 92 dB');
   await expect(page.getByTestId('noise-limit')).toContainText('103 dB');
@@ -26,6 +27,8 @@ test('Track day planner and lap timer show the Laguna Seca noise limit', async (
   expect(await serious(page)).toEqual([]);
 
   await page.goto('./#/laptimer');
+  // Wait for the lazy-loaded route so the select below is the lap timer's, not the planner's.
+  await expect(page.locator('main h1').first()).toHaveText('GPS Lap Timer');
   await trackSelect(page).selectOption('weathertech-raceway-laguna-seca');
   await expect(page.getByTestId('noise-limit')).toContainText('92 dB');
   expect(await serious(page)).toEqual([]);
