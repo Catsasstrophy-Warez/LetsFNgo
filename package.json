@@ -17,6 +17,7 @@
     "lighthouse": "node scripts/lighthouse.mjs",
     "validate:data": "node scripts/validate-data.mjs",
     "check:links": "node scripts/check-links.mjs",
+    "preview:diff": "node scripts/preview-diff.mjs",
     "e2e:update-visual": "playwright test e2e/visual.spec.ts --project=mobile --update-snapshots"
   },
   "repository": {
