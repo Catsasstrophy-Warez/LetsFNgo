@@ -77,7 +77,8 @@ never places a timing line from it. To contribute a start/finish line:
 - Lines go in as their own record in `src/data/startFinishLines.ts` (`id`, `trackId` = the track's id in `tracks.ts`,
   `configuration`, points `a`/`b`, optional `direction` 1/−1, `sectors`, `source`, `confidence`). `npm run validate:data`
   checks coordinate ranges, that `trackId` exists, one line per track + configuration, a 3–200 m line and that it lies
-  within 5 km of the facility point. Lines from OpenStreetMap are credited "© OpenStreetMap contributors" in the app.
+  within 5 km of the facility point. Lines from OpenStreetMap are credited "© OpenStreetMap contributors" in the app; that file is ODbL 1.0 (see
+  `LICENSE-DATA-OSM.md`), so keep its header and stay `unverified` unless confirmed against track documentation.
 
 ## Code changes
 

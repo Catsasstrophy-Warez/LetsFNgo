@@ -142,10 +142,10 @@ test('car-color accent follows the paint with AA contrast, and falls back', asyn
 test('lap timer: known track without a sourced line explains it, no "Use sourced line"', async ({ page }) => {
   await seed(page);
   await goto(page, '/laptimer');
-  await page.getByLabel('Known track (optional)').selectOption('road-america');
+  await page.getByLabel('Known track (optional)').selectOption('sonoma-raceway');
   await expect(page.getByText('No sourced start/finish line for this track yet')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Use sourced line' })).toHaveCount(0);
-  await expect(page.getByLabel('Track', { exact: true })).toHaveValue('Road America');
+  await expect(page.getByLabel('Track', { exact: true })).toHaveValue('Sonoma Raceway');
   expect(await serious(page)).toEqual([]);
 });
 
@@ -156,4 +156,22 @@ test('Spanish: track map, checklist and photo controls are translated', async ({
   await expect(page.locator('fieldset.ptc')).toContainText('Lista previa al circuito');
   await expect(page.getByText('Añadir foto').first()).toBeVisible();
   expect(await serious(page)).toEqual([]);
+});
+
+test('lap timer: "Use sourced line" warns it is derived/unverified and credits OpenStreetMap when used', async ({ page }) => {
+  await seed(page);
+  await goto(page, '/laptimer');
+  await page.getByLabel('Known track (optional)').selectOption('circuit-of-the-americas');
+  await expect(page.getByText('derived from map data and unverified')).toBeVisible();
+  await expect(page.getByRole('link', { name: '© OpenStreetMap contributors' }).first()).toHaveAttribute('href', 'https://www.openstreetmap.org/copyright');
+  await page.getByRole('button', { name: 'Use sourced line' }).click();
+  await expect(page.getByText('Using a sourced line (derived, unverified).')).toBeVisible();
+  await expect(page.locator('.sfl-inuse a')).toHaveAttribute('href', 'https://www.openstreetmap.org/copyright');
+  await expect(page.getByRole('button', { name: 'Drop line here' })).toBeVisible();
+  expect(await serious(page)).toEqual([]);
+  for (const route of ['/sources', '/help']) {
+    await goto(page, route);
+    await expect(page.locator('main a[href="https://www.openstreetmap.org/copyright"]').first()).toBeVisible();
+    expect(await serious(page)).toEqual([]);
+  }
 });

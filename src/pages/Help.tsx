@@ -1,3 +1,4 @@
+import { OsmCredit } from '../components/SourcedLine';
 import { Link } from 'react-router';
 import { Badge } from '../components/Facts';
 import { useT } from '../components/SettingsContext';
@@ -25,6 +26,7 @@ export default function Help() {
           <li><a href="#/help" onClick={(e) => { e.preventDefault(); document.getElementById('help-badges')?.scrollIntoView(); }}>{t('help.badges')}</a></li>
           <li><a href="#/help" onClick={(e) => { e.preventDefault(); document.getElementById('help-privacy')?.scrollIntoView(); }}>{t('help.privacy')}</a></li>
           <li><a href="#/help" onClick={(e) => { e.preventDefault(); document.getElementById('help-backup')?.scrollIntoView(); }}>{t('help.backup')}</a></li>
+          <li><a href="#/help" onClick={(e) => { e.preventDefault(); document.getElementById('help-data')?.scrollIntoView(); }}>{t('osm.title')}</a></li>
         </ul>
       </nav>
       <section className="card" aria-labelledby="help-tools">
@@ -55,6 +57,10 @@ export default function Help() {
         <p>{t('help.backupText')}</p>
         <ol><li>{t('help.backup1')}</li><li>{t('help.backup2')}</li><li>{t('help.backup3')}</li></ol>
         <p><Link to="/settings">{t('nav.settings')} →</Link></p>
+      </section>
+      <section className="card" aria-labelledby="help-data">
+        <h2 id="help-data">{t('osm.title')}</h2>
+        <p>{t('osm.text')} <OsmCredit /></p>
       </section>
     </>
   );

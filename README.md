@@ -188,6 +188,14 @@ Round-9 review of the whole repo (fixes have regression tests in `tests/round9.t
 - Every source URL in the data (including nested citations) must be `https://`, so no `javascript:` link can reach the page.
 - No issue found in share links (strict allow-list decode, no VIN), i18n interpolation and SVG text (React-escaped), or import validation (allow-list normalizers, 2 MB cap). `npm audit`: 0 vulnerabilities.
 
+## Third-party data
+
+`src/data/startFinishLines.ts` (sourced lap-timer start/finish lines) is derived from OpenStreetMap:
+data © OpenStreetMap contributors, available under the Open Database License (ODbL) 1.0
+(https://www.openstreetmap.org/copyright), snapshot 2026-06-01. Gate endpoints are computed from OSM nodes and are
+`unverified`; the app credits "© OpenStreetMap contributors" in the lap timer, on Sources and in Help. Only that file is
+ODbL; the rest of the project's code and data is not affected. See [LICENSE-DATA-OSM.md](LICENSE-DATA-OSM.md).
+
 ## Disclaimer
 
 This is an independent fan project. It is not affiliated with, endorsed by or sponsored by Ford Motor Company, Shelby American, Inc. or Carroll Shelby Licensing. "Ford", "Mustang", "Shelby", "GT500" and "Cobra" are trademarks of their respective owners and are used here only to identify the vehicle. No logos are used. Figures are compiled from third-party sources and may be wrong; verify with official Ford documents, NHTSA and your dealer. Nothing here is legal or mechanical advice.

@@ -4,7 +4,8 @@ import { Cite, Note } from '../components/Facts';
 import { useT, useUnits } from '../components/SettingsContext';
 import { tracks } from '../data/tracks';
 import { startFinishLines } from '../data/startFinishLines';
-import { SourcedLinePicker } from '../components/SourcedLine';
+import { OsmCredit, SourcedLinePicker } from '../components/SourcedLine';
+import { isOsmSource } from '../lib/lapTimer';
 import { cleanFixes, MPH, type Fix } from '../lib/gps';
 import { KEYS, activeCarId, loadTrack, today, uid, type TrackSession } from '../lib/garage';
 import { save } from '../lib/storage';
@@ -26,7 +27,10 @@ export default function LapTimer() {
   const supported = typeof navigator !== 'undefined' && !!navigator.geolocation;
   const [phase, setPhase] = useState<Phase>(supported ? 'idle' : 'unavailable');
   const [fixes, setFixes] = useState<Fix[]>([]);
-  const [line, setLine] = useState<TimingLine | null>(null);
+  const [line, setLineState] = useState<TimingLine | null>(null);
+  /** Source URL of the sourced line in use (null for a dropped / typed line). */
+  const [lineSrc, setLineSrc] = useState<string | null>(null);
+  const setLine = (l: TimingLine | null) => { setLineState(l); setLineSrc(null); };
   const [sectors, setSectors] = useState<TimingLine[]>([]);
   const [pts, setPts] = useState({ aLat: '', aLon: '', bLat: '', bLon: '' });
   const [name, setName] = useState('');
@@ -127,7 +131,8 @@ export default function LapTimer() {
       <section className="card">
         <h2>{t('lt.line')}</h2>
         <p className="muted">{line ? t('lt.lineSet', { s: sectors.length }) : t('lt.noLine')}</p>
-        <SourcedLinePicker trackId={trackId} lines={startFinishLines} onUse={(l) => { setLine(l.line); setSectors(l.sectors); setMsg(null); }} />
+        {line && lineSrc && <p className="small muted sfl-inuse">{t('sfl.inUse')} {isOsmSource(lineSrc) && <><OsmCredit /> (ODbL 1.0)</>}</p>}
+        <SourcedLinePicker trackId={trackId} lines={startFinishLines} onUse={(l, rec) => { setLine(l.line); setLineSrc(rec.source); setSectors(l.sectors); setMsg(null); }} />
         <div className="btn-row">
           <button className="btn" onClick={() => dropHere(false)} disabled={!running}>{t('lt.dropHere')}</button>
           <button className="btn ghost" onClick={() => dropHere(true)} disabled={!running || !line || sectors.length >= MAX_SECTORS}>{t('lt.addSector')}</button>

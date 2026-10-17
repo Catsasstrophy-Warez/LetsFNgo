@@ -319,12 +319,12 @@ describe('startFinishLines data slot', () => {
     id: 'laguna-gp', trackId: 'weathertech-raceway-laguna-seca', configuration: 'Grand Prix Circuit', a: { lat: 36.58706, lon: -121.75370 }, b: { lat: 36.58720, lon: -121.75355 },
     sectors: [], source: 'https://www.openstreetmap.org/way/123', confidence: 'unverified', ...o,
   });
-  it('is empty, has a schema, may be empty, and shows on Coverage', () => {
-    expect(startFinishLines).toEqual([]);
+  it('holds the OSM lines, has a schema, may be empty, and shows on Coverage', () => {
+    expect(startFinishLines).toHaveLength(9);
     expect(SCHEMAS.startFinishLines).toBeTruthy();
     expect(MAY_BE_EMPTY.has('startFinishLines')).toBe(true);
     expect(readFileSync('schemas/startFinishLines.schema.json', 'utf8')).toBe(JSON.stringify(SCHEMAS.startFinishLines, null, 2) + '\n');
-    expect(computeCoverage(collections).sections.find((s) => s.name === 'startFinishLines')?.records).toBe(0);
+    expect(computeCoverage(collections).sections.find((s) => s.name === 'startFinishLines')?.records).toBe(9);
     expect(routeFor('startFinishLines', {})).toBe('/laptimer');
   });
   it('checks track links, duplicates, line length and distance from the facility', () => {
