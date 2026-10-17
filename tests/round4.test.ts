@@ -267,7 +267,8 @@ describe('round 4 data', () => {
     expect(a('23V070000')).toBe('no'); expect(a('22V382000')).toBe('no');
     const nhtsa = recalls.filter((r) => r.kind === 'nhtsa-recall');
     expect(nhtsa.length).toBe(16);
-    expect(nhtsa.filter((r) => r.appliesToGT500 === 'vin').length).toBe(12);
+    expect(nhtsa.filter((r) => r.appliesToGT500 === 'vin').length).toBe(11);
+    expect(recalls.find((r) => r.campaign === '25V455000')!.appliesToGT500).toBe('unknown');
     expect(nhtsa.every((r) => r.evidence && r.source.startsWith('https://static.nhtsa.gov/'))).toBe(true);
     expect(recalls.find((r) => r.campaign === '20V573000')!.buildWindow).toBe('Feb 28 2019-Aug 13 2020');
     expect(recalls.find((r) => r.id === 'tensioner')!.campaign).toBe('CSP 21B26');
