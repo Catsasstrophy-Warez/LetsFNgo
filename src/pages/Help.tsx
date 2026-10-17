@@ -6,7 +6,7 @@ import type { MsgKey } from '../lib/i18n';
 
 /** Each tool: route, nav label, and its one-line help text (help.tool.<id>). */
 const TOOLS: [string, string][] = [
-  ['/specs', 'specs'], ['/vin', 'vin'], ['/editions', 'editions'], ['/history', 'history'], ['/market', 'market'], ['/buy', 'buy'], ['/garage', 'garage'],
+  ['/specs', 'specs'], ['/vin', 'vin'], ['/editions', 'editions'], ['/history', 'history'], ['/market', 'market'], ['/buy', 'buy'], ['/build-sheet', 'build'], ['/garage', 'garage'],
   ['/report', 'report'], ['/planner', 'planner'], ['/track', 'track'], ['/timer', 'timer'], ['/drag', 'drag'], ['/gps', 'gps'], ['/laptimer', 'laptimer'], ['/obd', 'obd'], ['/tree', 'tree'], ['/trackdays', 'trackdays'], ['/ask', 'ask'], ['/dyno', 'dyno'],
   ['/fuel', 'fuel'], ['/tires', 'tires'], ['/gearing', 'gearing'], ['/parts', 'parts'], ['/guides', 'guides'], ['/timeline', 'timeline'],
   ['/achievements', 'achievements'], ['/sources', 'sources'], ['/diagnostics', 'diagnostics'],

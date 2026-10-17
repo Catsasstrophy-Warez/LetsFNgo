@@ -286,7 +286,8 @@ describe('market value', () => {
   it('round-7 data: 15 DriveIndex sales plus named results, sourced and typed', () => {
     const di = auctionResults.filter((r) => r.source === 'https://driveindex.com/cars/ford/mustang-shelby-gt500/2020');
     expect(di).toHaveLength(15);
-    expect(di.every((r) => r.venue === null && r.cftp === null && r.confidence === 'reported' && r.year === 2020 && r.price! > 0)).toBe(true);
+    expect(di.filter((r) => r.venue !== null).map((r) => r.date)).toEqual(['2026-08-17', '2026-07-14', '2026-06-11']);
+    expect(di.every((r) => (r.venue === null || r.venue === 'Bring a Trailer') && r.cftp === null && r.confidence === 'reported' && r.year === 2020 && r.price! > 0)).toBe(true);
     expect(new Set(auctionResults.map((r) => r.id)).size).toBe(auctionResults.length);
     const edsel = auctionResults.find((r) => r.id === 'bat-2025-09-edsel')!;
     expect(edsel).toMatchObject({ price: 189901, mileage: 666, confidence: 'reported' });

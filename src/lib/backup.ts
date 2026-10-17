@@ -188,5 +188,5 @@ export function restoreBackup(b: Backup): boolean {
 }
 
 /** Every key this app writes. */
-export const ALL_KEYS = [WEATHER_KEY, 'gt500.recentSearches.v1' /* search.ts RECENT_KEY; not imported to keep the data index out of this chunk */, KEYS.garage, KEYS.cars, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, DYNO_KEY, NOTIFY_KEY, DASH_KEY, ACH_KEY, INSTALL_KEY, PTC_KEY, TRACKDAYS_KEY, BUYER_KEY, TREE_KEY, 'gt500.sflDir.v1' /* lapTimer.ts SFL_DIR_KEY; kept out of this chunk */, DIAG_KEY, 'gt500.theme'];
+export const ALL_KEYS = [WEATHER_KEY, 'gt500.recentSearches.v1' /* search.ts RECENT_KEY; not imported to keep the data index out of this chunk */, KEYS.garage, KEYS.cars, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, DYNO_KEY, NOTIFY_KEY, DASH_KEY, ACH_KEY, INSTALL_KEY, PTC_KEY, TRACKDAYS_KEY, BUYER_KEY, 'gt500.buildSheet.v1' /* buildSheet.ts BUILD_KEY; reset only, not in backups; kept out of this chunk */, TREE_KEY, 'gt500.sflDir.v1' /* lapTimer.ts SFL_DIR_KEY; kept out of this chunk */, DIAG_KEY, 'gt500.theme'];
 export function resetAll(): void { ALL_KEYS.forEach(remove); }

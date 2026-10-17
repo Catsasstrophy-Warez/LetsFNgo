@@ -128,7 +128,7 @@ test('market value: charts, filters, outlier toggle and your-car marker', async 
   await page.getByRole('heading', { name: 'Results', exact: true }).scrollIntoViewIfNeeded();
   await expect(page.getByText(/Edsel Ford II/).first()).toBeVisible();
   await page.getByLabel('CFTP').selectOption('yes');
-  await expect(page.getByText('1 of 20 results · 0 with a USD price')).toBeVisible();
+  await expect(page.getByText('1 of 22 results · 0 with a USD price')).toBeVisible();
   await expect(page.getByText(/no results with a USD price match/).first()).toBeVisible();
   await shot(page, 'market-cftp', info.project.name);
 });

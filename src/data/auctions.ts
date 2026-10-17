@@ -7,6 +7,9 @@ import type { AuctionResult, MarketStat } from './types';
 const DI = 'https://driveindex.com/cars/ford/mustang-shelby-gt500/2020';
 const CV_BAT = 'https://www.theclassicvaluer.com/vehicle-details/bring-a-trailer-2026-07-25-ford-mustang-sixth-generation-gt500-0f5d54';
 const CV_MECUM = 'https://www.theclassicvaluer.com/vehicle-details/mecum-2025-12-05-ford-mustang-sixth-generation-gt500-9efa60';
+const MECUM_INDY = 'https://www.classic.com/a/mecum-indy-2026-Y4rALMp/lots/2022-ford-shelby-mustang-gt500kr-47BVMBp';
+const MECUM_NOTE = 'Round 14: Classic.com "unofficial results" seen in a search summary (page returned 403).';
+const KR_OUTLIER = 'Shelby American GT500KR, not a stock GT500; excluded from medians by default.';
 const DI_NOTE = 'DriveIndex shows 15 of 78 sales for 2020 cars; venue, CFTP status and listing URL are not given per sale.';
 
 const driveIndex2020: [string, number, number][] = [
@@ -16,17 +19,40 @@ const driveIndex2020: [string, number, number][] = [
   ['2026-02-01', 96000, 479], ['2026-01-12', 101000, 215], ['2025-12-30', 78501, 4200],
 ];
 
+/** Round 14: The Classic Valuer GBP conversions of the same BaT sales DriveIndex lists (low; not back-converted). */
+const CV = 'https://www.theclassicvaluer.com/vehicle-details/bring-a-trailer-';
+const batGbp: Record<string, Partial<AuctionResult>> = {
+  '2026-06-11': { venue: 'Bring a Trailer', localPrice: { amount: 65142, currency: 'GBP' }, note: `${DI_NOTE} Round 14 (low): Bring a Trailer sale, The Classic Valuer shows £65,142 (${CV}2026-06-11-ford-mustang-sixth-generation-gt500-bab287). Listing: https://bringatrailer.com/listing/2020-ford-mustang-shelby-gt500-122/` },
+  '2026-07-14': { venue: 'Bring a Trailer', localPrice: { amount: 71744, currency: 'GBP' }, note: `${DI_NOTE} Round 14 (low): Bring a Trailer sale, The Classic Valuer shows £71,744 (${CV}2026-07-14-ford-mustang-sixth-generation-gt500-948e1a). Listing: https://bringatrailer.com/listing/2020-ford-mustang-shelby-gt500-123/` },
+  '2026-08-17': {
+    venue: 'Bring a Trailer', note: `${DI_NOTE} Round 14 (low): Bring a Trailer sale. Listing: https://bringatrailer.com/listing/2020-ford-mustang-shelby-gt500-130/`,
+    conflicts: [
+      { value: '$114,000', source: DI, confidence: 'reported', context: 'DriveIndex' },
+      { value: '£88,817', source: `${CV}2026-08-17-ford-mustang-sixth-generation-gt500-4b6b47`, confidence: 'unverified', context: 'The Classic Valuer page header (its own summary says $114,000)' },
+    ],
+  },
+};
+
 export const auctionResults: AuctionResult[] = [
   ...driveIndex2020.map(([date, price, mileage]): AuctionResult => ({
     id: `di-${date}-${mileage}`, date, venue: null, year: 2020, mileage, price, outcome: 'sold', cftp: null, heritage: null,
     description: '2020 GT500 sale listed by DriveIndex', source: DI, confidence: 'reported', note: DI_NOTE,
+    ...batGbp[date],
   })),
   {
-    id: 'bat-2025-09-edsel', date: '2025-09', venue: 'Bring a Trailer', year: 2020, mileage: 666, price: 189901, outcome: 'sold', cftp: null, heritage: null,
+    id: 'mecum-indy-2026-kr-2022', date: '2026-05-16', venue: 'Mecum Indy', year: 2022, mileage: 1000, price: 187000, outcome: 'sold', cftp: null, heritage: null, outlier: KR_OUTLIER,
+    description: '2022 Shelby GT500KR (about 1,000 mi)', source: MECUM_INDY, confidence: 'unverified', note: MECUM_NOTE,
+  },
+  {
+    id: 'mecum-indy-2026-kr-2021', date: '2026-05-16', venue: 'Mecum Indy', year: 2021, mileage: null, price: 154000, outcome: 'sold', cftp: null, heritage: null, outlier: KR_OUTLIER,
+    description: '2021 Shelby GT500KR (mileage not given)', source: MECUM_INDY, confidence: 'unverified', note: MECUM_NOTE,
+  },
+  {
+    id: 'bat-2025-09-edsel', date: '2025-09-16', venue: 'Bring a Trailer', year: 2020, mileage: 666, price: 189901, outcome: 'sold', cftp: null, heritage: null,
     outlier: 'Celebrity provenance (Edsel Ford II owned); excluded from medians by default.',
     description: "Edsel Ford II's 2020 GT500 (auction record per the source)",
     source: 'https://fordauthority.com/2025/09/edsel-ford-iis-2020-ford-mustang-shelby-gt500-sets-new-auction-record/', confidence: 'reported',
-    note: 'Figures come from a search snippet of the article; the page itself returned 403.',
+    note: 'Figures first came from a search snippet (403); round 14 confirms the Sept 16, 2025 close at $189,901, 666 mi, Rapid Red — called the highest Shelby price on BaT.',
   },
   {
     id: 'bat-2026-07-25', date: '2026-07-25', venue: 'Bring a Trailer', year: 2021, mileage: 2500, price: null, localPrice: { amount: 91166, currency: 'GBP' }, outcome: 'sold', cftp: true, heritage: null,

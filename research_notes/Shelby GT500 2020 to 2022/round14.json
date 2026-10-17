@@ -1,0 +1,23 @@
+{
+ "round": 14,
+ "date": "2026-10-17",
+ "facts": [
+  {"topic":"batSale2025EdselFord","value":"2020 GT500, Rapid Red, 666 mi, $189,901, closed 2025-09-16, Shelby BaT record","source":"https://fordauthority.com/2025/09/edsel-ford-iis-2020-ford-mustang-shelby-gt500-sets-new-auction-record","confidence":"medium"},
+  {"topic":"batSale2026_06_11","value":"2020 GT500, 10,000 mi, GBP 65,142 (aggregator)","source":"https://bringatrailer.com/listing/2020-ford-mustang-shelby-gt500-122/","confidence":"low","note":"via https://www.theclassicvaluer.com/vehicle-details/bring-a-trailer-2026-06-11-ford-mustang-sixth-generation-gt500-bab287"},
+  {"topic":"batSale2026_07_14","value":"2020 GT500, 2,300 mi, GBP 71,744 (aggregator)","source":"https://bringatrailer.com/listing/2020-ford-mustang-shelby-gt500-123/","confidence":"low","note":"via https://www.theclassicvaluer.com/vehicle-details/bring-a-trailer-2026-07-14-ford-mustang-sixth-generation-gt500-948e1a"},
+  {"topic":"batSale2026_08_17","value":"2020 GT500, 2,800 mi","source":"https://bringatrailer.com/listing/2020-ford-mustang-shelby-gt500-130/","confidence":"low","conflict":["GBP 88,817 (page header)","$114,000 (page summary)"],"note":"via https://www.theclassicvaluer.com/vehicle-details/bring-a-trailer-2026-08-17-ford-mustang-sixth-generation-gt500-4b6b47"},
+  {"topic":"mecumIndy2026","value":"2022 GT500KR ~1,000 mi $187,000; 2021 GT500KR $154,000; 2026-05-16; unofficial","source":"https://www.classic.com/a/mecum-indy-2026-Y4rALMp/lots/2022-ford-shelby-mustang-gt500kr-47BVMBp","confidence":"low","note":"search summary; page 403"},
+  {"topic":"gt500krProduction","value":"180 US (60 per model year) + 45 overseas = 225","source":"https://www.shelby.com/eblasts/121521-SAI/121521-SAI.html","confidence":"medium","conflict":["120 retrofits + 60 new (https://www.autoblog.com/2021/12/16/ford-shelby-mustang-gt500kr-60th-anniversary/)","180 across MY2021-2022 (https://www.fordmuscle.com/?p=937288)"]},
+  {"topic":"trackAttackYears","value":"2020 to Nov 2023; free to GT500 owners at Charlotte Motor Speedway; replaced by Dark Horse Track Attack","source":"https://fordauthority.com/2023/11/ford-mustang-shelby-gt500-track-attack-program-ends/","confidence":"medium","note":"search summary; page 403"},
+  {"topic":"motorTrendBDC2020","value":"GT500 CFTP took part; lap quicker than 2018 Camaro ZL1; placement not stated","source":"https://themustangsource.com/?p=37078","confidence":"low"},
+  {"topic":"quarterMileStock","value":"10.61 @ 133 mph","source":"https://www.motor1.com/news/379132/2020-shelby-gt500-quarter-mile/","confidence":"medium"},
+  {"topic":"quarterMileStockPulley","value":"9.91 @ 137.60 mph; SPE intake, Lethal race pipe, PBD tune, drag radials","source":"https://www.hotcars.com/stock-pulley-mustang-shelby-gt500-quarter-mile-record/","confidence":"low"},
+  {"topic":"quarterMileLethal","value":"9.15 @ 155 mph, 2020 CFTP","source":"https://www.svtperformance.com/threads/lethal-performances-2020-gt500-cftp-clicks-off-a-9-15-155mph.1201867/","confidence":"low","note":"date unverified"},
+  {"topic":"pbdTuneGain","value":"+56 whp from tune","source":"https://themustangsource.com/?p=34098","confidence":"low"},
+  {"topic":"lundTunedBuild","value":"945 rwhp / 753 rwtq vs 684/591 stock; not tune-only","source":"https://www.streetmusclemag.com/?p=2402810","confidence":"low"},
+  {"topic":"svtperformanceForum","value":"2020+ Shelby GT500 Mustang subforum","source":"https://www.svtperformance.com/forums/2020-shelby-gt500-mustang.481/","confidence":"high"},
+  {"topic":"tr9070Clutches","value":"odd 5 plates 155 sq in; even 6 plates 136 sq in","source":"https://www.transmissiondigest.com/?p=31560","confidence":"medium"},
+  {"topic":"nonHagertyConditionValues2020","value":"perfect $130k-154k; excellent $112,750-130k; good $105k-112,750; fair $80k-105k (ConceptCarz, not Hagerty)","source":"https://www.conceptcarz.com/valuation/29301/view/eras.aspx?d=15","confidence":"low"}
+ ],
+ "notFound": ["Hagerty #1-#4 values","Cars & Bids 2025-2026 GT500 sales","Barrett-Jackson 2025-2026 GT500 sales","2024-2026 quickest/fastest records","Car and Driver 10Best placement","GT500 DCT clutch upgrade vendors/prices","TCM tune prices","Livernois tune-only dyno","Facebook group URLs","Wimbledon White paint code (retry)","2022 owner supplement (retry)"]
+}

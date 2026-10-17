@@ -3,6 +3,10 @@
 All notable changes to GT500 Companion, newest first. Research notes for each round live in
 `research_notes/Shelby GT500 2020 to 2022/`.
 
+## Round 16 — build & sticker
+- Build & sticker page (`/build-sheet`): pick a model year and the packages listed for it, see the original MSRP as a window sticker where every line shows its sourced price, confidence and source. Unsourced prices (e.g. 2021 gas guzzler tax, extra-cost paint, a 2020-only Handling Package price in other years) are flagged and excluded, and the total reads "at least" with a count of unpriced lines. Conflicting sourced values are listed beside the primary value; options with unknown year availability are marked "availability unverified". Print-friendly, links to Market and the buyer's price check; last build saved on the device (cleared by reset, not in backups — backup schema stays v10).
+- Round 14 research data: GT500KR production 225 (180 US, 60 per model year, + 45 overseas; Shelby American) with Autoblog and Fordmuscle split conflicts; Track Attack ran 2020 to November 2023 (Ford Authority via search summary only); Edsel Ford II BaT sale dated 2025-09-16; Mecum Indy 2026 GT500KR sales ($187,000 and $154,000, unverified, outliers); GBP conversions and a $114,000 vs £88,817 conflict on three 2026 BaT sales already listed by DriveIndex; 9.91 @ 137.60 and 9.15 @ 155 mph drag records (unverified); SVTPerformance GT500 subforum (confirmed); TR-9070 clutch friction areas.
+
 ## Round 15 — buyer's guide, round 13 data, native fix
 - Buyer's guide page (`/buy`): per-year sourced checklist (recalls, known issues), VIN and price checks; backup schema v10.
 - Round 13 research data: 2021 destination charge ($1,195, Ford Authority via search summary only); 2020 Handling Package $1,500 with contents; Carbon Fiber Handling Package contents; 2021 Technology Package listings; 2020 Recaro seats $1,595; Heritage stripe prices corroborated; CFTP $18,900 leaked-guide price conflict; curb weight conflicts (4,225 lb leaked eSourceBook, 4,080 lb Motor1 scale).
