@@ -66,6 +66,7 @@ export const PAGES = {
   Diagnostics: () => import('./pages/Diagnostics'),
   Buy: () => import('./pages/Buy'),
   BuildSheet: () => import('./pages/BuildSheet'),
+  Cost: () => import('./pages/Cost'),
 };
 /** Dev-only component gallery: `import.meta.env.DEV` is false in production, so the chunk is never built. */
 const Gallery = import.meta.env.DEV ? lazy(() => import('./pages/Gallery')) : null;
@@ -79,7 +80,7 @@ const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
   '/welcome': PAGES.Welcome, '/dyno': PAGES.Dyno, '/tires': PAGES.Tires, '/share': PAGES.Share, '/parts': PAGES.Parts,
   '/report': PAGES.Report, '/market': PAGES.Market, '/achievements': PAGES.Achievements,
   '/editions': PAGES.Editions, '/history': PAGES.History, '/help': PAGES.Help, '/coverage': PAGES.Coverage,
-  '/obd': PAGES.Obd, '/tree': PAGES.Tree, '/ask': PAGES.Ask, '/trackdays': PAGES.TrackDays, '/diagnostics': PAGES.Diagnostics, '/buy': PAGES.Buy, '/build-sheet': PAGES.BuildSheet,
+  '/obd': PAGES.Obd, '/tree': PAGES.Tree, '/ask': PAGES.Ask, '/trackdays': PAGES.TrackDays, '/diagnostics': PAGES.Diagnostics, '/buy': PAGES.Buy, '/build-sheet': PAGES.BuildSheet, '/cost': PAGES.Cost,
   '/guides': () => Promise.all([PAGES.Guides(), PAGES.Guide()]),
 };
 const L = Object.fromEntries(Object.entries(PAGES).map(([k, f]) => [k, lazy(f as () => Promise<{ default: () => JSX.Element }>)])) as Record<keyof typeof PAGES, React.LazyExoticComponent<() => JSX.Element>>;
@@ -113,6 +114,7 @@ export const NAV = [
   { to: '/laptimer', label: 'GPS Lap Timer', key: 'nav.laptimer' as MsgKey },
   { to: '/obd', label: 'OBD-II Gauges', key: 'nav.obd' as MsgKey },
   { to: '/fuel', label: 'Fuel & Cost', key: 'nav.fuel' as MsgKey },
+  { to: '/cost', label: 'Cost of Ownership', key: 'nav.cost' as MsgKey },
   { to: '/dyno', label: 'Dyno Log', key: 'nav.dyno' as MsgKey },
   { to: '/tires', label: 'Tire & Wheel Calc', key: 'nav.tires' as MsgKey },
   { to: '/gearing', label: 'Gear & Speed Calc', key: 'nav.gearing' as MsgKey },
@@ -254,6 +256,7 @@ export default function App() {
           <Route path="/diagnostics" element={<L.Diagnostics />} />
           <Route path="/buy" element={<L.Buy />} />
           <Route path="/build-sheet" element={<L.BuildSheet />} />
+          <Route path="/cost" element={<L.Cost />} />
           {Gallery && <Route path="/dev/gallery" element={<Gallery />} />}
           <Route path="*" element={<Home />} />
         </Routes>

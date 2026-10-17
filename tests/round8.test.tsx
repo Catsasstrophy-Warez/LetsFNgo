@@ -123,9 +123,9 @@ describe('multi-car Garage store', () => {
 describe('backup schema 6', () => {
   const v4 = { app: 'gt500-companion', schema: 4, exported: '', garage: { nickname: 'Snake', mods: [{ id: 'm', date: '2025-01-01', title: 'Tune' }] }, plans: [], track: [{ id: 't', date: '2025-01-01', track: 'VIR', laps: '' }], drag: [], fuel: [], settings: {}, onboarding: { done: true, completed: '' }, dyno: [], notify: { enabled: false, sent: {} }, dashboard: { order: [], hidden: [] } };
   it('migrates v4 → v6: single garage becomes car #1, losslessly', () => {
-    expect(SCHEMA_VERSION).toBe(10);
+    expect(SCHEMA_VERSION).toBe(11);
     const m = migrate(v4);
-    expect(m).toMatchObject({ schema: 10, cars: { active: DEFAULT_CAR_ID }, achievements: { seen: [] } });
+    expect(m).toMatchObject({ schema: 11, cars: { active: DEFAULT_CAR_ID }, achievements: { seen: [] } });
     expect('garage' in m).toBe(false);
     const r = validateBackup(v4);
     expect(r.ok && r.migratedFrom).toBe(4);
@@ -164,7 +164,7 @@ describe('backup schema 6', () => {
     expect(validateBackup({ ...base, cars: { active: 'a', cars: [] } }).ok).toBe(false);
     expect(validateBackup({ ...base, cars: 'x' }).ok).toBe(false);
     expect(validateBackup({ ...base, achievements: { seen: [1] } }).ok).toBe(false);
-    expect(validateBackup({ ...base, schema: 11 }).ok).toBe(false);
+    expect(validateBackup({ ...base, schema: 12 }).ok).toBe(false);
     const bad = validateBackup({ ...v4, garage: { nickname: 5 } });
     expect(!bad.ok && bad.errors.join()).toMatch(/garage/);
   });
@@ -302,7 +302,7 @@ describe('market value', () => {
     expect(pcar).toMatchObject({ outcome: 'offer', price: 85000, mileage: 100 });
     expect(priced(auctionResults).some((r) => r.id === pcar.id)).toBe(false);
     for (const r of auctionResults) expect(r.source).toMatch(/^https:\/\//);
-    expect(median(priced(filterAuctions(auctionResults, DEFAULT_FILTER)).map((r) => r.price))).toBe(94000);
+    expect(median(priced(filterAuctions(auctionResults, DEFAULT_FILTER)).map((r) => r.price))).toBe(95000); // round 15 adds the Mecum Dallas 2022 sale ($118,250)
   });
   it('round-7 medians and the DriveIndex vs ConceptCarz conflict', () => {
     const v = (id: string) => marketStats.find((s) => s.id === id)!;

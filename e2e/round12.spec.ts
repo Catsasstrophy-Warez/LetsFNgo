@@ -79,7 +79,7 @@ test('photos: attach to a service entry, view, export with photos, delete', asyn
   await page.getByRole('button', { name: 'Export JSON' }).click();
   const file = await (await dl).path();
   const json = JSON.parse(readFileSync(file!, 'utf8'));
-  expect(json.schema).toBe(10);
+  expect(json.schema).toBe(11);
   expect(json.photos).toHaveLength(1);
   expect(json.photos[0].data.startsWith('/9j/')).toBe(true);
   expect(json.photos[0].w).toBe(2);

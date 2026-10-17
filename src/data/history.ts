@@ -16,6 +16,7 @@ export const milestones: Milestone[] = [
   { id: 'rt-pcoty', date: '2020-12', title: 'Road & Track 2021 Performance Car of the Year', source: 'https://tremec.com/ford-mustang-shelby-gt500-awarded-2021-performance-car-of-the-year-by-road-track/', confidence: 'confirmed', research: 'high' },
   { id: 'mt-bdc-2020', date: '2020', title: "MotorTrend Best Driver's Car 2020 contender (CFTP); reportedly best Laguna Seca lap; final placement unknown", placement: null, source: 'https://themustangsource.com/?p=37078', confidence: 'unverified', research: 'low', note: 'Secondary source (low-medium). MotorTrend published no full ranking, so the GT500’s placement stays unknown.' },
   { id: 'mt-bdc-2020-winner', date: '2020', title: "MotorTrend Best Driver's Car 2020 won by the Porsche 718 Cayman GT4 (GT500 did not win)", placement: null, source: 'https://www.rennlist.com/how-tos/slideshows/porsche-718-cayman-gt4-pros-and-cons-623189', confidence: 'reported', research: 'medium', note: 'Field: Corvette C8 Z51, Ferrari F8 Tributo, Shelby GT500, Lamborghini Huracán Evo, 911 Turbo S, Cayenne Turbo Coupe, 718 Cayman GT4. GT500 placement not published.' },
+  { id: 'hagerty-hot-list-2020', date: '2020', title: 'Named to the Hagerty 2020 Hot List (future collectible)', source: 'https://fordauthority.com/2020/07/2020-mustang-shelby-gt500-dubbed-future-collectible-by-hagerty/', confidence: 'reported', research: 'medium', note: 'Research round 15; seen in a search summary.' },
 ];
 
 /** Searched for, nothing sourced. */

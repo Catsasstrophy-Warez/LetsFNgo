@@ -180,9 +180,9 @@ describe('year diff and head-to-head', () => {
 
 describe('backup schema 3', () => {
   it('migrates v2 with onboarding done and round-trips gps runs', () => {
-    expect(SCHEMA_VERSION).toBe(10);
-    expect(migrate({ schema: 2 })).toMatchObject({ schema: 10, onboarding: { done: true } });
-    expect(migrate({ schema: 1 })).toMatchObject({ schema: 10, drag: [], onboarding: { done: true } });
+    expect(SCHEMA_VERSION).toBe(11);
+    expect(migrate({ schema: 2 })).toMatchObject({ schema: 11, onboarding: { done: true } });
+    expect(migrate({ schema: 1 })).toMatchObject({ schema: 11, drag: [], onboarding: { done: true } });
     const w = { tempF: null, pressureInHg: null, humidity: null, elevationFt: null, pressureIsStation: false };
     const slip = { id: 'g', date: '2026-01-01', track: '', rt: null, sixty: null, threeThirty: null, eighthEt: null, eighthMph: null, quarterEt: null, quarterMph: null, da: null, weather: w, mods: [], notes: 'GPS estimate', gps: { kind: 'quarter', seconds: 11.2, trapMph: 125, accuracyM: 2.5 } };
     const b = JSON.parse(JSON.stringify(makeBackup(EMPTY_GARAGE, [], [], [slip as never], [], undefined, 'x', { done: true, completed: '2026-01-01' })));

@@ -446,3 +446,18 @@ kbd { font: 600 .8rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; border: 
 .seg legend { font-weight: 600; margin-bottom: .25rem; }
 ul.plain { list-style: none; padding: 0; margin: 0; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 .75rem; }
+
+/* Cost of ownership (round 17): whose number a value is, and a simple horizontal bar chart. */
+.origin { display: inline-block; font-size: .68rem; font-weight: 700; padding: .05rem .4rem; border-radius: 999px; border: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+.origin-user { color: var(--text); background: var(--surface); }
+.origin-sourced { color: var(--b-confirmed); background: var(--b-confirmed-bg); }
+.origin-mixed { color: var(--b-reported); background: var(--b-reported-bg); }
+label.block { display: block; margin-top: .35rem; }
+.cost-chart { width: 100%; height: auto; max-width: 720px; display: block; }
+.cost-chart-bar { fill: var(--accent); }
+.cost-chart-label, .cost-chart-val { fill: var(--text); font-size: 13px; }
+@media print {
+  .origin { border: 1px solid #000; color: #000; background: none; }
+  .cost-chart-bar { fill: #444; }
+  .cost-chart-label, .cost-chart-val { fill: #000; }
+}

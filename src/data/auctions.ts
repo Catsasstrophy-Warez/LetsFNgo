@@ -60,6 +60,11 @@ export const auctionResults: AuctionResult[] = [
     note: 'Only a GBP conversion (£91,166) was found; the USD hammer price was not seen and is not back-converted. Listing: https://bringatrailer.com/listing/2021-ford-mustang-shelby-gt500-127/',
   },
   {
+    id: 'mecum-dallas-2022-09', date: '2022-09', venue: 'Mecum Dallas', year: 2020, mileage: null, price: 118250, outcome: 'sold', cftp: null, heritage: null,
+    description: '2020 GT500, Twister Orange', source: 'https://www.hagerty.com/valuation-tools/past-sales/2020-ford-mustang/vin/1c1ff011-1ef7-4975-9379-bfccc3e54002', confidence: 'unverified',
+    note: 'Research round 15: Hagerty past-sales record seen in a search summary, not tied to its own URL (the source is an example Hagerty past-sales page). Two unsold lots in the same summary (Grabber Lime, $100,000 high bid, Mecum Glendale Mar 2023; Performance Blue, $70,000, Mecum Schaumburg Oct 2022) are not listed.',
+  },
+  {
     id: 'mecum-2025-12-05', date: '2025-12-05', venue: 'Mecum', year: 2020, mileage: null, price: null, outcome: 'sold', cftp: null, heritage: null,
     description: '2020 GT500 — sources disagree on price and mileage', source: CV_MECUM, confidence: 'unverified',
     conflicts: [

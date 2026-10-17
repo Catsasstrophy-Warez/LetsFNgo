@@ -205,8 +205,8 @@ describe('photos', () => {
 describe('backup v8', () => {
   const photo = (i: number, owner = 'e1') => ({ id: `pphoto${i}xx`, kind: 'service', ownerId: owner, created: '2026-06-01T10:00:00.000Z', w: 10, h: 10, data: '/9j/AAAA' });
   it('is schema 8 and migrates v7 with an empty checklist template', () => {
-    expect(SCHEMA_VERSION).toBe(10);
-    expect(migrate({ schema: 7 })).toMatchObject({ schema: 10, ptc: { items: [] } });
+    expect(SCHEMA_VERSION).toBe(11);
+    expect(migrate({ schema: 7 })).toMatchObject({ schema: 11, ptc: { items: [] } });
     const v7 = { ...makeBackup({ vin: '', year: '', color: '', nickname: '', odometer: '', mods: [], service: [], reminders: [] }, [], []), schema: 7 } as Record<string, unknown>;
     delete v7.ptc;
     const r = validateBackup(v7);

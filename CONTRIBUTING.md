@@ -86,6 +86,14 @@ never places a timing line from it. To contribute a start/finish line:
   within 5 km of the facility point. Lines from OpenStreetMap are credited "© OpenStreetMap contributors" in the app; that file is ODbL 1.0 (see
   `LICENSE-DATA-OSM.md`), so keep its header and stay `unverified` unless confirmed against track documentation.
 
+## Part prices
+
+Part records in `src/data/parts.ts` can carry an optional `price` (`value`, `per` = `each` or `quart`, `dateSeen`,
+`source`, `confidence`, optional `conflicts`). Cite a retailer or Ford parts page, give the date you saw the price, and
+keep other snapshot prices as conflicts rather than averaging them. The Cost of ownership page (`#/cost`) prices a
+scheduled service only when every part in it is priced and every per-quart fluid has a single sourced capacity; a
+capacity given as a range keeps that service unpriced.
+
 ## Code changes
 
 See the README for the dev setup. Keep `npm run typecheck`, `npm run lint`, `npm test`, `npm run validate:data`,

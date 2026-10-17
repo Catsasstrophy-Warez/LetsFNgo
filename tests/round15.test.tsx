@@ -78,8 +78,8 @@ describe('buyer ticks storage and backup v10', () => {
     expect(loadBuyer()).toEqual({ checked: [] });
   });
   it('schema 10 round-trips buyer, migrates v9, rejects malformed, restores, resets', () => {
-    expect(SCHEMA_VERSION).toBe(10);
-    expect(migrate({ schema: 9 })).toMatchObject({ schema: 10, buyer: { checked: [] } });
+    expect(SCHEMA_VERSION).toBe(11);
+    expect(migrate({ schema: 9 })).toMatchObject({ schema: 11, buyer: { checked: [] } });
     const b = makeBackup(EMPTY_GARAGE, [], [], [], [], undefined, undefined, undefined, { buyer: { checked: ['svc:w-pt'] } });
     const r = validateBackup(JSON.parse(JSON.stringify(b)));
     expect(r.ok && r.data.buyer).toEqual({ checked: ['svc:w-pt'] });

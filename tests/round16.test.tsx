@@ -102,7 +102,7 @@ describe('storage', () => {
     store.set(BUILD_KEY, '{"year":2021,"options":["<b>",1,"tech"]}');
     expect(loadBuild()).toEqual({ year: 2021, options: ['tech'] });
     expect(ALL_KEYS).toContain(BUILD_KEY);
-    expect(SCHEMA_VERSION).toBe(10);
+    expect(SCHEMA_VERSION).toBe(11);
   });
 });
 
