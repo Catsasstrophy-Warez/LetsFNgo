@@ -69,6 +69,7 @@ const ITEMS: Record<string, JsonSchema> = {
   competitors: rec({ id: str, name: str, power: nul(str), quarterMile: nul(str), lap: nul(str), price: nul(str), verdict: str }, {
     sheet: rec({ model: str, hp: nul(num), torque: nul(num), weightLb: nul(num), zeroTo60: nul(num), zeroTo60By: nul(str), quarterMile: nul(str), priceUsd: nul(num) }, { hidden: bool,
       msrp: sv(num, { modelYear: { type: 'integer' }, destinationIncluded: nul(bool) }, { conflicts: arr({ $ref: '#/$defs/numberValue' }, 1) }) }),
+    prices: arr(sv(num, { modelYear: { type: 'integer' }, destinationIncluded: nul(bool), context: str }), 1),
   }),
   communities: rec({ id: str, name: str, description: str }),
   media: rec({ id: str, youtubeId: { type: 'string', pattern: '^[\\w-]{11}$' }, title: str, credit: str,

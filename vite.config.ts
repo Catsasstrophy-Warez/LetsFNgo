@@ -2,8 +2,8 @@ import { defineConfig } from 'vitest/config';
 import type { Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
 
 /** Stamp dist/sw.js with a per-build version and the list of emitted assets to precache. */
 function swVersion(): Plugin {
@@ -24,6 +24,33 @@ function swVersion(): Plugin {
   };
 }
 
+/** Every file under `dir` (relative, POSIX separators), sorted. */
+export function listFiles(dir: string, root = dir): string[] {
+  return readdirSync(dir).flatMap((f) => { const p = join(dir, f); return statSync(p).isDirectory() ? listFiles(p, root) : [relative(root, p).split(sep).join('/')]; }).sort();
+}
+
+/**
+ * Tooling only: write dist/.preview-manifest.json listing every emitted file with its size and SHA-256. The app
+ * never reads it, and the service worker does not precache it (it is written after the worker is stamped).
+ */
+function previewManifest(): Plugin {
+  let outDir = 'dist';
+  return {
+    name: 'preview-manifest',
+    apply: 'build',
+    configResolved(c) { outDir = c.build.outDir; },
+    closeBundle() {
+      if (!existsSync(outDir)) return;
+      const name = '.preview-manifest.json';
+      const files = listFiles(outDir).filter((f) => f !== name).map((path) => {
+        const buf = readFileSync(join(outDir, path));
+        return { path, bytes: buf.length, sha256: createHash('sha256').update(buf).digest('hex') };
+      });
+      writeFileSync(join(outDir, name), `${JSON.stringify({ generated: new Date().toISOString(), entry: 'index.html', count: files.length, files }, null, 2)}\n`);
+    },
+  };
+}
+
 /**
  * Dev server only: Vite injects CSS as <style> tags (and React refresh as an inline script), which the strict CSP
  * blocks, so `npm run dev` (and the /dev/gallery page) rendered unstyled. Production builds keep the strict CSP.
@@ -37,7 +64,7 @@ function devCsp(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), swVersion(), devCsp()],
+  plugins: [react(), swVersion(), devCsp(), previewManifest()],
   base: './',
   test: { include: ['tests/**/*.test.{ts,tsx}'], setupFiles: ['tests/setup.ts'] },
 });

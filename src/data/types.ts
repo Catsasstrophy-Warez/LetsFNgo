@@ -146,6 +146,15 @@ export interface Competitor extends Sourced {
   verdict: string;
   /** Round-3 spec-sheet figures, each with its own source. */
   sheet?: CompetitorSheet;
+  /** Base prices by model year (round 11), each with its own source. `context` names the exact trim / basis. */
+  prices?: CompetitorPrice[];
+}
+
+/** One sourced competitor price for a model year and trim (`context` is required). */
+export interface CompetitorPrice extends SourcedValue<number> {
+  modelYear: number;
+  destinationIncluded: boolean | null;
+  context: string;
 }
 
 /** A base MSRP with its model year and whether destination is included (null when the source does not say). */

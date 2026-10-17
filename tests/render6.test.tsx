@@ -60,7 +60,7 @@ describe('round-6 pages render', () => {
   });
   it('Settings has the notifications toggle (unsupported fallback in SSR)', async () => {
     const h = await render('Settings');
-    for (const t of ['Maintenance notifications', 'does not support notifications', 'schema v8']) expect(h).toContain(t);
+    for (const t of ['Maintenance notifications', 'does not support notifications', 'schema v9']) expect(h).toContain(t);
   });
   it('Year compare tables carry stacked-card labels', async () => {
     const h = await render('YearCompare');

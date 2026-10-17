@@ -185,13 +185,13 @@ describe('stored sessions', () => {
     expect(normTrack({ ...base, gps: s.gps })?.gps?.laps.length).toBe(1);
   });
   it('backup v7 round-trips GPS sessions; v6 migrates', () => {
-    expect(SCHEMA_VERSION).toBe(8);
+    expect(SCHEMA_VERSION).toBe(9);
     expect(MAX_IMPORT_BYTES).toBe(4 * 1024 * 1024);
     const s = sessionFromFixes(syntheticCircuit({ laps: 2.2 }), radialLine(SOUTH), [])!;
     const track = [{ id: 't', date: '2026-01-01', track: 'X', conditions: '', airTemp: '', pressures: { fl: '', fr: '', rl: '', rr: '' }, laps: s.text, notes: '', gps: s.gps }];
     const r = validateBackup(JSON.parse(JSON.stringify(makeBackup({ vin: '', year: '', color: '', nickname: '', odometer: '', mods: [], service: [], reminders: [] }, [], track))));
     expect(r.ok && r.data.track[0].gps?.trace.length).toBe(s.gps.trace.length);
-    expect(migrate({ schema: 6 })).toMatchObject({ schema: 8 });
+    expect(migrate({ schema: 6 })).toMatchObject({ schema: 9 });
   });
   it('prunes old traces but keeps laps', () => {
     const s = sessionFromFixes(syntheticCircuit({ laps: 1.2 }), radialLine(SOUTH), [])!;

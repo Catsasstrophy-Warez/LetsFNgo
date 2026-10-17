@@ -9,6 +9,14 @@ import { MAX_ITEM_LEN, MAX_USER_ITEMS, factFor, loadPtc, savePtc, tirePressuresS
  * data record; the tire item asks for the owner's own target until a pressure is sourced. Owner items can be added
  * to (and removed from) the template kept on this device; the ticked list is saved with the session.
  */
+/** Unique id for an owner item: two items added within the same millisecond used to share an id (and tick together). */
+export function newUserItemId(items: { id: string }[], now = Date.now()): string {
+  const base = `ptc-u${now.toString(36)}`;
+  let id = base, k = 0;
+  while (items.some((i) => i.id === id)) id = `${base}-${(++k).toString(36)}`;
+  return id;
+}
+
 export function PreTrackChecklist({ items, onChange }: { items: CheckItem[]; onChange: (items: CheckItem[]) => void }) {
   const t = useT();
   const [text, setText] = useState('');
@@ -20,7 +28,7 @@ export function PreTrackChecklist({ items, onChange }: { items: CheckItem[]; onC
     const tpl = loadPtc();
     if (tpl.items.length >= MAX_USER_ITEMS) { setErr(t('ptc.limit', { n: MAX_USER_ITEMS })); return; }
     savePtc({ items: [...tpl.items, v] });
-    onChange([...items, { id: `ptc-u${Date.now().toString(36)}`, label: v, done: false, kind: 'user' }]);
+    onChange([...items, { id: newUserItemId(items), label: v, done: false, kind: 'user' }]);
     setText(''); setErr('');
   };
   const removeItem = (it: CheckItem) => {

@@ -425,3 +425,24 @@ kbd { font: 600 .8rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; border: 
 .ptc { border: 1px solid var(--border); border-radius: 10px; padding: .5rem .75rem; margin: .5rem 0; }
 .ptc .check { align-items: flex-start; }
 .accent-swatch { display: inline-block; width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); vertical-align: middle; }
+/* Round 13: OBD gauges, tree trainer, track days */
+.gauges { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: .75rem; margin: .5rem 0; }
+.gauge { text-align: center; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: .5rem; }
+.gauge-svg { width: 100%; max-width: 160px; display: block; margin: 0 auto; }
+.gauge-track { fill: none; stroke: var(--border); stroke-width: 8; stroke-linecap: round; }
+.gauge-fill { fill: none; stroke: var(--accent); stroke-width: 8; stroke-linecap: round; }
+.gauge-v { font-size: 1.25rem; font-weight: 800; margin-top: -1.2rem; }
+.gauge-l { display: block; color: var(--muted); font-size: .85rem; }
+.demo-badge { font-size: .8rem; }
+.tree { display: flex; flex-direction: column; align-items: center; gap: .5rem; margin: .75rem auto; padding: .75rem; background: #111; border-radius: 16px; width: 96px; }
+.tree-lamp { width: 56px; height: 56px; border-radius: 50%; border: 3px solid #333; background: #2a2a2a; }
+.tree-lamp.amber.on { background: #ffb000; border-color: #ffd36b; }
+.tree-lamp.green.on { background: #19d35b; border-color: #8ff0b1; }
+.tree-lamp.red.on { background: #e5262b; border-color: #ff8a8d; }
+@media (prefers-reduced-motion: no-preference) { .tree-lamp.on { box-shadow: 0 0 18px currentColor; } }
+.tree-btn { width: 100%; }
+.tree-status { font-size: 1.2rem; font-weight: 700; text-align: center; min-height: 1.6em; }
+.seg { border: 0; padding: 0; margin: 0 0 .5rem; display: flex; flex-wrap: wrap; gap: 1rem; }
+.seg legend { font-weight: 600; margin-bottom: .25rem; }
+ul.plain { list-style: none; padding: 0; margin: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0 .75rem; }

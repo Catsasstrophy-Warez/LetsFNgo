@@ -250,6 +250,64 @@
         },
         "additionalProperties": false
       },
+      "prices": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "modelYear",
+            "destinationIncluded",
+            "context",
+            "value",
+            "source",
+            "confidence"
+          ],
+          "properties": {
+            "modelYear": {
+              "type": "integer"
+            },
+            "destinationIncluded": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "context": {
+              "type": "string",
+              "minLength": 1
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "source": {
+              "$ref": "#/$defs/source"
+            },
+            "confidence": {
+              "$ref": "#/$defs/confidence"
+            },
+            "note": {
+              "type": "string",
+              "minLength": 1
+            },
+            "originalUrl": {
+              "$ref": "#/$defs/source"
+            }
+          },
+          "additionalProperties": false
+        },
+        "minItems": 1
+      },
       "note": {
         "type": "string",
         "minLength": 1

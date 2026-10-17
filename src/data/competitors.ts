@@ -1,4 +1,4 @@
-import type { Competitor, CompetitorSheet } from './types';
+import type { Competitor, CompetitorPrice, CompetitorSheet } from './types';
 
 const CD3 = 'https://fordauthority.com/2020/02/2020-shelby-gt500-vs-camaro-zl1-1le-vs-challenger-hellcat-redeye-at-the-drag-strip';
 
@@ -10,7 +10,33 @@ const WC = 'https://en.wikipedia.org/wiki/Dodge_Challenger';
 const WP = 'https://en.wikipedia.org/wiki/Porsche_911_(992)';
 
 export const SHEET_CAVEAT = 'Round-3 figures, each with its own source and confidence. Most are manufacturer claims or test numbers quoted by secondary sites (Car and Driver and MotorTrend pages could not be fetched), and model years differ by row. Blank cells were not found. Rows from low-quality or database-only sources are hidden by default.';
-export const competitors: Competitor[] = [
+
+const CARS20 = 'https://www.cars.com/research/chevrolet-camaro-2020/specs/407671/';
+const ISEE20 = 'https://www.iseecars.com/car/2020-dodge-challenger-price';
+/** Round-11 competitor prices (research levels: medium → reported, low-medium → unverified, high → confirmed). */
+export const competitorPrices: Record<string, CompetitorPrice[]> = {
+  zl1: [
+    { value: 7500, modelYear: 2018, destinationIncluded: null, context: 'ZL1 1LE package price at its 2018 launch (option, not a car price)', source: 'https://www.autoblog.com/tag/camaro+1le/', confidence: 'confirmed', note: 'Confirmed for 2018 only. Not confirmed for 2020–2022 and not applied to those years.' },
+  ],
+  'zl1-auto': [
+    { value: 63000, modelYear: 2020, destinationIncluded: false, context: '2020 Camaro ZL1 coupe base MSRP, excl. destination', source: CARS20, confidence: 'reported' },
+    { value: 69000, modelYear: 2020, destinationIncluded: false, context: '2020 Camaro ZL1 convertible base MSRP, excl. destination', source: CARS20, confidence: 'reported' },
+    { value: 64395, modelYear: 2022, destinationIncluded: true, context: '2022 Camaro ZL1 coupe 6MT, incl. $1,395 destination', source: 'https://gmauthority.com/blog/2022/05/2022-chevy-camaro-gets-200-price-increase/', confidence: 'reported', note: 'From a search snippet; the page returned 403. 2022 automatic / convertible prices not found.' },
+  ],
+  hellcat: [
+    { value: 58995, modelYear: 2020, destinationIncluded: false, context: '2020 Challenger SRT Hellcat base MSRP (destination $1,495 extra)', source: ISEE20, confidence: 'reported' },
+  ],
+  redeye: [
+    { value: 70595, modelYear: 2020, destinationIncluded: null, context: '2020 Challenger SRT Hellcat Redeye base MSRP', source: ISEE20, confidence: 'reported' },
+    { value: 76595, modelYear: 2020, destinationIncluded: null, context: '2020 Challenger SRT Hellcat Redeye Widebody base MSRP', source: 'https://www.cargurus.ca/Cars/2020-Dodge-Challenger-Value-c29713', confidence: 'unverified', note: 'Research confidence low-medium (price database).' },
+    { value: 81060, modelYear: 2021, destinationIncluded: null, context: '2021 Challenger SRT Hellcat Redeye Widebody starting price as reported', source: 'https://www.foxnews.com/auto/dodge-challenger-charger-muscle-cars-jailbreak', confidence: 'reported' },
+  ],
+  jailbreak: [
+    { value: 995, modelYear: 2022, destinationIncluded: null, context: 'Jailbreak package option on the 2022 Challenger SRT Hellcat Redeye Widebody (option price, not a car price)', source: 'https://media.stellantisnorthamerica.com/newsrelease.do?id=23338', confidence: 'confirmed', note: 'Jailbreak launched for MY2022; there was no 2021 Jailbreak.' },
+  ],
+};
+
+const competitorsBase: Competitor[] = [
   { id: 'gt500', name: 'Shelby GT500 (2020)', power: '760 hp / 625 lb-ft', quarterMile: '11.4 s @ 132 mph (C/D)', lap: '1:28.15 (Throttle House, worn tires)', price: '$94,665 as tested (C/D)', verdict: 'Quickest at the drag strip.', source: CD3, confidence: 'reported',
     sheet: sheet({ model: '2020 Mustang Shelby GT500', hp: 760, torque: 625, weightLb: 4171, zeroTo60: 3.3, zeroTo60By: 'Ford claim (prepped surface)', quarterMile: '10.7 s @ 133 mph (Ford claim)', source: 'https://web.archive.org/web/20240528083635/https://www.musclecarsandtrucks.com/2020-ford-mustang-shelby-gt500-0-60-quarter-mile-times-revealed/', originalUrl: 'https://www.musclecarsandtrucks.com/2020-ford-mustang-shelby-gt500-0-60-quarter-mile-times-revealed/', confidence: 'reported', note: 'Car and Driver estimated 3.5 s / 11.0 s on clean pavement. Weight differs from the Specs page range (4,006–4,225 lb).' }) },
   { id: 'zl1', name: 'Chevrolet Camaro ZL1 1LE', power: null, quarterMile: '11.5 s @ 124 mph (C/D)', lap: '1:27.20 (Throttle House)', price: '$73,995 as tested (C/D)', verdict: 'Matched or beat the GT500 on road courses for less money.', source: 'https://fordauthority.com/2020/01/2020-ford-mustang-shelby-gt500-v-2019-chevrolet-camaro-zl1-1le', confidence: 'reported',
@@ -33,3 +59,5 @@ export const competitors: Competitor[] = [
   { id: 'gt3', name: 'Porsche 911 GT3 (992)', power: null, quarterMile: null, lap: null, price: null, verdict: 'No tested comparison found.', source: WP, confidence: 'unverified',
     sheet: sheet({ msrp: { value: 161100, modelYear: 2022, destinationIncluded: false, context: 'excl. $1,350 delivery', source: 'https://newsroom.porsche.com/en_US/2021/products/2022-porsche-911-gt3-pricing-updates-24060.html', confidence: 'confirmed' }, model: '2022 911 GT3 (992), 6MT', hp: null, torque: null, weightLb: 3126, zeroTo60: 3.3, zeroTo60By: 'Car and Driver (via Stuttcars)', quarterMile: '11.5 s @ 124 mph', source: 'https://www.stuttcars.com/porsche-of-the-day-2022-porsche-911-gt3/', confidence: 'reported', note: 'Weight 3,126 lb manual / 3,164 lb PDK (Autoblog).' }) },
 ];
+
+export const competitors: Competitor[] = competitorsBase.map((c) => (competitorPrices[c.id] ? { ...c, prices: competitorPrices[c.id] } : c));

@@ -234,16 +234,25 @@ export async function photosToBackup(list?: PhotoRec[]): Promise<PhotoBackup[]> 
  * itself). Returns how many were written.
  */
 export async function restorePhotos(list: PhotoBackup[], encode: Encoder = encodeImage): Promise<number> {
-  await be().clear();
-  let n = 0;
+  // Decode and rebuild every record first: a bad photo or a thumbnail failure must not leave this device with its
+  // photos already wiped. Photos past the device quotas (thumbnails included) are skipped rather than overfilling.
+  const recs: PhotoRec[] = [];
+  let total = 0;
+  const per = new Map<string, number>();
   for (const p of list) {
-    const bytes = b64ToBytes(p.data);
-    const blob = new Blob([bytes as BlobPart], { type: 'image/jpeg' });
+    if (recs.length >= MAX_PHOTOS) break;
+    const key = `${p.kind}:${p.ownerId}`;
+    if ((per.get(key) ?? 0) >= MAX_PER_OWNER) continue;
+    const blob = new Blob([b64ToBytes(p.data) as BlobPart], { type: 'image/jpeg' });
     let thumb: Blob = blob;
     try { thumb = (await encode(blob)).thumb; } catch { /* keep the full image as its own thumbnail */ }
-    await be().put({ id: p.id, kind: p.kind, ownerId: p.ownerId, created: p.created, w: p.w, h: p.h, bytes: blob.size + (thumb === blob ? 0 : thumb.size), blob, thumb });
-    n++;
+    const bytes = blob.size + (thumb === blob ? 0 : thumb.size);
+    if (total + bytes > MAX_TOTAL_BYTES) continue;
+    total += bytes; per.set(key, (per.get(key) ?? 0) + 1);
+    recs.push({ id: p.id, kind: p.kind, ownerId: p.ownerId, created: p.created, w: p.w, h: p.h, bytes, blob, thumb });
   }
+  await be().clear();
+  for (const r of recs) await be().put(r);
   changed();
-  return n;
+  return recs.length;
 }

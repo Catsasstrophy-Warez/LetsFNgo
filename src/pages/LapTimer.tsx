@@ -36,6 +36,11 @@ export default function LapTimer() {
   const [name, setName] = useState('');
   const [trackId, setTrackId] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  /** Choosing another track drops a sourced line (and its sectors) that belongs to the previous track. */
+  const pickTrack = (id: string) => {
+    if (id !== trackId && lineSrc) { setLine(null); setSectors([]); }
+    setTrackId(id);
+  };
   const watchId = useRef<number | null>(null);
 
   const stopWatch = () => { if (watchId.current !== null) navigator.geolocation.clearWatch(watchId.current); watchId.current = null; };
@@ -102,7 +107,7 @@ export default function LapTimer() {
         <h2>{t('lt.session')}</h2>
         <label>{t('track.track')}<input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('track.trackPh')} /></label>
         <label>{t('sfl.known')}
-          <select className="input" value={trackId} onChange={(e) => { const id = e.target.value; setTrackId(id); const tr = tracks.find((x) => x.id === id); if (tr) setName(tr.name); }}>
+          <select className="input" value={trackId} onChange={(e) => { const id = e.target.value; pickTrack(id); const tr = tracks.find((x) => x.id === id); if (tr) setName(tr.name); }}>
             <option value="">{t('sfl.pick')}</option>
             {tracks.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
           </select>
@@ -110,7 +115,7 @@ export default function LapTimer() {
         {hint && (
           <p className="muted" role="status">
             {t('lt.near', { name: hint.track.name, d: fmtQty('distance', hint.distM / 1609.344, u, 1) })}{' '}
-            <button className="link-btn" onClick={() => { setName(hint.track.name); setTrackId(hint.track.id); }}>{t('lt.useName')}</button> <Cite c={hint.track.confidence} url={hint.track.source} />
+            <button className="link-btn" onClick={() => { setName(hint.track.name); pickTrack(hint.track.id); }}>{t('lt.useName')}</button> <Cite c={hint.track.confidence} url={hint.track.source} />
             <br /><span className="small">{t('lt.facilityNote')}</span>
           </p>
         )}

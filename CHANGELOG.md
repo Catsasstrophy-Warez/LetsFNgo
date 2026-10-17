@@ -3,6 +3,13 @@
 All notable changes to GT500 Companion, newest first. Research notes for each round live in
 `research_notes/Shelby GT500 2020 to 2022/`.
 
+## Round 13 — OBD-II, trainers and planning
+- OBD-II live gauges over Web Bluetooth (BLE ELM327), with supported-PID detection, boost from MAP − baro, session CSV and an attach-to-log summary. Read-only by construction (no Mode 04). Demo mode clearly labelled.
+- Read-only trouble-code viewer (Mode 03/07, P/C/B/U decoding; descriptions not included, generic lookup link).
+- Drag tree trainer (sportsman .5 / pro .4, red lights, stats); offline "Ask the data" over sourced facts; track day planner with packing lists and `.ics`; backup schema v9.
+- Competitor prices by model year from round 11 research; `dist/.preview-manifest.json` for tooling.
+- Fixes: photo restore no longer wipes existing photos on a bad file and respects quotas; checklist item id collisions; the lap timer drops a sourced line when the track changes.
+
 ## Round 12 — track tools and OpenStreetMap lines
 - Track map: GPS sessions drawn as an SVG map colored by speed, with sector table and theoretical best.
 - Photo attachments on service, mods and track sessions (IndexedDB, size quotas); backup schema v8 with optional photos.

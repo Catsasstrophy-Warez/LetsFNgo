@@ -33,6 +33,16 @@ export default function Compare() {
             <p>{c.verdict}</p>
             <Cite c={c.confidence} url={c.source} />
             {c.note && <Note>{c.note}</Note>}
+            {c.prices && (
+              <details className="sub">
+                <summary>{t('cmp.pricesByYear', { n: c.prices.length })}</summary>
+                <ul className="rows small">
+                  {c.prices.map((p, i) => (
+                    <li key={i}><strong>MY{p.modelYear} {n(p.value, '$')}</strong>{p.destinationIncluded === true ? ` · ${t('cmp.inclDest')}` : p.destinationIncluded === false ? ` · ${t('cmp.exclDest')}` : ''} — {p.context} <Cite c={p.confidence} url={p.source} />{p.note && <div className="muted">{p.note}</div>}</li>
+                  ))}
+                </ul>
+              </details>
+            )}
           </article>
         ))}
       </div>

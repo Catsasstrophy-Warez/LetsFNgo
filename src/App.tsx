@@ -59,6 +59,10 @@ export const PAGES = {
   Help: () => import('./pages/Help'),
   Coverage: () => import('./pages/Coverage'),
   LapTimer: () => import('./pages/LapTimer'),
+  Obd: () => import('./pages/Obd'),
+  Tree: () => import('./pages/Tree'),
+  Ask: () => import('./pages/Ask'),
+  TrackDays: () => import('./pages/TrackDays'),
 };
 /** Dev-only component gallery: `import.meta.env.DEV` is false in production, so the chunk is never built. */
 const Gallery = import.meta.env.DEV ? lazy(() => import('./pages/Gallery')) : null;
@@ -72,6 +76,7 @@ const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
   '/welcome': PAGES.Welcome, '/dyno': PAGES.Dyno, '/tires': PAGES.Tires, '/share': PAGES.Share, '/parts': PAGES.Parts,
   '/report': PAGES.Report, '/market': PAGES.Market, '/achievements': PAGES.Achievements,
   '/editions': PAGES.Editions, '/history': PAGES.History, '/help': PAGES.Help, '/coverage': PAGES.Coverage,
+  '/obd': PAGES.Obd, '/tree': PAGES.Tree, '/ask': PAGES.Ask, '/trackdays': PAGES.TrackDays,
   '/guides': () => Promise.all([PAGES.Guides(), PAGES.Guide()]),
 };
 const L = Object.fromEntries(Object.entries(PAGES).map(([k, f]) => [k, lazy(f as () => Promise<{ default: () => JSX.Element }>)])) as Record<keyof typeof PAGES, React.LazyExoticComponent<() => JSX.Element>>;
@@ -94,11 +99,14 @@ export const NAV = [
   { to: '/timeline', label: 'Ownership Timeline', key: 'nav.timeline' as MsgKey },
   { to: '/report', label: 'Service History Report', key: 'nav.report' as MsgKey },
   { to: '/achievements', label: 'Achievements', key: 'nav.achievements' as MsgKey },
+  { to: '/trackdays', label: 'Track Day Planner', key: 'nav.trackdays' as MsgKey },
   { to: '/track', label: 'Track Day Log', key: 'nav.track' as MsgKey },
   { to: '/timer', label: 'Session Timer', key: 'nav.timer' as MsgKey },
   { to: '/drag', label: 'Drag Strip Log', key: 'nav.drag' as MsgKey },
+  { to: '/tree', label: 'Drag Tree Trainer', key: 'nav.tree' as MsgKey },
   { to: '/gps', label: 'GPS Meter (approx.)', key: 'nav.gps' as MsgKey },
   { to: '/laptimer', label: 'GPS Lap Timer', key: 'nav.laptimer' as MsgKey },
+  { to: '/obd', label: 'OBD-II Gauges', key: 'nav.obd' as MsgKey },
   { to: '/fuel', label: 'Fuel & Cost', key: 'nav.fuel' as MsgKey },
   { to: '/dyno', label: 'Dyno Log', key: 'nav.dyno' as MsgKey },
   { to: '/tires', label: 'Tire & Wheel Calc', key: 'nav.tires' as MsgKey },
@@ -113,6 +121,7 @@ export const NAV = [
   { to: '/community', label: 'Community', key: 'nav.community' as MsgKey },
   { to: '/quiz', label: 'Trivia Quiz', key: 'nav.quiz' as MsgKey },
   { to: '/print', label: 'Print Spec Sheet', key: 'nav.print' as MsgKey },
+  { to: '/ask', label: 'Ask the Data', key: 'nav.ask' as MsgKey },
   { to: '/sources', label: 'Sources', key: 'nav.sources' as MsgKey },
   { to: '/coverage', label: 'Data Coverage', key: 'nav.coverage' as MsgKey },
   { to: '/help', label: 'Help & Guide', key: 'nav.help' as MsgKey },
@@ -233,6 +242,10 @@ export default function App() {
           <Route path="/history" element={<L.History />} />
           <Route path="/help" element={<L.Help />} />
           <Route path="/coverage" element={<L.Coverage />} />
+          <Route path="/obd" element={<L.Obd />} />
+          <Route path="/tree" element={<L.Tree />} />
+          <Route path="/ask" element={<L.Ask />} />
+          <Route path="/trackdays" element={<L.TrackDays />} />
           {Gallery && <Route path="/dev/gallery" element={<Gallery />} />}
           <Route path="*" element={<Home />} />
         </Routes>
