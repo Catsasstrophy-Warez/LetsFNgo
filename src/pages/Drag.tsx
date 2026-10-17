@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useCarLog } from '../components/CarContext';
 import { Link } from 'react-router';
 import { Cite, Note } from '../components/Facts';
+import { WeatherFill } from '../components/WeatherFill';
 import { UnitInput } from '../components/UnitInput';
 import { EtTrend } from '../components/Trends';
 import { useT, useUnits } from '../components/SettingsContext';
@@ -37,6 +38,7 @@ export function DaCalculator() {
         <UnitInput label={t('drag.humidity')} kind={null} value={w.humidity} onChange={(humidity) => setW({ ...w, humidity })} digits={0} />
         <UnitInput label={t('drag.elev')} kind="altitude" value={w.elevationFt} onChange={(elevationFt) => setW({ ...w, elevationFt })} digits={0} />
       </div>
+      <WeatherFill onFill={(x) => setW({ tempF: x.tempF, pressureInHg: x.stationInHg, humidity: x.humidity, elevationFt: x.elevationFt ?? w.elevationFt, pressureIsStation: true })} />
       <label className="check"><input type="checkbox" checked={w.pressureIsStation} onChange={(e) => setW({ ...w, pressureIsStation: e.target.checked })} />
         <span>{t('drag.stationNote')}</span></label>
       {r ? (
@@ -97,6 +99,7 @@ export default function Drag() {
           <UnitInput label={t('drag.rh')} kind={null} value={f.weather.humidity} onChange={setW('humidity')} digits={0} />
           <UnitInput label={t('drag.elevShort')} kind="altitude" value={f.weather.elevationFt} onChange={setW('elevationFt')} digits={0} />
         </fieldset>
+        <WeatherFill onFill={(x) => setF({ ...f, weather: { tempF: x.tempF, pressureInHg: x.stationInHg, humidity: x.humidity, elevationFt: x.elevationFt ?? f.weather.elevationFt, pressureIsStation: true } })} />
         {calc && f.da === null && <p className="muted">{t('drag.calcDa', { d: fmtQty('altitude', calc.daFt, u) })}</p>}
         <p className="muted small">{t('drag.modsSnap', { m: mods.length ? mods.join(', ') : t('drag.stockNoMods') })}</p>
         <label>{t('log.notes')}<textarea className="input" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></label>

@@ -2,10 +2,10 @@ import { collections } from '../data';
 import type { Sourced } from '../data/types';
 
 /** One sourced fact, flattened for researchers. Nested sourced values (conflicts, guide steps…) get their own row. */
-export interface FactRow { collection: string; id: string; path: string; label: string; value: string; source: string; confidence: string; note: string }
+export interface FactRow { collection: string; id: string; path: string; label: string; value: string; source: string; originalUrl: string; confidence: string; note: string }
 
 type Obj = Record<string, unknown>;
-const SKIP = new Set(['source', 'confidence', 'note', 'swatch', 'id']);
+const SKIP = new Set(['source', 'originalUrl', 'confidence', 'note', 'swatch', 'id']);
 const NESTED = (v: unknown) => !!v && typeof v === 'object' && !Array.isArray(v) && ('source' in (v as Obj) || 'confidence' in (v as Obj));
 
 /** A readable value: scalar fields (not label/id/source) joined as "key: value". Nested sourced records are rows of their own. */
@@ -25,7 +25,7 @@ function walk(collection: string, rootId: string, path: string, o: Obj, out: Fac
   if ('source' in o) {
     const labelKey = LABELS.find((k) => typeof o[k] === 'string') ?? null;
     const s = o as unknown as Sourced;
-    out.push({ collection, id: rootId, path, label: labelKey ? String(o[labelKey]) : '', value: valueOf(o, labelKey), source: s.source, confidence: s.confidence ?? '', note: s.note ?? '' });
+    out.push({ collection, id: rootId, path, label: labelKey ? String(o[labelKey]) : '', value: valueOf(o, labelKey), source: s.source, originalUrl: s.originalUrl ?? '', confidence: s.confidence ?? '', note: s.note ?? '' });
   }
   for (const [k, v] of Object.entries(o)) {
     if (Array.isArray(v)) v.forEach((x, i) => { if (x && typeof x === 'object') walk(collection, rootId, `${path}.${k}[${i}]`, x as Obj, out); });
@@ -44,7 +44,7 @@ export function factRows(cols: Record<string, Sourced[]> = collections): FactRow
   return out;
 }
 
-const COLS: (keyof FactRow)[] = ['collection', 'id', 'path', 'label', 'value', 'source', 'confidence', 'note'];
+const COLS: (keyof FactRow)[] = ['collection', 'id', 'path', 'label', 'value', 'source', 'originalUrl', 'confidence', 'note'];
 /**
  * RFC 4180 quoting; cells starting with = + - @ (spreadsheet formulas), tab/CR/LF, or whitespace followed by a
  * formula character are prefixed with ' to stop CSV injection (some spreadsheets trim leading spaces).

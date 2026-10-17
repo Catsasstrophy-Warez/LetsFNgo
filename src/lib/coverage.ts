@@ -20,7 +20,7 @@ const ROUTES: Record<string, string> = {
   production: '/years', performance: '/performance', recalls: '/ownership', maintenance: '/ownership', vinPositions: '/vin',
   modStages: '/mods', competitors: '/compare', communities: '/community', media: '/media', photos: '/media', audio: '/media',
   dynoBaselines: '/dyno', partNumbers: '/parts', auctionResults: '/market', marketStats: '/market', editions: '/editions',
-  events: '/history', milestones: '/history', notes: '/sources',
+  events: '/history', milestones: '/history', tracks: '/laptimer', notes: '/sources',
 };
 
 export function labelOf(r: Obj): string {
@@ -28,8 +28,14 @@ export function labelOf(r: Obj): string {
   return '—';
 }
 
+const WAYBACK = /^https:\/\/web\.archive\.org\/web\/[^/]+\/(https?:\/\/.+)$/;
+/** The archived page's URL when `url` is a Wayback Machine snapshot, else null. */
+export const archivedUrl = (url: string): string | null => WAYBACK.exec(url)?.[1] ?? null;
+
+/** Display host. A Wayback snapshot is credited to the site it archives (the publisher), not web.archive.org. */
 export function hostOf(url: string): string {
-  try { return new URL(url).hostname.replace(/^www\d?\.|^www-backend\./, ''); } catch { return url; }
+  const orig = archivedUrl(url);
+  try { return new URL(orig ?? url).hostname.replace(/^www\d?\.|^www-backend\./, ''); } catch { return url; }
 }
 
 function eachSourced(v: unknown, f: (o: Obj) => void) {

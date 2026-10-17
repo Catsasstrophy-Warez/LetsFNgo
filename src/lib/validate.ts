@@ -5,6 +5,8 @@
  */
 import { DEFAULT_REMINDERS, EMPTY_GARAGE, MAX_CARS, type Car, type CarStore, type GarageState, type LogEntry, type Plan, type Reminder, type TrackSession } from './garage';
 import type { GpsRun, Timeslip } from './drag';
+import type { GpsLap, GpsSession } from './garage';
+import { MAX_SECTORS, MAX_SESSION_LAPS, MAX_TRACE_POINTS, type TimingLine, type TracePt } from './lapTimer';
 import type { FillUp } from './fuel';
 import { MAX_CURVE_POINTS, type CurvePoint, type DynoPull } from './dyno';
 
@@ -83,7 +85,49 @@ export function normTrack(v: unknown): TrackSession | null {
   const pressures = build<TrackSession['pressures']>({ fl: str(pr.fl), fr: str(pr.fr), rl: str(pr.rl), rr: str(pr.rr) });
   const t = build<Omit<TrackSession, 'pressures'>>({ id: req(v.id), date: req(v.date), track: req(v.track), conditions: str(v.conditions), airTemp: str(v.airTemp), laps: req(v.laps), notes: str(v.notes) });
   const c = carField(v);
-  return t && pressures && c ? { ...t, pressures, ...c } : null;
+  let gps: GpsSession | undefined;
+  if (v.gps !== undefined) {
+    const g = normGpsSession(v.gps);
+    if (!g) return null;
+    gps = g;
+  }
+  return t && pressures && c ? { ...t, pressures, ...c, ...(gps ? { gps } : {}) } : null;
+}
+
+const finite = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
+const isLat = (x: unknown) => finite(x) && Math.abs(x) <= 90;
+const isLon = (x: unknown) => finite(x) && Math.abs(x) <= 180;
+function normPoint(v: unknown): { lat: number; lon: number } | null {
+  return isObj(v) && isLat(v.lat) && isLon(v.lon) ? { lat: v.lat as number, lon: v.lon as number } : null;
+}
+export function normLine(v: unknown): TimingLine | null {
+  if (!isObj(v) || (v.dir !== 1 && v.dir !== -1 && v.dir !== 0)) return null;
+  const a = normPoint(v.a), b = normPoint(v.b);
+  return a && b ? { a, b, dir: v.dir } : null;
+}
+/** GPS session: lines valid, laps and trace within their caps, every number finite and in range. */
+export function normGpsSession(v: unknown): GpsSession | null {
+  if (!isObj(v) || typeof v.startIso !== 'string' || v.startIso.length > 40) return null;
+  const line = normLine(v.line);
+  if (!line || !Array.isArray(v.sectors) || v.sectors.length > MAX_SECTORS || !Array.isArray(v.laps) || v.laps.length > MAX_SESSION_LAPS || !Array.isArray(v.trace) || v.trace.length > MAX_TRACE_POINTS) return null;
+  const sectors: TimingLine[] = [];
+  for (const x of v.sectors) { const l = normLine(x); if (!l) return null; sectors.push(l); }
+  const laps: GpsLap[] = [];
+  for (const x of v.laps) {
+    if (!isObj(x) || typeof x.valid !== 'boolean' || !finite(x.n) || !finite(x.seconds) || x.seconds <= 0 || !finite(x.accuracyM) || x.accuracyM < 0 || !finite(x.startMs) || !finite(x.endMs)) return null;
+    let sec: number[] | null = null;
+    if (x.sectors !== null && x.sectors !== undefined) {
+      if (!Array.isArray(x.sectors) || x.sectors.length > MAX_SECTORS + 1 || !x.sectors.every((y) => finite(y) && y >= 0)) return null;
+      sec = [...(x.sectors as number[])];
+    }
+    laps.push({ n: x.n, seconds: x.seconds, sectors: sec, accuracyM: x.accuracyM, startMs: x.startMs, endMs: x.endMs, valid: x.valid });
+  }
+  const trace: TracePt[] = [];
+  for (const p of v.trace) {
+    if (!Array.isArray(p) || p.length !== 5 || !p.every(finite) || !isLat(p[1]) || !isLon(p[2]) || p[3] < 0 || p[4] < 0) return null;
+    trace.push([p[0], p[1], p[2], p[3], p[4]]);
+  }
+  return { startIso: v.startIso, line, sectors, laps, trace };
 }
 
 export function normSlip(v: unknown): Timeslip | null {

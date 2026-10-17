@@ -281,6 +281,42 @@
         }
       },
       "additionalProperties": false
+    },
+    "geoPoint": {
+      "type": "object",
+      "required": [
+        "lat",
+        "lon"
+      ],
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      },
+      "additionalProperties": false
+    },
+    "geoLine": {
+      "type": "object",
+      "required": [
+        "a",
+        "b"
+      ],
+      "properties": {
+        "a": {
+          "$ref": "#/$defs/geoPoint"
+        },
+        "b": {
+          "$ref": "#/$defs/geoPoint"
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

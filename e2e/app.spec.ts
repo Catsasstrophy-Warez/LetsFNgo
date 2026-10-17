@@ -8,7 +8,7 @@ const shot = async (page: Page, name: string, project: string) => { if (SHOTS) a
 
 const ROUTES = ['/', '/specs', '/years', '/colors', '/visualizer', '/packages', '/performance', '/vin', '/ownership', '/garage', '/planner',
   '/timeline', '/track', '/timer', '/drag', '/gps', '/fuel', '/gearing', '/tools', '/mods', '/compare', '/diff', '/media', '/community',
-  '/quiz', '/print', '/sources', '/settings', '/search', '/welcome', '/dyno', '/tires', '/parts', '/guides', '/guides/track-service', '/guides/dct-fluid',
+  '/quiz', '/print', '/sources', '/settings', '/search', '/laptimer', '/welcome', '/dyno', '/tires', '/parts', '/guides', '/guides/track-service', '/guides/dct-fluid',
   '/report', '/market', '/achievements', '/editions', '/history', '/help', '/parts?tab=fp', '/coverage'];
 
 /** Seed a returning user so Home does not redirect to the intro, with some data so log pages render content. */
@@ -292,7 +292,7 @@ test('sources page downloads all facts as CSV and JSON', async ({ page }) => {
   const [csv] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download CSV' }).click()]);
   expect(csv.suggestedFilename()).toMatch(/^gt500-facts-\d{4}-\d{2}-\d{2}\.csv$/);
   const text = await (await import('node:fs/promises')).readFile((await csv.path())!, 'utf8');
-  expect(text.split('\r\n')[0]).toBe('collection,id,path,label,value,source,confidence,note');
+  expect(text.split('\r\n')[0]).toBe('collection,id,path,label,value,source,originalUrl,confidence,note');
   expect(text).toContain('FL-2087');
   const [json] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download JSON' }).click()]);
   const data = JSON.parse(await (await import('node:fs/promises')).readFile((await json.path())!, 'utf8'));

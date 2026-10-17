@@ -388,3 +388,14 @@ kbd { font: 600 .8rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; border: 
 .gallery { display: grid; gap: 1rem; }
 @media (min-width: 1000px) { .gallery { grid-template-columns: 1fr 1fr; } }
 .gallery-panel { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 16px; padding: 1rem; min-width: 0; }
+/* GPS lap analysis */
+.ga-line { fill: none; stroke-width: 2; }
+.ga-c0 { stroke: var(--accent); background: var(--accent); }
+.ga-c1 { stroke: var(--ok); background: var(--ok); }
+.ga-c2 { stroke: var(--warn); background: var(--warn); }
+.ga-c3 { stroke: var(--text); background: var(--text); stroke-dasharray: 6 4; }
+.ga-key { display: inline-block; width: 1.2em; height: .35em; vertical-align: middle; border-radius: 2px; }
+.lap-pick { border: 1px solid var(--border); border-radius: 10px; display: flex; flex-wrap: wrap; gap: .25rem 1rem; }
+.search-group { margin: 1rem 0 .25rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.recent { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; }
+.rows li.active-hit { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }

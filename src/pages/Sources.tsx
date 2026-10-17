@@ -1,5 +1,6 @@
 import { allSourceUrls, REPORT_PATH } from '../data';
 import { hostOf } from '../components/Facts';
+import { archivedUrl } from '../lib/coverage';
 import { factRows, toCsv, toJson } from '../lib/factExport';
 import { today } from '../lib/garage';
 import { downloadText } from '../lib/download';
@@ -35,7 +36,7 @@ export default function Sources() {
       {Object.keys(byHost).sort().map((h) => (
         <section key={h} className="card">
           <h2 className="host">{h}</h2>
-          <ul className="srclist">{byHost[h].map((u) => <li key={u}><a href={u} target="_blank" rel="noopener noreferrer">{u}</a></li>)}</ul>
+          <ul className="srclist">{byHost[h].map((u) => <li key={u}><a href={u} target="_blank" rel="noopener noreferrer">{archivedUrl(u) ?? u}</a>{archivedUrl(u) && <span className="muted small"> — {t('src.archivedCopy')}</span>}</li>)}</ul>
         </section>
       ))}
     </>

@@ -44,7 +44,7 @@ export default function Compare() {
           <thead><tr><th>{t('cmp.model')}</th><th>hp</th><th>lb-ft</th><th>{t('cmp.weight')}</th><th>0–60</th><th>¼ mi</th><th>{t('cmp.price')}</th><th>{t('cmp.ref')}</th></tr></thead>
           <tbody>{sheets.filter((s) => all || !s.hidden).map((s) => (
             <tr key={s.model} className={s.hidden ? 'muted' : ''}><td>{s.model}{s.note && <div className="small muted">{s.note}</div>}</td><td>{n(s.hp)}</td><td>{n(s.torque)}</td><td>{n(s.weightLb, '', ' lb')}</td>
-              <td>{n(s.zeroTo60, '', ' s')}{s.zeroTo60By && <div className="small muted">{s.zeroTo60By}</div>}</td><td>{s.quarterMile ?? '—'}</td><td>{n(s.priceUsd, '$')}</td><td><Cite c={s.confidence} url={s.source} /></td></tr>
+              <td>{n(s.zeroTo60, '', ' s')}{s.zeroTo60By && <div className="small muted">{s.zeroTo60By}</div>}</td><td>{s.quarterMile ?? '—'}</td><td>{s.msrp ? <>{n(s.msrp.value, '$')}<div className="small muted">MY{s.msrp.modelYear}{s.msrp.destinationIncluded === true ? ` · ${t('cmp.inclDest')}` : s.msrp.destinationIncluded === false ? ` · ${t('cmp.exclDest')}` : ''}</div><Cite c={s.msrp.confidence} url={s.msrp.source} />{s.msrp.conflicts?.map((c, i) => <div key={i} className="small muted">{t('cmp.alsoReported')} {n(c.value, '$')} <Cite c={c.confidence} url={c.source} /></div>)}</> : n(s.priceUsd, '$')}</td><td><Cite c={s.confidence} url={s.source} /></td></tr>
           ))}</tbody>
         </table>
       </section>

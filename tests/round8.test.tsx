@@ -123,9 +123,9 @@ describe('multi-car Garage store', () => {
 describe('backup schema 6', () => {
   const v4 = { app: 'gt500-companion', schema: 4, exported: '', garage: { nickname: 'Snake', mods: [{ id: 'm', date: '2025-01-01', title: 'Tune' }] }, plans: [], track: [{ id: 't', date: '2025-01-01', track: 'VIR', laps: '' }], drag: [], fuel: [], settings: {}, onboarding: { done: true, completed: '' }, dyno: [], notify: { enabled: false, sent: {} }, dashboard: { order: [], hidden: [] } };
   it('migrates v4 → v6: single garage becomes car #1, losslessly', () => {
-    expect(SCHEMA_VERSION).toBe(6);
+    expect(SCHEMA_VERSION).toBe(7);
     const m = migrate(v4);
-    expect(m).toMatchObject({ schema: 6, cars: { active: DEFAULT_CAR_ID }, achievements: { seen: [] } });
+    expect(m).toMatchObject({ schema: 7, cars: { active: DEFAULT_CAR_ID }, achievements: { seen: [] } });
     expect('garage' in m).toBe(false);
     const r = validateBackup(v4);
     expect(r.ok && r.migratedFrom).toBe(4);
@@ -159,12 +159,12 @@ describe('backup schema 6', () => {
     expect(store.has(KEYS.garage)).toBe(false);
     expect(loadGarage().nickname).toBe('Snake');
   });
-  it('rejects malformed cars and achievements, and files newer than v6', () => {
+  it('rejects malformed cars and achievements, and files newer than v7', () => {
     const base = makeBackup(EMPTY_GARAGE, [], []);
     expect(validateBackup({ ...base, cars: { active: 'a', cars: [] } }).ok).toBe(false);
     expect(validateBackup({ ...base, cars: 'x' }).ok).toBe(false);
     expect(validateBackup({ ...base, achievements: { seen: [1] } }).ok).toBe(false);
-    expect(validateBackup({ ...base, schema: 7 }).ok).toBe(false);
+    expect(validateBackup({ ...base, schema: 8 }).ok).toBe(false);
     const bad = validateBackup({ ...v4, garage: { nickname: 5 } });
     expect(!bad.ok && bad.errors.join()).toMatch(/garage/);
   });

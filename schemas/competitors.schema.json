@@ -180,6 +180,66 @@
           "hidden": {
             "type": "boolean"
           },
+          "msrp": {
+            "type": "object",
+            "required": [
+              "modelYear",
+              "destinationIncluded",
+              "value",
+              "source",
+              "confidence"
+            ],
+            "properties": {
+              "modelYear": {
+                "type": "integer"
+              },
+              "destinationIncluded": {
+                "anyOf": [
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "source": {
+                "$ref": "#/$defs/source"
+              },
+              "confidence": {
+                "$ref": "#/$defs/confidence"
+              },
+              "context": {
+                "type": "string",
+                "minLength": 1
+              },
+              "conflicts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/numberValue"
+                },
+                "minItems": 1
+              },
+              "note": {
+                "type": "string",
+                "minLength": 1
+              },
+              "originalUrl": {
+                "$ref": "#/$defs/source"
+              }
+            },
+            "additionalProperties": false
+          },
           "note": {
             "type": "string",
             "minLength": 1
@@ -326,6 +386,42 @@
         },
         "originalUrl": {
           "$ref": "#/$defs/source"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geoPoint": {
+      "type": "object",
+      "required": [
+        "lat",
+        "lon"
+      ],
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      },
+      "additionalProperties": false
+    },
+    "geoLine": {
+      "type": "object",
+      "required": [
+        "a",
+        "b"
+      ],
+      "properties": {
+        "a": {
+          "$ref": "#/$defs/geoPoint"
+        },
+        "b": {
+          "$ref": "#/$defs/geoPoint"
         }
       },
       "additionalProperties": false

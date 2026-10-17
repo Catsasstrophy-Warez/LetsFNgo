@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { useCarLog } from '../components/CarContext';
 import { Cite, Note } from '../components/Facts';
 import { KEYS, loadTrack, today, uid, type TrackSession } from '../lib/garage';
@@ -6,6 +7,7 @@ import { formatLapTime, lapStats, parseLaps } from '../lib/laptime';
 import { REFERENCE_TRACKS, referenceLaps } from '../lib/refLaps';
 import { LapTrend } from '../components/Trends';
 import { useT } from '../components/SettingsContext';
+import { GpsAnalysis } from '../components/GpsAnalysis';
 
 const blank = (): Omit<TrackSession, 'id'> => ({ date: today(), track: '', conditions: '', airTemp: '', pressures: { fl: '', fr: '', rl: '', rr: '' }, laps: '', notes: '' });
 
@@ -36,7 +38,7 @@ export default function Track() {
   return (
     <>
       <h1>{t('nav.track')}</h1>
-      <p className="lede">{t('track.lede', { tracks: REFERENCE_TRACKS.join(' · ') })}</p>
+      <p className="lede">{t('track.lede', { tracks: REFERENCE_TRACKS.join(' · ') })} <Link to="/laptimer">{t('nav.laptimer')} →</Link></p>
       <form className="card form" onSubmit={submit} noValidate>
         <h2>{t('track.new')}</h2>
         <div className="form two">
@@ -82,6 +84,12 @@ export default function Track() {
                   ))}
                 </ul>
                 <Note>{t('track.refsNote')}</Note>
+              </>
+            )}
+            {s.gps && (
+              <>
+                <div className="sub">{t('ga.heading')} <span className="tag">{t('ga.provenance')}</span></div>
+                <GpsAnalysis gps={s.gps} name={s.track} date={s.date} />
               </>
             )}
             {s.notes && <p>{s.notes}</p>}

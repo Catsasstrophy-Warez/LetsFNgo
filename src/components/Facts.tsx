@@ -6,10 +6,12 @@ export function Badge({ c }: { c: Confidence }) {
 }
 
 export { hostOf } from '../lib/coverage';
-import { hostOf } from '../lib/coverage';
+import { archivedUrl, hostOf } from '../lib/coverage';
 
+/** Source link. An archived (Wayback) source names the original site and says it is an archived copy. */
 export function Src({ url }: { url: string }) {
-  return <a className="src" href={url} target="_blank" rel="noopener noreferrer">{hostOf(url)} ↗</a>;
+  const archived = archivedUrl(url) !== null;
+  return <a className="src" href={url} target="_blank" rel="noopener noreferrer" title={archived ? tr('src.archivedTitle', { u: archivedUrl(url) ?? '' }) : undefined}>{hostOf(url)}{archived ? ` (${tr('src.archived')})` : ''} ↗</a>;
 }
 
 /** Badge + source link. */

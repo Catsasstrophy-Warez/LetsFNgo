@@ -61,7 +61,8 @@ const ITEMS: Record<string, JsonSchema> = {
     gain: { type: 'object', required: ['whp', 'basis'], properties: { whp: num, basis: str }, additionalProperties: false },
   }),
   competitors: rec({ id: str, name: str, power: nul(str), quarterMile: nul(str), lap: nul(str), price: nul(str), verdict: str }, {
-    sheet: rec({ model: str, hp: nul(num), torque: nul(num), weightLb: nul(num), zeroTo60: nul(num), zeroTo60By: nul(str), quarterMile: nul(str), priceUsd: nul(num) }, { hidden: bool }),
+    sheet: rec({ model: str, hp: nul(num), torque: nul(num), weightLb: nul(num), zeroTo60: nul(num), zeroTo60By: nul(str), quarterMile: nul(str), priceUsd: nul(num) }, { hidden: bool,
+      msrp: sv(num, { modelYear: { type: 'integer' }, destinationIncluded: nul(bool) }, { conflicts: arr({ $ref: '#/$defs/numberValue' }, 1) }) }),
   }),
   communities: rec({ id: str, name: str, description: str }),
   media: rec({ id: str, youtubeId: { type: 'string', pattern: '^[\\w-]{11}$' }, title: str, credit: str,
@@ -88,8 +89,13 @@ const ITEMS: Record<string, JsonSchema> = {
     category: en('Body & aero', 'Engine', 'Fuel & cooling', 'Driveline', 'Appearance'), research }),
   events: rec({ id: str, kind: en('program', 'convention', 'auction'), name: str, date: nul(date), location: nul(str), research }, { dateText: str, cost: nul(str) }),
   milestones: rec({ id: str, date: nul(date), title: str, research }, { placement: nul(str) }),
+  tracks: rec({ id: str, name: str, kind: en('road course', 'drag strip', 'oval + road course', 'road course + drag strip', 'oval + road course + drag strip'), configuration: str, city: str, state: { type: 'string', pattern: '^[A-Z]{2}$' },
+    facility: nul({ $ref: '#/$defs/geoPoint' }), startFinish: nul({ $ref: '#/$defs/geoLine' }), sectors: arr({ $ref: '#/$defs/geoLine' }), lengthMi: nul(num) }, { direction: en(1, -1) }),
   notes: rec({ text: str }),
 };
+
+/** Collections that may legitimately be empty (data slots waiting for sourced records). */
+export const MAY_BE_EMPTY = new Set(['tracks']);
 
 const DEFS: Record<string, JsonSchema> = {
   source: https,
@@ -97,6 +103,8 @@ const DEFS: Record<string, JsonSchema> = {
   conflict: sv(strnum),
   numberValue: sv(num),
   stringValue: sv(str),
+  geoPoint: { type: 'object', required: ['lat', 'lon'], properties: { lat: { type: 'number', minimum: -90, maximum: 90 }, lon: { type: 'number', minimum: -180, maximum: 180 } }, additionalProperties: false },
+  geoLine: { type: 'object', required: ['a', 'b'], properties: { a: { $ref: '#/$defs/geoPoint' }, b: { $ref: '#/$defs/geoPoint' } }, additionalProperties: false },
 };
 
 /** One JSON Schema per collection (an array of records); each is self-contained (shared `$defs` copied in). */
@@ -133,6 +141,8 @@ export function validateSchema(schema: JsonSchema, v: unknown, root: JsonSchema 
     const t = typeOf(v);
     if (!types.includes(t) && !(t === 'number' && types.includes('integer') && Number.isInteger(v))) return [`${path}: expected ${types.join('|')}, got ${t}`];
     if (t === 'number' && !Number.isFinite(v)) return [`${path}: must be a finite number`];
+    if (t === 'number' && typeof schema.minimum === 'number' && (v as number) < schema.minimum) return [`${path}: must be ≥ ${schema.minimum}`];
+    if (t === 'number' && typeof schema.maximum === 'number' && (v as number) > schema.maximum) return [`${path}: must be ≤ ${schema.maximum}`];
   }
   const errs: string[] = [];
   if (typeof v === 'string') {
@@ -178,7 +188,7 @@ export function checkCollections(collections: Record<string, Sourced[]>): Issue[
     const push = (path: string, message: string) => issues.push({ collection: name, path, message });
     const schema = SCHEMAS[name];
     if (!schema) { push('$', 'no JSON Schema for this collection (add it to src/lib/dataSchema.ts)'); continue; }
-    if (!recs.length) push('$', 'collection is empty');
+    if (!recs.length && !MAY_BE_EMPTY.has(name)) push('$', 'collection is empty');
     for (const e of validateSchema(schema, recs)) { const i = e.indexOf(': '); push(e.slice(0, i), e.slice(i + 2)); }
     const ids = new Map<string, number>();
     const seen = new Map<string, number>();
@@ -195,6 +205,11 @@ export function checkCollections(collections: Record<string, Sourced[]>): Issue[
         if ('value' in s && s.value === null && !(typeof s.note === 'string' && s.note.trim())) push(`${p}.note`, 'a null value needs a note explaining the gap');
         if ('originalUrl' in s && !(typeof s.source === 'string' && s.source.startsWith('https://web.archive.org/web/') && s.source.endsWith(String(s.originalUrl)))) push(`${p}.originalUrl`, 'originalUrl is only for a Wayback snapshot source that ends with it');
       });
+      const msrp = (o.sheet as Record<string, unknown> | undefined)?.msrp as Record<string, unknown> | undefined;
+      if (msrp && Array.isArray(msrp.conflicts)) {
+        const vals = new Set([msrp.value, ...msrp.conflicts.map((c) => (c as { value?: unknown }).value)].filter((x) => x !== undefined && x !== null).map(String));
+        if (vals.size < 2) push(`${at}.sheet.msrp.conflicts`, 'a conflict needs at least two different sourced values');
+      }
       for (const k of CONFLICT_KEYS) {
         const list = o[k];
         if (list === undefined) continue;

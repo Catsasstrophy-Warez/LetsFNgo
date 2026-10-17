@@ -57,6 +57,7 @@ export const PAGES = {
   History: () => import('./pages/History'),
   Help: () => import('./pages/Help'),
   Coverage: () => import('./pages/Coverage'),
+  LapTimer: () => import('./pages/LapTimer'),
 };
 /** Dev-only component gallery: `import.meta.env.DEV` is false in production, so the chunk is never built. */
 const Gallery = import.meta.env.DEV ? lazy(() => import('./pages/Gallery')) : null;
@@ -66,7 +67,7 @@ const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
   '/vin': PAGES.Vin, '/ownership': PAGES.Ownership, '/garage': PAGES.Garage, '/mods': PAGES.Mods, '/compare': PAGES.Compare, '/media': PAGES.Media,
   '/community': PAGES.Community, '/sources': PAGES.Sources, '/search': PAGES.Search, '/gearing': PAGES.Gearing, '/tools': PAGES.PerfTools,
   '/planner': PAGES.Planner, '/track': PAGES.Track, '/settings': PAGES.Settings, '/drag': PAGES.Drag, '/fuel': PAGES.Fuel, '/visualizer': PAGES.Visualizer,
-  '/print': PAGES.PrintSheet, '/quiz': PAGES.Quiz, '/timer': PAGES.Timer, '/gps': PAGES.GpsMeter, '/timeline': PAGES.Timeline, '/diff': PAGES.YearCompare,
+  '/print': PAGES.PrintSheet, '/quiz': PAGES.Quiz, '/timer': PAGES.Timer, '/gps': PAGES.GpsMeter, '/laptimer': PAGES.LapTimer, '/timeline': PAGES.Timeline, '/diff': PAGES.YearCompare,
   '/welcome': PAGES.Welcome, '/dyno': PAGES.Dyno, '/tires': PAGES.Tires, '/share': PAGES.Share, '/parts': PAGES.Parts,
   '/report': PAGES.Report, '/market': PAGES.Market, '/achievements': PAGES.Achievements,
   '/editions': PAGES.Editions, '/history': PAGES.History, '/help': PAGES.Help, '/coverage': PAGES.Coverage,
@@ -96,6 +97,7 @@ export const NAV = [
   { to: '/timer', label: 'Session Timer', key: 'nav.timer' as MsgKey },
   { to: '/drag', label: 'Drag Strip Log', key: 'nav.drag' as MsgKey },
   { to: '/gps', label: 'GPS Meter (approx.)', key: 'nav.gps' as MsgKey },
+  { to: '/laptimer', label: 'GPS Lap Timer', key: 'nav.laptimer' as MsgKey },
   { to: '/fuel', label: 'Fuel & Cost', key: 'nav.fuel' as MsgKey },
   { to: '/dyno', label: 'Dyno Log', key: 'nav.dyno' as MsgKey },
   { to: '/tires', label: 'Tire & Wheel Calc', key: 'nav.tires' as MsgKey },
@@ -206,6 +208,7 @@ export default function App() {
           <Route path="/quiz" element={<L.Quiz />} />
           <Route path="/timer" element={<L.Timer />} />
           <Route path="/gps" element={<L.GpsMeter />} />
+          <Route path="/laptimer" element={<L.LapTimer />} />
           <Route path="/timeline" element={<L.Timeline />} />
           <Route path="/diff" element={<L.YearCompare />} />
           <Route path="/welcome" element={<L.Welcome />} />

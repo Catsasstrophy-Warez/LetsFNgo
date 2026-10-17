@@ -1,4 +1,5 @@
 import { load, save } from './storage';
+import type { TimingLine, TracePt } from './lapTimer';
 import { normCarStore, normGarage, normList, normPlan, normTrack } from './validate';
 
 export interface LogEntry { id: string; date: string; title: string; notes: string; miles?: string; cost?: string }
@@ -20,7 +21,14 @@ export interface TrackSession {
   laps: string; notes: string;
   /** Owning car (multi-car Garage). Missing means the first, migrated car (`DEFAULT_CAR_ID`). */
   carId?: string;
+  /** Present when the session was recorded by the GPS lap timer (backup schema v7). */
+  gps?: GpsSession;
 }
+
+/** One lap timed by GPS. `startMs`/`endMs` are relative to the trace start; accuracy is the worst fix in the lap (m). */
+export interface GpsLap { n: number; seconds: number; sectors: number[] | null; accuracyM: number; startMs: number; endMs: number; valid: boolean }
+/** GPS provenance of a lap-timer session: the line(s) used, every lap (refused ones flagged) and a capped trace. */
+export interface GpsSession { startIso: string; line: TimingLine; sectors: TimingLine[]; laps: GpsLap[]; trace: TracePt[] }
 
 export const KEYS = { garage: 'gt500.garage.v1', cars: 'gt500.cars.v1', plans: 'gt500.plans.v1', track: 'gt500.track.v1' } as const;
 

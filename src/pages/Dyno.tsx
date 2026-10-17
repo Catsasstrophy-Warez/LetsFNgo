@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { Cite, Note } from '../components/Facts';
+import { WeatherFill } from '../components/WeatherFill';
 import { UnitInput } from '../components/UnitInput';
 import { DynoChart } from '../components/DynoChart';
 import { useT, useUnits } from '../components/SettingsContext';
@@ -72,6 +73,7 @@ export default function Dyno() {
           <UnitInput label={t('drag.rh')} kind={null} value={f.weather.humidity} onChange={setW('humidity')} digits={0} />
           <UnitInput label={t('drag.elevShort')} kind="altitude" value={f.weather.elevationFt} onChange={setW('elevationFt')} digits={0} />
         </fieldset>
+        <WeatherFill onFill={(x) => setF({ ...f, weather: { tempF: x.tempF, pressureInHg: x.stationInHg, humidity: x.humidity, elevationFt: x.elevationFt ?? f.weather.elevationFt, pressureIsStation: true } })} />
         <label className="check"><input type="checkbox" checked={f.weather.pressureIsStation} onChange={(e) => setF({ ...f, weather: { ...f.weather, pressureIsStation: e.target.checked } })} /><span>{t('dyno.stationShort')}</span></label>
         {air && <p className="muted small">{t('dyno.factors', { sae: saeFactor(air)?.toFixed(3) ?? '—', std: stdFactor(air)?.toFixed(3) ?? '—' })}</p>}
         <label>{t('dyno.curve')}

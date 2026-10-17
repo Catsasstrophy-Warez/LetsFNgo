@@ -148,6 +148,13 @@ export interface Competitor extends Sourced {
   sheet?: CompetitorSheet;
 }
 
+/** A base MSRP with its model year and whether destination is included (null when the source does not say). */
+export interface MsrpValue extends SourcedValue<number> {
+  modelYear: number;
+  destinationIncluded: boolean | null;
+  conflicts?: SourcedValue<number>[];
+}
+
 export interface CompetitorSheet extends Sourced {
   /** Exact model the figures describe (may differ from the comparison-test car). */
   model: string;
@@ -159,6 +166,8 @@ export interface CompetitorSheet extends Sourced {
   zeroTo60By: string | null;
   quarterMile: string | null;
   priceUsd: number | null;
+  /** Base MSRP from its own source (model year may differ from the figures above). */
+  msrp?: MsrpValue;
   /** Low-quality or database-only rows: kept for transparency, hidden by default. */
   hidden?: boolean;
 }
@@ -365,4 +374,32 @@ export interface Milestone extends Sourced {
   title: string;
   placement?: string | null;
   research: ResearchLevel;
+}
+
+/** A point on a circuit, WGS84 decimal degrees. */
+export interface GeoPoint { lat: number; lon: number }
+/** A timing line between two points (start/finish or a sector split). */
+export interface GeoLine { a: GeoPoint; b: GeoPoint }
+
+/**
+ * A circuit or drag strip for the GPS lap timer. `facility` is the facility's map coordinate (a Wikipedia article
+ * point, precision roughly 1 m–1 km) — NOT a timing line. It is only used to suggest the nearest track; the owner
+ * always sets the start/finish line on-site. `startFinish` stays null until a sourced line exists.
+ */
+export interface TrackDef extends Sourced {
+  id: string;
+  name: string;
+  kind: 'road course' | 'drag strip' | 'oval + road course' | 'road course + drag strip' | 'oval + road course + drag strip';
+  configuration: string;
+  city: string;
+  state: string;
+  /** Facility point (not a start/finish line), or null when not sourced. */
+  facility: GeoPoint | null;
+  /** Start/finish line, only from a source that publishes one. Never derived from `facility`. */
+  startFinish: GeoLine | null;
+  direction?: 1 | -1;
+  /** Sector split lines in lap order. */
+  sectors: GeoLine[];
+  /** Lap / strip length in miles, or null. */
+  lengthMi: number | null;
 }

@@ -8,6 +8,7 @@ import { DEFAULT_ONBOARDING, normCarStore, normFill, normGarage, normOnboarding,
 import { ONBOARDING_KEY, loadOnboarding } from './onboarding';
 import { remove, save } from './storage';
 import { INSTALL_KEY } from './install';
+import { WEATHER_KEY } from './weather';
 import { DYNO_KEY, loadDyno, type DynoPull } from './dyno';
 import { NOTIFY_KEY, loadNotify } from './notify';
 import { DASH_KEY, DEFAULT_DASH, loadDash, normDashboard } from './dashboard';
@@ -24,11 +25,13 @@ import { DEFAULT_NOTIFY, normDyno, normNotify, type DashLayout, type NotifyPrefs
  *  5 — multi-car Garage: `garage` becomes `cars` ({ active, cars: [{ id, ...garage }] }); track, drag, fuel and dyno
  *      entries may carry `carId`. v4 files migrate losslessly to one car with id "car1" (entries without carId belong to it).
  *  6 — adds `achievements` ({ seen: [...] }, which unlocked milestones were already announced). v5 files migrate with none seen.
+ *  7 — track sessions may carry `gps` (GPS lap timer: timing lines, laps with accuracy, and a capped trace of at most
+ *      MAX_TRACE_POINTS samples). v6 files migrate unchanged (no session has GPS data). The import size cap grows to 4 MB.
  */
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 export const APP_ID = 'gt500-companion';
 /** Largest backup file accepted for import. */
-export const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
+export const MAX_IMPORT_BYTES = 4 * 1024 * 1024;
 
 export interface Backup {
   app: typeof APP_ID; schema: number; exported: string;
@@ -70,6 +73,7 @@ export function migrate(v: Obj): Obj {
     o = { ...rest, schema: 5, cars: isObj(garage) ? { active: DEFAULT_CAR_ID, cars: [{ ...garage, id: DEFAULT_CAR_ID }] } : garage === undefined ? { active: DEFAULT_CAR_ID, cars: [{ id: DEFAULT_CAR_ID }] } : garage };
   }
   if (o.schema === 5) o = { ...o, schema: 6, achievements: o.achievements ?? { seen: [] } };
+  if (o.schema === 6) o = { ...o, schema: 7 };
   return o;
 }
 
@@ -129,5 +133,5 @@ export function restoreBackup(b: Backup): boolean {
 }
 
 /** Every key this app writes. */
-export const ALL_KEYS = [KEYS.garage, KEYS.cars, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, DYNO_KEY, NOTIFY_KEY, DASH_KEY, ACH_KEY, INSTALL_KEY, 'gt500.theme'];
+export const ALL_KEYS = [WEATHER_KEY, 'gt500.recentSearches.v1' /* search.ts RECENT_KEY; not imported to keep the data index out of this chunk */, KEYS.garage, KEYS.cars, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, DYNO_KEY, NOTIFY_KEY, DASH_KEY, ACH_KEY, INSTALL_KEY, 'gt500.theme'];
 export function resetAll(): void { ALL_KEYS.forEach(remove); }

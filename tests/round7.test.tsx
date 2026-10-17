@@ -142,7 +142,7 @@ describe('fact export', () => {
     expect(csvCell('-2.25')).toBe("'-2.25");
     const rows = factRows().slice(0, 5);
     const csv = toCsv(rows);
-    expect(csv.split('\r\n')[0]).toBe('collection,id,path,label,value,source,confidence,note');
+    expect(csv.split('\r\n')[0]).toBe('collection,id,path,label,value,source,originalUrl,confidence,note');
     expect(JSON.parse(toJson(rows, 'x')).count).toBe(5);
   });
 });
