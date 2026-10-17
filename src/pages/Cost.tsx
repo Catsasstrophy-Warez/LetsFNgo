@@ -8,7 +8,7 @@ import type { MsgKey } from '../lib/i18n';
 import { usdFixed, usdWhole } from '../lib/format';
 import { activeCar, carLabel, forCar, loadCars, loadTrack } from '../lib/garage';
 import { loadFuel } from '../lib/fuel';
-import { estimate, loggedCosts, valuePoints, yearOf, type CostLine } from '../lib/cost';
+import { INSURANCE_POINTS, estimate, loggedCosts, servicePricing, valuePoints, yearOf, type CostLine } from '../lib/cost';
 import { inputsFor, loadCost, posNum, saveCost, withInputs, type CostInputs } from '../lib/costStore';
 
 type NumField = 'annualMiles' | 'years' | 'fuelPrice' | 'insurance' | 'tireSet' | 'tireLife' | 'purchasePrice';
@@ -62,6 +62,17 @@ export default function Cost() {
             </label>
           ))}
         </div>
+        {INSURANCE_POINTS.length > 0 && (
+          <div className="small" aria-labelledby="cost-ins-ref">
+            <p id="cost-ins-ref"><strong>{t('cost.insRefTitle')}</strong> <span className="muted">{t('cost.insRefNote')}</span></p>
+            <ul>
+              {INSURANCE_POINTS.map((m) => (
+                <li key={m.id}>{m.item.replace(/^Insurance data point: /, '')}: {t('cost.insRefVal', { a: usdWhole(Number(m.value)) })} <Origin o="sourced" /> <Cite c={m.confidence} url={m.source} />
+                  {m.context && <span className="muted"> — {m.context}</span>}{m.note && <div className="muted">{m.note}</div>}</li>
+              ))}
+            </ul>
+          </div>
+        )}
         {saveErr && <p className="err" role="alert">{t('cost.saveErr')}</p>}
       </section>
 
@@ -84,6 +95,11 @@ export default function Cost() {
                             onChange={(e) => { const n = num(e.target.value); const sp = { ...inp.servicePrices }; if (n === null) delete sp[l.id]; else sp[l.id] = n; commit({ ...inp, servicePrices: sp }); }} />
                         </label>
                         {l.unitPrice != null && <div>{t('cost.each', { a: usdFixed(l.unitPrice) })} <Origin o={l.priceOrigin!} /></div>}
+                        {servicePricing(l.id).parts.filter((p) => p.price).map((p) => (
+                          <div key={p.part.id} className="muted">{t(p.price!.per === 'quart' ? 'cost.partPerQt' : 'cost.partEach', { n: p.part.number, a: usdFixed(p.price!.value!), d: p.price!.dateSeen })} <Cite c={p.price!.confidence} url={p.price!.source} />
+                            {p.reason === 'no-capacity' && <> {t('cost.noCapacity')}</>}</div>
+                        ))}
+                        {l.priceOrigin !== 'sourced' && servicePricing(l.id).parts.some((p) => !p.price) && <div className="muted">{t('cost.partsUnpriced', { n: servicePricing(l.id).parts.filter((p) => !p.price).map((p) => p.part.number).join(', ') })}</div>}
                       </>}
                       {l.kind === 'fuel' && (l.mpg
                         ? <>{t('cost.mpgUsed', { m: l.mpg.value.toFixed(1) })} <Origin o={l.mpg.origin} />{l.mpg.source && <> <Cite c={l.mpg.confidence!} url={l.mpg.source} /></>}

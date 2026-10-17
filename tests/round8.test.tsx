@@ -302,7 +302,7 @@ describe('market value', () => {
     expect(pcar).toMatchObject({ outcome: 'offer', price: 85000, mileage: 100 });
     expect(priced(auctionResults).some((r) => r.id === pcar.id)).toBe(false);
     for (const r of auctionResults) expect(r.source).toMatch(/^https:\/\//);
-    expect(median(priced(filterAuctions(auctionResults, DEFAULT_FILTER)).map((r) => r.price))).toBe(94000);
+    expect(median(priced(filterAuctions(auctionResults, DEFAULT_FILTER)).map((r) => r.price))).toBe(95000); // round 15 adds the Mecum Dallas 2022 sale ($118,250)
   });
   it('round-7 medians and the DriveIndex vs ConceptCarz conflict', () => {
     const v = (id: string) => marketStats.find((s) => s.id === id)!;

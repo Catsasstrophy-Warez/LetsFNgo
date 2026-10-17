@@ -235,6 +235,16 @@ export interface DynoBaseline extends Sourced {
   date: string | null;
 }
 
+/** A retail price for a part, seen on a given date. Shown on the Cost page as a sourced price; never a default. */
+export interface PartPrice extends SourcedValue<number> {
+  /** What one `value` buys: one part, or one US quart of a fluid. */
+  per: 'each' | 'quart';
+  /** YYYY-MM-DD the price was seen. */
+  dateSeen: string;
+  /** Other sourced prices (other sellers / snapshots). */
+  conflicts?: SourcedValue<number>[];
+}
+
 /** A part number or fluid spec, only where a cited source names it. Linked back to maintenance facts and Garage reminders. */
 export interface PartNumber extends Sourced {
   id: string;
@@ -249,6 +259,8 @@ export interface PartNumber extends Sourced {
   maintenanceIds: string[];
   /** Default Garage reminder ids this part is used for. */
   reminderIds: string[];
+  /** A sourced retail price (research round 15+), only where a source gives one. */
+  price?: PartPrice;
 }
 
 /** One step of a how-to guide. Every step carries its own source and confidence. */

@@ -71,6 +71,63 @@
       "confidence": {
         "$ref": "#/$defs/confidence"
       },
+      "price": {
+        "type": "object",
+        "required": [
+          "per",
+          "dateSeen",
+          "value",
+          "source",
+          "confidence"
+        ],
+        "properties": {
+          "per": {
+            "enum": [
+              "each",
+              "quart"
+            ]
+          },
+          "dateSeen": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "$ref": "#/$defs/source"
+          },
+          "confidence": {
+            "$ref": "#/$defs/confidence"
+          },
+          "context": {
+            "type": "string",
+            "minLength": 1
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/numberValue"
+            },
+            "minItems": 1
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1
+          },
+          "originalUrl": {
+            "$ref": "#/$defs/source"
+          }
+        },
+        "additionalProperties": false
+      },
       "note": {
         "type": "string",
         "minLength": 1

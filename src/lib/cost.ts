@@ -4,15 +4,18 @@
  *    combined mpg and market medians / auction results — each with source and confidence;
  *  - user: anything the owner typed (prices, insurance, tires, fuel price, annual miles) or logged (fuel, service,
  *    mods, track sessions).
- * No part price for a scheduled service is sourced in this app, so every service is "price not sourced" unless the
- * owner types their own cost. Unpriced lines are listed but left out of the total, which then reads "at least".
+ * Part prices come from src/data (`partNumbers[].price`, research round 15). A service counts as sourced-priced only
+ * when every part it uses is priced and every fluid quantity is a single sourced number; otherwise it is "price not
+ * sourced" unless the owner types their own cost (the engine-oil capacity is a conflicting range, so the oil change
+ * stays unpriced and the per-quart price is shown as a reference). Unpriced lines are listed but left out of the total, which then reads "at least".
  * The value comparison lists sourced data points next to the purchase price; it is not a forecast and no
  * depreciation curve is applied.
  */
 import { auctionResults } from '../data/auctions';
-import { SUPP21 } from '../data/maintenance';
+import { SUPP21, maintenance } from '../data/maintenance';
+import { partNumbers } from '../data/parts';
 import { specs } from '../data/specs';
-import type { AuctionResult, Confidence, MarketStat, ModelYear, SourcedValue } from '../data/types';
+import type { AuctionResult, Confidence, MaintenanceItem, MarketStat, ModelYear, PartNumber, PartPrice, SourcedValue } from '../data/types';
 import { marketStats } from '../data/auctions';
 import { DEFAULT_REMINDERS, type LogEntry, type Reminder } from './garage';
 import type { FillUp } from './fuel';
@@ -27,11 +30,58 @@ export interface ScheduledService { id: string; item: string; everyMiles: number
 /** The sourced normal schedule (same intervals as the default Garage reminders). */
 export const SCHEDULE: ScheduledService[] = DEFAULT_REMINDERS.map((r: Reminder) => ({ id: r.id, item: r.item, everyMiles: r.everyMiles, everyMonths: r.everyMonths, source: SUPP21, confidence: 'reported' as Confidence }));
 
+/** Fluid capacity (maintenance fact id) used to turn a per-quart price into a per-service quantity. */
+export const CAPACITY_FACT: Record<string, string> = { 'xo-5w50-qgt': 'oil-cap' };
+
+/** A single sourced quantity in quarts from a maintenance fact, or null when it is missing, a range or text. */
+export function sourcedQuarts(fact: MaintenanceItem | undefined): { qt: number; source: string; confidence: Confidence } | null {
+  if (!fact || fact.unit !== 'qt') return null;
+  const v = fact.value;
+  const n = typeof v === 'number' ? v : typeof v === 'string' && /^\d+(\.\d+)?$/.test(v.trim()) ? Number(v) : null;
+  return n !== null && n > 0 ? { qt: n, source: fact.source, confidence: fact.confidence } : null;
+}
+
+const RANK: Confidence[] = ['unverified', 'reported', 'confirmed'];
+const lowest = (cs: Confidence[]): Confidence => cs.reduce((a, c) => (RANK.indexOf(c) < RANK.indexOf(a) ? c : a), 'confirmed' as Confidence);
+
+/** One part of a service with its sourced price (null when unpriced) and why. */
+export interface ServicePart { part: PartNumber; price: PartPrice | null; qty: number | null; cost: number | null; reason: 'priced' | 'no-price' | 'no-capacity' }
+export interface ServicePricing { id: string; parts: ServicePart[]; price: SourcedValue<number> | null }
+
 /**
- * Sourced part / service prices by service id. Empty: no cited source in src/data gives a price for any scheduled
- * service. Add an entry only with a source; the page then uses it and labels it as sourced.
+ * Sourced price of one occurrence of a service: the sum of its parts (kind 'part' linked by reminder id). Priced only
+ * when the service has parts, every part has a sourced price, and every per-quart fluid has a single sourced capacity.
+ * Confidence is the lowest among the prices and capacities used.
  */
-export const SOURCED_SERVICE_PRICES: Record<string, SourcedValue<number>> = {};
+export function servicePricing(id: string, parts: PartNumber[] = partNumbers, facts: MaintenanceItem[] = maintenance): ServicePricing {
+  const used = parts.filter((p) => p.kind === 'part' && p.reminderIds.includes(id));
+  const sp: ServicePart[] = used.map((part) => {
+    const price = part.price && part.price.value !== null ? part.price : null;
+    if (!price) return { part, price: null, qty: null, cost: null, reason: 'no-price' };
+    if (price.per === 'each') return { part, price, qty: 1, cost: price.value as number, reason: 'priced' };
+    const cap = sourcedQuarts(facts.find((f) => f.id === CAPACITY_FACT[part.id]));
+    return cap ? { part, price, qty: cap.qt, cost: (price.value as number) * cap.qt, reason: 'priced' } : { part, price, qty: null, cost: null, reason: 'no-capacity' };
+  });
+  if (!sp.length || sp.some((p) => p.cost === null)) return { id, parts: sp, price: null };
+  const confs = sp.map((p) => p.price!.confidence);
+  for (const p of sp) if (p.price!.per === 'quart') confs.push(sourcedQuarts(facts.find((f) => f.id === CAPACITY_FACT[p.part.id]))!.confidence);
+  const value = Math.round(sp.reduce((a, p) => a + (p.cost as number), 0) * 100) / 100;
+  return { id, parts: sp, price: { value, source: sp[0].price!.source, confidence: lowest(confs), context: sp.map((p) => p.part.number).join(' + ') } };
+}
+
+/**
+ * Sourced service prices by service id, built from the part prices in src/data. A service is listed only when it is
+ * fully priced (see servicePricing); the page then uses it and labels it as sourced.
+ */
+export function sourcedServicePrices(schedule: ScheduledService[] = SCHEDULE, parts: PartNumber[] = partNumbers, facts: MaintenanceItem[] = maintenance): Record<string, SourcedValue<number>> {
+  const out: Record<string, SourcedValue<number>> = {};
+  for (const s of schedule) { const p = servicePricing(s.id, parts, facts).price; if (p) out[s.id] = p; }
+  return out;
+}
+export const SOURCED_SERVICE_PRICES: Record<string, SourcedValue<number>> = sourcedServicePrices();
+
+/** Sourced insurance data points (reference only; never used as the insurance input). */
+export const INSURANCE_POINTS: MaintenanceItem[] = maintenance.filter((m) => m.id.startsWith('ins-'));
 
 export interface CostLine {
   id: string;
