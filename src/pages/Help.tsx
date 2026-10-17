@@ -9,7 +9,7 @@ const TOOLS: [string, string][] = [
   ['/specs', 'specs'], ['/vin', 'vin'], ['/editions', 'editions'], ['/history', 'history'], ['/market', 'market'], ['/garage', 'garage'],
   ['/report', 'report'], ['/planner', 'planner'], ['/track', 'track'], ['/timer', 'timer'], ['/drag', 'drag'], ['/gps', 'gps'], ['/laptimer', 'laptimer'], ['/obd', 'obd'], ['/tree', 'tree'], ['/trackdays', 'trackdays'], ['/ask', 'ask'], ['/dyno', 'dyno'],
   ['/fuel', 'fuel'], ['/tires', 'tires'], ['/gearing', 'gearing'], ['/parts', 'parts'], ['/guides', 'guides'], ['/timeline', 'timeline'],
-  ['/achievements', 'achievements'], ['/sources', 'sources'],
+  ['/achievements', 'achievements'], ['/sources', 'sources'], ['/diagnostics', 'diagnostics'],
 ];
 
 /** In-app user guide: what each tool does, what the confidence badges mean, privacy and backups. */

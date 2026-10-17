@@ -9,7 +9,7 @@ const shot = async (page: Page, name: string, project: string) => { if (SHOTS) a
 const ROUTES = ['/', '/specs', '/years', '/colors', '/visualizer', '/packages', '/performance', '/vin', '/ownership', '/garage', '/planner',
   '/timeline', '/track', '/timer', '/drag', '/gps', '/fuel', '/gearing', '/tools', '/mods', '/compare', '/diff', '/media', '/community',
   '/quiz', '/print', '/sources', '/settings', '/search', '/laptimer', '/welcome', '/dyno', '/tires', '/parts', '/guides', '/guides/track-service', '/guides/dct-fluid',
-  '/report', '/market', '/achievements', '/editions', '/history', '/help', '/parts?tab=fp', '/coverage'];
+  '/report', '/market', '/achievements', '/editions', '/history', '/help', '/parts?tab=fp', '/coverage', '/diagnostics'];
 
 /** Seed a returning user so Home does not redirect to the intro, with some data so log pages render content. */
 async function seed(page: Page, theme: 'dark' | 'light', lang: 'en' | 'es' = 'en') {

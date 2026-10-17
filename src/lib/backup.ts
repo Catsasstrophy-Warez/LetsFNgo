@@ -17,6 +17,7 @@ import { PTC_KEY, loadPtc, normPtc, type PtcTemplate } from './ptc';
 import { MAX_PER_OWNER, MAX_PHOTOS, MAX_TOTAL_BYTES, type PhotoBackup } from './photoLimits';
 import { MAX_EVENTS, TRACKDAYS_KEY, loadTrackDays, normTrackDay, type TrackDay } from './trackdays';
 import { TREE_KEY } from './tree';
+import { DIAG_KEY } from './diag';
 
 /**
  * Schema history:
@@ -124,6 +125,8 @@ export function validateBackup(raw: unknown): { ok: true; data: Backup; migrated
   if (!ptc) errs.push('"ptc" is malformed');
   const trackdays = strictList(v.trackdays, 'trackdays', normTrackDay, errs);
   if (trackdays.length > MAX_EVENTS) errs.push(`"trackdays" has more than ${MAX_EVENTS} events`);
+  // Two events with one id would be edited and deleted together in the planner.
+  if (new Set(trackdays.map((d) => d.id)).size !== trackdays.length) errs.push('"trackdays" repeats an event id');
   let photos: PhotoBackup[] | undefined;
   if (v.photos !== undefined) {
     photos = strictList(v.photos, 'photos', normPhotoBackup, errs);
@@ -180,5 +183,5 @@ export function restoreBackup(b: Backup): boolean {
 }
 
 /** Every key this app writes. */
-export const ALL_KEYS = [WEATHER_KEY, 'gt500.recentSearches.v1' /* search.ts RECENT_KEY; not imported to keep the data index out of this chunk */, KEYS.garage, KEYS.cars, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, DYNO_KEY, NOTIFY_KEY, DASH_KEY, ACH_KEY, INSTALL_KEY, PTC_KEY, TRACKDAYS_KEY, TREE_KEY, 'gt500.theme'];
+export const ALL_KEYS = [WEATHER_KEY, 'gt500.recentSearches.v1' /* search.ts RECENT_KEY; not imported to keep the data index out of this chunk */, KEYS.garage, KEYS.cars, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, DYNO_KEY, NOTIFY_KEY, DASH_KEY, ACH_KEY, INSTALL_KEY, PTC_KEY, TRACKDAYS_KEY, TREE_KEY, 'gt500.sflDir.v1' /* lapTimer.ts SFL_DIR_KEY; kept out of this chunk */, DIAG_KEY, 'gt500.theme'];
 export function resetAll(): void { ALL_KEYS.forEach(remove); }

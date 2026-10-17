@@ -74,6 +74,12 @@ never places a timing line from it. To contribute a start/finish line:
   of travel, for one named configuration.
 - Cite a source: the track's own map or timing documentation, or an OpenStreetMap way/node URL for the line. A line
   captured on-site with the app's "Drop line here" can be submitted as `unverified` with the date and device.
+- Direction convention: `+1` counts a crossing from the right of the segment `a→b` to its left. With `a` on the
+  left of the direction of travel (as in the OSM derivation), `+1` means "travel along the bearing". Keep the
+  derivation note's "Bearing of the way … = X deg" and "at LAT, LON lies on" wording: `tests/round14.test.tsx`
+  parses it and checks every gate with a simulated loop drive.
+- Spanish text for a record's label/note goes in `src/data/es.ts` (keyed by record id; never values, names or
+  sources). A key for a record that does not exist fails the tests.
 - Lines go in as their own record in `src/data/startFinishLines.ts` (`id`, `trackId` = the track's id in `tracks.ts`,
   `configuration`, points `a`/`b`, optional `direction` 1/−1, `sectors`, `source`, `confidence`). `npm run validate:data`
   checks coordinate ranges, that `trackId` exists, one line per track + configuration, a 3–200 m line and that it lies

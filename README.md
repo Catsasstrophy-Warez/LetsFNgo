@@ -13,7 +13,7 @@ npm install
 npm run dev        # local dev server
 npm run build      # typecheck + production build to dist/
 npm run preview    # serve the build
-npm test           # Vitest (455 tests): security regressions (report CSP/escaping, ICS control chars, CSV formula guard, prototype keys, CSP/Capacitor/SW config, https-only sources), money helpers, round-8 data slots and filters, install prompt, Editions/History/Help/Ford Performance renders and empty states, multi-car Garage + v4→v5→v6→v7 migration, GPS lap timer (synthetic circuits, jitter, gaps, direction, sectors, ghost delta), Open-Meteo parser fixtures, fuzzy search, archived-source display, .ics (escaping/folding), service report, market data/filters, achievements, shortcuts, en/es key parity and Spanish render of every page, Pages workflow triggers, VIN decoder, round-7 review regressions, i18n, parts, guides, fact export, prefetch, data integrity, tool math, DA/fuel/quiz/units, backup validation & migration, SW update flow, page render tests
+npm test           # Vitest (481 tests): security regressions (report CSP/escaping, ICS control chars, CSV formula guard, prototype keys, CSP/Capacitor/SW config, https-only sources), money helpers, round-8 data slots and filters, install prompt, Editions/History/Help/Ford Performance renders and empty states, multi-car Garage + v4→v5→v6→v7 migration, GPS lap timer (synthetic circuits, jitter, gaps, direction, sectors, ghost delta), Open-Meteo parser fixtures, fuzzy search, archived-source display, .ics (escaping/folding), service report, market data/filters, achievements, shortcuts, en/es key parity and Spanish render of every page, Pages workflow triggers, VIN decoder, round-7 review regressions, i18n, parts, guides, fact export, prefetch, data integrity, tool math, DA/fuel/quiz/units, backup validation & migration, SW update flow, page render tests
 npm run typecheck
 npm run lint
 npm run lighthouse # Lighthouse mobile preset on the built app (needs Chromium; see below)
@@ -34,6 +34,17 @@ npm run cap:android  # open Android Studio
 ```
 
 The app already works inside the WebView: `HashRouter` keeps every route after `#`, and Vite's `base: './'` makes every asset URL relative, so `capacitor://localhost` (iOS) and `https://localhost` (Android) need no rewrites. In the native wrapper (`window.Capacitor.isNativePlatform()`), `src/lib/platform.ts` skips the service worker and the offline warm-up, because the assets ship inside the app and iOS WKWebView does not support service workers. Maintenance notifications use the web Notification API and fall back to the in-app explanation where the WebView lacks it. No native plugins are used yet. The config pins `server.androidScheme: 'https'`, `cleartext: false`, an empty `allowNavigation`, `android.allowMixedContent: false`, `webContentsDebuggingEnabled: false` and `ios.limitsNavigationsToAppBoundDomains`.
+
+### Unsigned Android APK and iOS check from CI
+
+`.github/workflows/native.yml` runs only when started by hand (**Actions → Native builds (unsigned) → Run workflow**). It does two things:
+
+- **Android**: builds the web app, runs `npx cap add android`, `npx cap sync android` and `./gradlew assembleDebug` (JDK 21, Android SDK), then uploads an **unsigned debug APK** as the workflow artifact `gt500-companion-android-debug-apk`. It is kept for 14 days.
+- **iOS** (`macos-latest`): generates `ios/` and runs `npx cap sync ios` to check that the native project syncs. Nothing is built for a device and nothing is signed.
+
+To install the APK on an Android phone, download the artifact zip from the run page and unzip it. Copy the `.apk` to the phone, or run `adb install gt500-companion-debug-*.apk` with USB debugging on. Opening the file on the phone asks you to allow "Install unknown apps" for your file manager or browser. A debug build is signed only with the Android SDK's throwaway debug key, so Android may warn about it. It can't be updated over a build signed with a different key, so uninstall it first.
+
+**Store releases are not automated.** Google Play and the App Store need the owner's own release signing key/keystore, Apple certificates and provisioning profiles, and developer accounts (Google Play Console, Apple Developer Program). None of these are in this repository or its secrets, and the workflow never asks for them.
 
 ### Icons and splash screens
 
@@ -242,3 +253,19 @@ This is an independent fan project. It is not affiliated with, endorsed by or sp
   - Switching the lap timer's known track kept the previous track's sourced (OSM) line and its credit.
   - There is also a regression test that every directional OSM line counts travel along its way bearing and refuses the reverse.
 - Lighthouse (mobile, local preview): `/` 100, `/specs` 99, `/obd` 99, `/tree` 99, `/ask` 98, `/trackdays` 99, `/compare` 98, `/settings` 99 (accessibility, best practices and SEO 100 on all).
+
+## Round 14
+
+- **Direction-sign audit** (OSM start/finish lines): every sign was re-derived from scratch. Each gate's stored `a`/`b` matches the documented derivation (OSM node ± 10 m, great-circle, perpendicular to the way bearing) within 0.1 m. `a` is always on the left of travel along the way. The timer counts a crossing from the right of `a→b` to the left as +1. So "+1 = travel along the way bearing" is correct for all 8 directional lines. The non-directional Chuckwalla line counts both ways. **No sign was wrong, and no data changed.** `tests/round14.test.tsx` has a table-driven test for every line. It drives a car round a 300 m loop through the gate along the documented bearing (smoothing on, default 20 s debounce) and checks that 2 valid laps register, and that the reverse lap registers none.
+- **Flip / Either direction** (lap timer): with a sourced line in use, a one-tap control chooses **As published**, **Flip direction** or **Either direction**. The choice is remembered per line record on this device (`gt500.sflDir.v1`; device-local, not in backups, so backups stay schema v9). Flip is disabled for a line with no published direction.
+- **Spanish for data**: `src/data/es.ts` is a typed `es` overlay keyed by record id. It translates spec labels and notes, never values, units, names, quotes or sources. Missing fields fall back to English. Translated text carries a visible "traducido" tag. A test checks that every overlay key exists in the data, and the English records are untouched. (Section headings were already translated.)
+- **Native build pipeline**: a manual-only workflow builds an unsigned Android debug APK and checks the iOS sync (see "Native apps").
+- **Diagnostics** (Settings → Advanced → Diagnostics, `/diagnostics`): an opt-in, local-only field-test log for real-world testing on a phone or at a track. It is off by default. It records GPS fix accuracy, fix interval and speed, lap crossings (lap time, valid, worst accuracy, direction setting) and OBD command timings (command, status, byte count, round trip). No coordinates, VIN, device names or clock times are kept: entries are timed from when recording started. It keeps the newest 3,000 entries, shows a summary (median/95th-percentile accuracy, fix gaps, OBD errors and latency) and exports JSON. Nothing leaves the device unless you export it. `src/lib/diag.ts`.
+- **Bug fixes from a round 13 audit** (regression tests in `tests/round14.test.tsx`):
+  - OBD: an ISO 9141/KWP adapter's `BUS INIT: ...OK` line was treated as a bus error, so every reply on those protocols failed.
+  - BLE: a setup failure after the GATT connection opened (e.g. notifications refused) left the adapter connected. A drop mid-command waited for the 2.5 s timeout instead of failing at once.
+  - OBD page: a failed init or support read left the transport open, and starting again did not close the earlier connection.
+  - Tree trainer: a red light within 0.5 ms of green rounded to −0, which JSON saves as 0, so after a reload it showed as a "perfect light". It is now stored as −0.001.
+  - Ask: "1/4 mile" never matched, because normalization strips the slash. "0 to 60" is now recognized too.
+  - Track day planner and backup v9: repeated event ids are refused on import (they were edited and deleted together) and de-duplicated on load. Repeated packing-item ids keep the first.
+- Lighthouse (mobile, local preview): `/` 99, `/specs` 99, `/laptimer` 98, `/diagnostics` 98, `/settings` 99, `/obd` 98 (accessibility, best practices and SEO 100 on all).

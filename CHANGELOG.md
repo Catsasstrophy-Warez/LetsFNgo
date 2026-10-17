@@ -3,6 +3,14 @@
 All notable changes to GT500 Companion, newest first. Research notes for each round live in
 `research_notes/Shelby GT500 2020 to 2022/`.
 
+## Round 14 — direction audit, Spanish data, native CI, field-test kit
+- Direction-sign audit of all 9 OSM start/finish lines: signs re-derived independently and confirmed correct (no data change), with a table-driven loop-drive test per gate (laps forward, none in reverse).
+- Lap timer: one-tap **Flip direction** / **Either direction** for sourced lines, remembered per line on the device.
+- Spanish overlay for sourced spec labels and notes (`src/data/es.ts`), with English fallback, a visible "traducido" marker and a key-existence test.
+- Manual-only native workflow: unsigned Android debug APK artifact (Capacitor + Gradle) and an iOS `cap sync` check on macOS.
+- Opt-in, local-only Diagnostics page (Settings → Advanced) logging anonymized GPS, lap and OBD timings, with JSON export.
+- Fixes: `BUS INIT: ...OK` treated as an OBD error; BLE connection leak on setup failure and slow failure on drop; OBD transport left open after a failed init; near-zero red lights reloading as perfect lights; "1/4 mile" in Ask; duplicate track-day and packing ids.
+
 ## Round 13 — OBD-II, trainers and planning
 - OBD-II live gauges over Web Bluetooth (BLE ELM327), with supported-PID detection, boost from MAP − baro, session CSV and an attach-to-log summary. Read-only by construction (no Mode 04). Demo mode clearly labelled.
 - Read-only trouble-code viewer (Mode 03/07, P/C/B/U decoding; descriptions not included, generic lookup link).

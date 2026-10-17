@@ -39,7 +39,11 @@ export interface Result { mode: TreeMode; /** seconds; negative = red light. */ 
 export function classify(s: Schedule, tap: number, date = new Date().toISOString()): Result | null {
   const rt = (tap - s.green) / 1000;
   if (tap - s.green > TIMEOUT_MS) return null;
-  return { mode: s.mode, rt: Math.round(rt * 1000) / 1000, red: rt < 0, date };
+  const red = rt < 0;
+  // A red light under half a millisecond would round to 0.000 (or −0, which JSON stores as 0) and reload as a
+  // "perfect light"; keep it at −0.001 so the stored sign still says red.
+  const r = Math.round(rt * 1000) / 1000;
+  return { mode: s.mode, rt: red ? Math.min(r, -0.001) : r + 0, red, date };
 }
 
 export interface Stats { runs: number; reds: number; best: number | null; avg: number | null; perfect: number }

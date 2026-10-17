@@ -40,10 +40,16 @@ export function normTrackDay(v: unknown): TrackDay | null {
   const o = v as Record<string, unknown>;
   if (typeof o.id !== 'string' || !o.id || typeof o.date !== 'string' || !validDate(o.date) || typeof o.track !== 'string' || !o.track.trim()) return null;
   const end = typeof o.endDate === 'string' && validDate(o.endDate) && o.endDate >= o.date ? o.endDate : '';
-  const pack = Array.isArray(o.pack) ? o.pack.map(normPack).filter((x): x is PackItem => !!x).slice(0, MAX_PACK) : [];
+  // Repeated item ids would make one checkbox toggle several items; keep the first of each.
+  const ids = new Set<string>();
+  const pack = Array.isArray(o.pack) ? o.pack.map(normPack).filter((x): x is PackItem => !!x && !ids.has(x.id) && !!ids.add(x.id)).slice(0, MAX_PACK) : [];
   return { id: o.id.slice(0, 40), date: o.date, endDate: end, trackId: s(o.trackId, 80), track: s(o.track), group: s(o.group, 60), org: s(o.org), notes: s(o.notes, 1000), pack };
 }
-export const loadTrackDays = (): TrackDay[] => { const v = load<unknown>(TRACKDAYS_KEY, []); return Array.isArray(v) ? v.map(normTrackDay).filter((x): x is TrackDay => !!x) : []; };
+export const loadTrackDays = (): TrackDay[] => {
+  const v = load<unknown>(TRACKDAYS_KEY, []);
+  const ids = new Set<string>();
+  return Array.isArray(v) ? v.map(normTrackDay).filter((x): x is TrackDay => !!x && !ids.has(x.id) && !!ids.add(x.id)) : [];
+};
 export const saveTrackDays = (l: TrackDay[]) => save(TRACKDAYS_KEY, sortDays(l).slice(0, MAX_EVENTS));
 export const sortDays = (l: TrackDay[]) => l.slice().sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
 

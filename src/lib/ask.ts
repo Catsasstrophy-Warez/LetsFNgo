@@ -23,8 +23,9 @@ export function normQ(q: string): string {
 const RULES: [Intent, RegExp][] = [
   ['paint', /\b(paint|color|colour|pintura|codigo de color)\b/],
   ['oil', /\b(oil|aceite|lubricante)\b/],
-  ['zeroSixty', /\b0 ?-? ?60\b|\bzero to sixty\b|\b0 ?- ?100 ?km\b|\b0 a 60\b/],
-  ['quarter', /\bquarter|1 ?\/ ?4|cuarto de milla\b/],
+  ['zeroSixty', /\b0 ?-? ?60\b|\bzero to sixty\b|\b0 to 60\b|\b0 ?- ?100 ?km\b|\b0 a 60\b/],
+  // normQ turns "1/4" into "1 4" (slashes are stripped), so match that form too.
+  ['quarter', /\bquarter\b|\b1 ?\/? ?4 ?(mile|milla|mi)\b|\bcuarto de milla\b/],
   ['recalls', /\b(recalls?|retiros?|llamad[ao]s? a revision|campanas?|tsb)\b/],
   ['power', /\b(horsepower|hp|power|potencia|caballos)\b/],
   ['torque', /\b(torque|par motor)\b/],

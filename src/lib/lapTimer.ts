@@ -385,3 +385,28 @@ export function sourcedTimingLines(l: { a: LatLon; b: LatLon; direction?: 1 | -1
 export function isOsmSource(url: string): boolean {
   try { const h = new URL(url).hostname.toLowerCase(); return h === 'openstreetmap.org' || h.endsWith('.openstreetmap.org') || h === 'osm.org' || h.endsWith('.osm.org'); } catch { return false; }
 }
+
+/* ---------- per-track direction preference for sourced lines ---------- */
+
+/**
+ * How a sourced line's stored direction is applied: `stored` as published, `flipped` (the opposite direction, for a
+ * track run the other way round or a wrong sign) or `either` (both directions count; the first crossing sets it).
+ */
+export type DirPref = 'stored' | 'flipped' | 'either';
+export const SFL_DIR_KEY = 'gt500.sflDir.v1';
+const DIR_PREFS: DirPref[] = ['stored', 'flipped', 'either'];
+
+/** The timing line with a direction preference applied. A line with no stored direction (0) stays 0 unless `either`. */
+export function applyDirPref(line: TimingLine, pref: DirPref): TimingLine {
+  if (pref === 'either') return { ...line, dir: 0 };
+  if (pref === 'flipped') return { ...line, dir: line.dir === 0 ? 0 : (-line.dir as 1 | -1) };
+  return { ...line };
+}
+
+/** Stored preferences keyed by sourced-line record id; anything malformed is dropped. */
+export function normDirPrefs(v: unknown): Record<string, DirPref> {
+  const out: Record<string, DirPref> = {};
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return out;
+  for (const [k, p] of Object.entries(v as Record<string, unknown>).slice(0, 200)) if (k.length <= 120 && DIR_PREFS.includes(p as DirPref)) out[k] = p as DirPref;
+  return out;
+}

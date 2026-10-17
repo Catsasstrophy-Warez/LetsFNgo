@@ -56,7 +56,9 @@ const ERRORS: [RegExp, ElmError][] = [
 
 /** Clean an adapter reply: drop the `>` prompt, echo, `SEARCHING...`, blank lines; uppercase. Returns lines or an error. */
 export function cleanResponse(raw: string, echo?: string): { lines: string[] } | { error: ElmError } {
-  const lines = raw.replace(/>/g, '').split(/[\r\n]+/).map((l) => l.trim().toUpperCase()).filter((l) => l && !/^SEARCHING/.test(l) && l !== echo?.toUpperCase());
+  // "BUS INIT: ...OK" is the ISO 9141 / KWP init succeeding (not an error); "BUS INIT: ...ERROR" still is one.
+  const lines = raw.replace(/>/g, '').split(/[\r\n]+/).map((l) => l.trim().toUpperCase())
+    .filter((l) => l && !/^SEARCHING/.test(l) && !/^BUS ?INIT:?[ .]*OK$/.test(l) && l !== echo?.toUpperCase());
   for (const l of lines) for (const [re, e] of ERRORS) if (re.test(l.replace(/\s+/g, ' '))) return { error: e };
   if (!lines.length) return { error: 'empty' };
   return { lines };
@@ -172,12 +174,16 @@ export const EMPTY_READING: Reading = { rpm: null, speed: null, coolant: null, i
 export class ObdClient {
   supported = new Set<number>();
   sent: string[] = [];
+  /** Optional observer of every command (diagnostics): command, raw reply or null on failure, round-trip ms. */
+  onCmd?: (cmd: string, raw: string | null, ms: number) => void;
   constructor(private t: ObdTransport) {}
   get simulated() { return !!this.t.simulated; }
   async cmd(c: string): Promise<string> {
     const safe = assertReadOnly(c);
     this.sent.push(safe);
-    return this.t.send(safe);
+    if (!this.onCmd) return this.t.send(safe);
+    const t0 = Date.now();
+    try { const r = await this.t.send(safe); this.onCmd(safe, r, Date.now() - t0); return r; } catch (e) { this.onCmd(safe, null, Date.now() - t0); throw e; }
   }
   async init(): Promise<void> {
     for (const c of ELM_INIT) await this.cmd(c);

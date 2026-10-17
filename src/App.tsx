@@ -63,6 +63,7 @@ export const PAGES = {
   Tree: () => import('./pages/Tree'),
   Ask: () => import('./pages/Ask'),
   TrackDays: () => import('./pages/TrackDays'),
+  Diagnostics: () => import('./pages/Diagnostics'),
 };
 /** Dev-only component gallery: `import.meta.env.DEV` is false in production, so the chunk is never built. */
 const Gallery = import.meta.env.DEV ? lazy(() => import('./pages/Gallery')) : null;
@@ -76,7 +77,7 @@ const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
   '/welcome': PAGES.Welcome, '/dyno': PAGES.Dyno, '/tires': PAGES.Tires, '/share': PAGES.Share, '/parts': PAGES.Parts,
   '/report': PAGES.Report, '/market': PAGES.Market, '/achievements': PAGES.Achievements,
   '/editions': PAGES.Editions, '/history': PAGES.History, '/help': PAGES.Help, '/coverage': PAGES.Coverage,
-  '/obd': PAGES.Obd, '/tree': PAGES.Tree, '/ask': PAGES.Ask, '/trackdays': PAGES.TrackDays,
+  '/obd': PAGES.Obd, '/tree': PAGES.Tree, '/ask': PAGES.Ask, '/trackdays': PAGES.TrackDays, '/diagnostics': PAGES.Diagnostics,
   '/guides': () => Promise.all([PAGES.Guides(), PAGES.Guide()]),
 };
 const L = Object.fromEntries(Object.entries(PAGES).map(([k, f]) => [k, lazy(f as () => Promise<{ default: () => JSX.Element }>)])) as Record<keyof typeof PAGES, React.LazyExoticComponent<() => JSX.Element>>;
@@ -246,6 +247,7 @@ export default function App() {
           <Route path="/tree" element={<L.Tree />} />
           <Route path="/ask" element={<L.Ask />} />
           <Route path="/trackdays" element={<L.TrackDays />} />
+          <Route path="/diagnostics" element={<L.Diagnostics />} />
           {Gallery && <Route path="/dev/gallery" element={<Gallery />} />}
           <Route path="*" element={<Home />} />
         </Routes>

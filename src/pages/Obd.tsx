@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { Cite } from '../components/Facts';
 import { useT, useUnits } from '../components/SettingsContext';
 import {
-  EMPTY_READING, MAP_MAX_KPA, MAX_SAMPLES, OBD_SOURCE, OIL_TEMP_NOTE_SOURCE, ObdClient, boostKpa, demoTransport, dtcLookupUrl, samplesCsv, summarize,
+  EMPTY_READING, MAP_MAX_KPA, cleanResponse, MAX_SAMPLES, OBD_SOURCE, OIL_TEMP_NOTE_SOURCE, ObdClient, boostKpa, demoTransport, dtcLookupUrl, samplesCsv, summarize,
   type Dtc, type ObdSample, type PidKey, type Reading,
 } from '../lib/obd';
 import { bleSupport, connectBle } from '../lib/obdBle';
@@ -12,6 +12,14 @@ import { downloadText } from '../lib/download';
 import { KEYS, activeCarId, forCar, loadTrack, today } from '../lib/garage';
 import { DRAG_KEY, loadDrag } from '../lib/drag';
 import { save } from '../lib/storage';
+import { diagLog } from '../lib/diag';
+
+/** Diagnostics observer: command, reply status and byte count only (no VIN-bearing modes are allowed anyway). */
+const obdDiag = (cmd: string, raw: string | null, ms: number) => {
+  if (raw === null) return diagLog({ k: 'obd', cmd, ok: false, err: 'transport', bytes: 0, ms });
+  const c = cleanResponse(raw);
+  diagLog('error' in c ? { k: 'obd', cmd, ok: false, err: c.error, bytes: 0, ms } : { k: 'obd', cmd, ok: true, err: null, bytes: Math.floor(c.lines.join('').replace(/[^0-9A-F]/g, '').length / 2), ms });
+};
 import type { MsgKey } from '../lib/i18n';
 
 const POLL_KEYS: PidKey[] = ['rpm', 'speed', 'coolant', 'iat', 'map', 'baro', 'throttle', 'oil'];
@@ -104,10 +112,15 @@ export default function Obd() {
   const begin = async (useDemo: boolean) => {
     setErr(''); setMsg(null); setDtcs(null); setSamples([]); setReading(EMPTY_READING);
     setPhase('connecting'); setDemo(useDemo);
+    // Starting again (e.g. after an error) must not leave an earlier adapter connection open.
+    if (client.current) await stop().then(() => setPhase('connecting'));
+    let tr: Awaited<ReturnType<typeof connectBle>> | ReturnType<typeof demoTransport> | null = null;
     try {
-      const tr = useDemo ? demoTransport() : await connectBle(() => { if (alive.current) { setErr(t('obd.lost')); stop(); setPhase('error'); } });
+      tr = useDemo ? demoTransport() : await connectBle(() => { if (alive.current) { setErr(t('obd.lost')); stop(); setPhase('error'); } });
       setName(useDemo ? t('obd.demoName') : (tr as { name?: string }).name ?? '');
       const c = new ObdClient(tr);
+      c.onCmd = obdDiag;
+      diagLog({ k: 'evt', src: 'obd', ev: useDemo ? 'connect-demo' : 'connect' });
       await c.init();
       await c.readSupported();
       setSupported(new Set(POLL_KEYS.filter((k) => c.isSupported(k))));
@@ -115,6 +128,8 @@ export default function Obd() {
       setPhase('live');
       loop(c);
     } catch (e) {
+      // Init or the support read failed after the adapter connected: close it so it is not left half-open.
+      if (tr && !client.current) await tr.close().catch(() => undefined);
       setPhase('error');
       const m = e instanceof Error ? e.message : '';
       setErr(e instanceof DOMException && e.name === 'NotFoundError' ? t('obd.cancelled') : m === 'profile' ? t('obd.noProfile') : t('obd.failed'));

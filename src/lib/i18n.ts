@@ -1,7 +1,7 @@
 /**
  * Tiny typed i18n layer (no dependencies). English is the complete reference dictionary; other languages
- * may be partial and fall back to English per key. Only UI chrome is translated — sourced data facts
- * (spec values, notes, sources) stay in English so they match their citations.
+ * may be partial and fall back to English per key. This file is UI chrome only; the human-readable labels and notes of
+ * sourced facts have a separate per-record overlay (src/data/es.ts). Values, names and sources stay in English.
  */
 export type Lang = 'en' | 'es';
 export const LANGS: [Lang, string][] = [['en', 'English'], ['es', 'Español']];
@@ -22,7 +22,7 @@ export const en = {
   'settings.title': 'Settings', 'settings.units': 'Units', 'settings.imperial': 'Imperial (mi, mph, lb, °F)', 'settings.metric': 'Metric (km, km/h, kg, °C)',
   'settings.unitsNote': 'Applies to Specs, Gear & Speed, Performance Tools, Garage, Drag Strip and Fuel logs and the print sheet. Data is stored in imperial units and converted for display, so switching never changes what you logged.',
   'settings.theme': 'Theme', 'settings.dark': 'Dark', 'settings.light': 'Light', 'settings.system': 'Match device',
-  'settings.language': 'Language', 'settings.languageNote': 'Translates menus and settings. Sourced facts stay in English so they match their citations.',
+  'settings.language': 'Language', 'settings.languageNote': 'Translates menus and settings. Spec labels and notes are translated where marked “translated”; values, names and cited sources stay in English.',
   'settings.intro': 'Intro', 'settings.introText': 'Run the 3-step first-run intro again (year, color, VIN, units). It only fills values you choose.',
   'settings.introBtn': 'Run intro again', 'settings.carLink': 'Looking for your car?',
   'nav.report': 'Service History Report',
@@ -1133,7 +1133,7 @@ export const en = {
   'gal.series': "Sample series",
   'gal.note': "A note explains an unknown or a caveat.",
   'nav.laptimer': "GPS Lap Timer",
-  'help.tool.laptimer': "Time laps from your phone’s GPS: set a start/finish line on-site (or use a sourced line when one exists for your track), add sectors, see live delta to your best lap; sessions auto-save to the Track log.",
+  'help.tool.laptimer': "Time laps from your phone’s GPS: set a start/finish line on-site (or use a sourced line when one exists for your track), add sectors, see live delta to your best lap; for a sourced line you can flip the counted direction or count either direction (remembered per line); sessions auto-save to the Track log.",
   'src.archived': "archived",
   'src.archivedTitle': "Archived copy (web.archive.org) of {u}",
   'src.archivedCopy': "archived copy (web.archive.org); original link is dead",
@@ -1461,6 +1461,43 @@ export const en = {
   "pack.gloves": "Driving gloves",
   "pack.phoneMount": "Phone mount (lap timer)",
   "pack.towels": "Towels",
+  "nav.diagnostics": "Diagnostics",
+  "diag.title": "Diagnostics",
+  "diag.lede": "Field-test kit: record anonymized GPS, lap-timer and OBD-II debug logs on this phone during a real session, then export them for review.",
+  "diag.privacy": "Off by default. Nothing leaves this device: the log is stored locally and only exported when you tap Export and save the file yourself. No coordinates, VIN, device or adapter names, or clock times are recorded — only fix accuracy, intervals, speed, lap crossings and OBD command timings, timed from when recording started.",
+  "diag.recording": "Recording",
+  "diag.record": "Record diagnostics while the Lap Timer and OBD-II pages run",
+  "diag.on": "Recording is on. Open the Lap Timer or OBD-II page and use it as normal.",
+  "diag.off": "Recording is off.",
+  "diag.gps": "GPS fixes",
+  "diag.accP50": "Median accuracy",
+  "diag.accP95": "95th pct accuracy",
+  "diag.dtP50": "Median fix interval",
+  "diag.dtMax": "Longest fix gap",
+  "diag.laps": "Lap crossings",
+  "diag.obd": "OBD commands",
+  "diag.obdFail": "OBD errors",
+  "diag.obdP50": "Median OBD reply",
+  "diag.export": "Export log (.json)",
+  "diag.clear": "Clear log",
+  "diag.confirmClear": "Delete the diagnostics log on this device?",
+  "diag.exported": "Exported {n} {n|entry|entries}.",
+  "diag.recent": "Latest entries",
+  "diag.empty": "No entries yet.",
+  "diag.note": "Keeps the newest 3,000 entries. Entries are timed in seconds since recording started; the export holds the calendar day only.",
+  "settings.advanced": "Advanced",
+  "settings.diagText": "Diagnostics records anonymized GPS / OBD / lap-timer debug logs locally for field testing. Off by default.",
+  "help.tool.diagnostics": "Opt-in field-test log (Settings → Advanced): GPS fix accuracy and intervals, lap crossings and OBD reply timings, stored only on this device, with JSON export.",
+  "sfl.dir": "Counted direction",
+  "sfl.dirStored": "As published",
+  "sfl.dirFlip": "Flip direction",
+  "sfl.dirEither": "Either direction",
+  "sfl.dirAsStored": "Counting the published direction.",
+  "sfl.dirFlipped": "Counting the opposite of the published direction.",
+  "sfl.dirBoth": "Both directions count; the first crossing sets it.",
+  "sfl.dirSaved": "Remembered for this line on this device.",
+  "data.translated": "translated",
+  "data.translatedTitle": "Label or note translated from the English original; the value and the cited source are unchanged.",
 } as const;
 export type MsgKey = keyof typeof en;
 

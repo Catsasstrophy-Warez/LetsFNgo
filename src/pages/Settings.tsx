@@ -159,6 +159,11 @@ export default function Settings() {
         </ul>
       </section>
       <p className="muted small">{t('settings.carLink')} <Link to="/garage">{t('nav.garage')} →</Link></p>
+      <details className="card" id="advanced">
+        <summary>{t('settings.advanced')}</summary>
+        <p className="muted small">{t('settings.diagText')}</p>
+        <Link to="/diagnostics">{t('diag.title')} →</Link>
+      </details>
     </>
   );
 }
