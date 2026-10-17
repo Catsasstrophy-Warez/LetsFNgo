@@ -64,6 +64,18 @@ link, prefer replacing it with a web.archive.org snapshot of the same page:
 - Pick a snapshot from a date when the page still showed the cited content; don't change the record's `confidence`.
 - If no snapshot exists, keep the URL and append `source link dead as of <YYYY-MM-DD>` to the record's `note`.
 
+## Track start/finish lines
+
+Entries in `src/data/tracks.ts` carry a `facility` point (the whole venue, from Wikipedia; precision varies from
+metres to about 1 km) and `startFinish: null`. The GPS lap timer only uses `facility` to suggest a track name and
+never places a timing line from it. To contribute a start/finish line:
+
+- Give two points (lat/lon, at least 5 decimal places) that span the track at the timing line, plus the direction
+  of travel, for one named configuration.
+- Cite a source: the track's own map or timing documentation, or an OpenStreetMap way/node URL for the line. A line
+  captured on-site with the app's "Drop line here" can be submitted as `unverified` with the date and device.
+- Lines go in as their own record with `source` and `confidence`; `npm run validate:data` checks coordinate ranges.
+
 ## Code changes
 
 See the README for the dev setup. Keep `npm run typecheck`, `npm run lint`, `npm test`, `npm run validate:data`,
