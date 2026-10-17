@@ -125,7 +125,9 @@ describe('round-8 data slots', () => {
     expect(se.price).toBe(29995); expect(kr.price).toBe(127895); expect(kr.upfitPrice).toBe(54995); expect(cr.price).toBe(209995);
     expect(kr.content).toBeNull();
     expect(cr.streetLegal).toBe(false);
-    expect(kr.productionConflicts!.map((c) => c.value)).toEqual(['225 total incl. 45 overseas', '120 retrofits plus 60 new']);
+    expect(kr.productionConflicts!.map((c) => c.value)).toEqual([
+      '225 total: 180 US (60 per model year) + 45 overseas', '225 total incl. 45 overseas', '120 retrofits plus 60 new', '120 retrofits plus 60 new', '180 US cars across MY2021-2022',
+    ]);
     expect(editions.some((e) => /Super Snake/.test(e.name))).toBe(false);
     expect(editionGaps.join()).toMatch(/Super Snake/);
   });

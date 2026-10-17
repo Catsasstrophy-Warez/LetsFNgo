@@ -25,6 +25,7 @@ export const esOverlay: { specs: Record<string, FactTextEs> } = {
     shift: { label: 'Tiempo de cambio' },
     'gear-ratios': { label: 'Relaciones de marcha (1–7, R)', note: 'Hoja de producto de TREMEC, "Ratio A". Según se informa, un fragmento de búsqueda del manual del propietario de Ford coincide en 1.ª, 2.ª, 7.ª y reversa.' },
     'clutch-packs': { label: 'Paquetes de embrague DCT' },
+    'clutch-area': { label: 'Superficie de fricción del embrague DCT', note: 'Ronda 14.' },
     'clutch-rating': { label: 'Par admisible del embrague DCT', note: 'Solo publicaciones de foros; no se encontró una cifra de Ford ni de TREMEC.' },
     diff: { label: 'Diferencial' },
     launch: { label: 'Control de arranque' },

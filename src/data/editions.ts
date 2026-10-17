@@ -7,6 +7,7 @@ import type { ShelbyEdition } from './types';
 const SE = 'https://shelby.com/Vehicles/GT500-Signature-Edition';
 const KR_AUTOBLOG = 'https://www.autoblog.com/2021/12/16/ford-shelby-mustang-gt500kr-60th-anniversary/';
 const KR_MOTOR1 = 'https://www.motor1.com/news/554870/mustang-shelby-gt500kr-2020-2022/';
+const KR_SHELBY = 'https://www.shelby.com/eblasts/121521-SAI/121521-SAI.html';
 const CR = 'https://shelby.com/multimedia/News/Press-Releases/shelby-american-turns-shelby-gt500-code-red-experimental-car-into-limited-production-edition-with-up-to-1300-horsepower-1';
 
 export const editions: ShelbyEdition[] = [
@@ -24,13 +25,16 @@ export const editions: ShelbyEdition[] = [
   {
     id: 'gt500kr', name: 'Shelby GT500KR', years: '2022 (upfit available for 2020-2021 cars)', modelYears: [2020, 2021, 2022],
     hpClaim: '900+ (93 octane)', price: 127895, priceNote: 'new car, starting price', upfitPrice: 54995,
-    production: '225 total incl. 45 overseas (split disputed)',
+    production: '225 total: 180 US (60 per model year) + 45 overseas',
     productionConflicts: [
+      { value: '225 total: 180 US (60 per model year) + 45 overseas', source: KR_SHELBY, confidence: 'reported', context: 'Shelby American e-blast, 2021-12-15 (round 14)' },
       { value: '225 total incl. 45 overseas', source: KR_AUTOBLOG, confidence: 'reported' },
+      { value: '120 retrofits plus 60 new', source: KR_AUTOBLOG, confidence: 'reported', context: 'Autoblog new-versus-upgrade split (round 14)' },
       { value: '120 retrofits plus 60 new', source: KR_MOTOR1, confidence: 'unverified', note: 'The round-8 notes record this new-versus-upgrade split from search summaries of the cited KR sources without naming which one; Motor1 itself returned 502.' },
+      { value: '180 US cars across MY2021-2022', source: 'https://www.fordmuscle.com/?p=937288', confidence: 'reported', context: 'Fordmuscle (round 14)' },
     ],
-    content: null, streetLegal: null, source: KR_AUTOBLOG, confidence: 'reported', research: 'medium',
-    note: 'Production was due to start in Q1 2022; the first production car was auctioned at Barrett-Jackson in January 2022.',
+    content: null, streetLegal: null, source: KR_SHELBY, confidence: 'reported', research: 'medium',
+    note: 'No source gives a per-year completed count. Production was due to start in Q1 2022; the first production car was auctioned at Barrett-Jackson in January 2022.',
   },
   {
     id: 'code-red', name: 'Shelby GT500 Code Red', years: '2022 announcement; donors MY2020-2022', modelYears: [2020, 2021, 2022],
