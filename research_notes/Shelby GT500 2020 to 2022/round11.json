@@ -1,0 +1,155 @@
+{
+ "license": "OSM ODbL 1.0 applies to any startFinishLines entries; none added this round",
+ "startFinishLines": [],
+ "startFinishAttempt": "2026-10-17: overpass.private.coffee 500, overpass.kumi.systems 500, maps.mail.ru 504, overpass-api.de reset; no official coordinates found",
+ "competitorPrices": [
+  {
+   "model": "Camaro ZL1 coupe",
+   "modelYear": 2020,
+   "priceUsd": 63000,
+   "basis": "base MSRP excl. destination",
+   "source": "https://www.cars.com/research/chevrolet-camaro-2020/specs/407671/",
+   "confidence": "medium"
+  },
+  {
+   "model": "Camaro ZL1 convertible",
+   "modelYear": 2020,
+   "priceUsd": 69000,
+   "basis": "base MSRP excl. destination",
+   "source": "https://www.cars.com/research/chevrolet-camaro-2020/specs/407671/",
+   "confidence": "medium"
+  },
+  {
+   "model": "Camaro ZL1 coupe 6MT",
+   "modelYear": 2022,
+   "priceUsd": 64395,
+   "basis": "MSRP incl. $1,395 destination (search snippet; page 403)",
+   "source": "https://gmauthority.com/blog/2022/05/2022-chevy-camaro-gets-200-price-increase/",
+   "confidence": "medium"
+  },
+  {
+   "model": "Camaro ZL1 1LE package",
+   "modelYear": 2018,
+   "priceUsd": 7500,
+   "basis": "package price at launch; not confirmed for 2020-2022",
+   "source": "https://www.autoblog.com/tag/camaro+1le/",
+   "confidence": "high-for-2018"
+  },
+  {
+   "model": "Challenger SRT Hellcat",
+   "modelYear": 2020,
+   "priceUsd": 58995,
+   "basis": "base MSRP; destination $1,495",
+   "source": "https://www.iseecars.com/car/2020-dodge-challenger-price",
+   "confidence": "medium"
+  },
+  {
+   "model": "Challenger SRT Hellcat Redeye",
+   "modelYear": 2020,
+   "priceUsd": 70595,
+   "basis": "base MSRP",
+   "source": "https://www.iseecars.com/car/2020-dodge-challenger-price",
+   "confidence": "medium"
+  },
+  {
+   "model": "Challenger SRT Hellcat Redeye Widebody",
+   "modelYear": 2020,
+   "priceUsd": 76595,
+   "basis": "base MSRP",
+   "source": "https://www.cargurus.ca/Cars/2020-Dodge-Challenger-Value-c29713",
+   "confidence": "low-medium"
+  },
+  {
+   "model": "Challenger SRT Hellcat Redeye Widebody",
+   "modelYear": 2021,
+   "priceUsd": 81060,
+   "basis": "starting price as reported",
+   "source": "https://www.foxnews.com/auto/dodge-challenger-charger-muscle-cars-jailbreak",
+   "confidence": "medium"
+  },
+  {
+   "model": "Jailbreak package (Challenger SRT Hellcat Redeye Widebody)",
+   "modelYear": 2022,
+   "priceUsd": 995,
+   "basis": "option MSRP; Jailbreak launched for MY2022, no 2021 Jailbreak",
+   "source": "https://media.stellantisnorthamerica.com/newsrelease.do?id=23338",
+   "confidence": "high"
+  }
+ ],
+ "competitorPriceGaps": [
+  "ZL1 1LE package 2020-2022",
+  "ZL1 2022 auto/convertible",
+  "Hellcat 2021-2022",
+  "Redeye 2022"
+ ],
+ "obdPids": [
+  {
+   "mode": "01",
+   "pid": "0x0C",
+   "name": "Engine RPM",
+   "formula": "(256A+B)/4 rpm",
+   "gt500Support": "unverified-likely",
+   "confidence": "definition high; support unverified",
+   "source": "https://en.wikipedia.org/wiki/OBD-II_PIDs"
+  },
+  {
+   "mode": "01",
+   "pid": "0x0D",
+   "name": "Vehicle speed",
+   "formula": "A km/h",
+   "gt500Support": "unverified-likely",
+   "confidence": "definition high; support unverified",
+   "source": "https://en.wikipedia.org/wiki/OBD-II_PIDs"
+  },
+  {
+   "mode": "01",
+   "pid": "0x05",
+   "name": "Engine coolant temp",
+   "formula": "A-40 C",
+   "gt500Support": "unverified-likely",
+   "confidence": "definition high; support unverified",
+   "source": "https://en.wikipedia.org/wiki/OBD-II_PIDs"
+  },
+  {
+   "mode": "01",
+   "pid": "0x0F",
+   "name": "Intake air temp",
+   "formula": "A-40 C",
+   "gt500Support": "unverified-likely",
+   "confidence": "definition high; support unverified",
+   "source": "https://en.wikipedia.org/wiki/OBD-II_PIDs"
+  },
+  {
+   "mode": "01",
+   "pid": "0x0B",
+   "name": "Intake manifold absolute pressure",
+   "formula": "A kPa (max 255); boost = MAP - baro PID 0x33",
+   "gt500Support": "unverified",
+   "confidence": "definition high; support unverified",
+   "source": "https://en.wikipedia.org/wiki/OBD-II_PIDs"
+  },
+  {
+   "mode": "01",
+   "pid": "0x11",
+   "name": "Throttle position",
+   "formula": "100A/255 %",
+   "gt500Support": "unverified-likely",
+   "confidence": "definition high; support unverified",
+   "source": "https://en.wikipedia.org/wiki/OBD-II_PIDs"
+  },
+  {
+   "mode": "01",
+   "pid": "0x5C",
+   "name": "Engine oil temp",
+   "formula": "A-40 C",
+   "gt500Support": "unverified-doubtful",
+   "confidence": "low; GT350 5.2L reported no oil temp PID",
+   "source": "https://en.wikipedia.org/wiki/OBD-II_PIDs ; https://forum.hptuners.com/showthread.php?p=864663"
+  }
+ ],
+ "obdNotes": [
+  "Query PIDs 0x00/0x20/0x40/0x60 support bitmaps at connect",
+  "Ford Mode 22 enhanced PIDs need OEM definitions",
+  "BLE ELM327 caveats are general knowledge, not GT500-sourced"
+ ]
+}
