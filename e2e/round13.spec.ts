@@ -137,7 +137,8 @@ test('regression: switching the known track drops the previous track\'s sourced 
 test('compare: competitor prices by model year with sources (Spanish)', async ({ page }) => {
   await seed(page, {}, 'es');
   await goto(page, '/compare');
-  await page.getByText(/Precios por año de modelo \(3\)/).first().click();
+  // Select the ZL1 card's price list by its content rather than a row count, so adding sourced rows doesn't break it.
+  await page.locator('details').filter({ hasText: 'MY2022 $64,395' }).locator('summary', { hasText: /Precios por año de modelo \(\d+\)/ }).first().click();
   await expect(page.getByText('MY2022 $64,395')).toBeVisible();
   expect(await serious(page)).toEqual([]);
 });
