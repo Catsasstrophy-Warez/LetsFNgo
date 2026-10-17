@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { useT } from '../components/SettingsContext';
 import { tracks } from '../data/tracks';
+import { TrackNoise } from '../components/TrackNoise';
 import { today, uid } from '../lib/garage';
 import { downloadText } from '../lib/download';
 import type { MsgKey } from '../lib/i18n';
@@ -50,6 +51,7 @@ export default function TrackDays() {
         </div>
         <p className="muted small">{d.date}{d.endDate && d.endDate !== d.date ? ` – ${d.endDate}` : ''} · {n > 0 ? t('td.inDays', { n }) : n === 0 || (d.endDate && d.endDate >= td) ? t('td.today') : t('td.past')}
           {d.org && <> · {d.org}</>}{d.group && <> · {t('td.group')}: {d.group}</>}</p>
+        {(() => { const tr = tracks.find((x) => x.id === d.trackId); return tr ? <TrackNoise track={tr} /> : null; })()}
         {d.notes && <p className="small">{d.notes}</p>}
         {d.pack.length > 0 && (
           <details open={open === d.id} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open ? d.id : null)}>
@@ -82,6 +84,7 @@ export default function TrackDays() {
             {tracks.map((x) => <option key={x.id} value={x.id}>{x.name} ({x.state})</option>)}
           </select>
         </label>
+        {(() => { const sel = tracks.find((x) => x.id === f.trackId); return sel ? <TrackNoise track={sel} /> : null; })()}
         {!f.trackId && <label>{t('td.customTrack')}<input className="input" value={f.custom} maxLength={200} onChange={(e) => setF({ ...f, custom: e.target.value })} /></label>}
         <div className="grid2">
           <label>{t('td.org')}<input className="input" value={f.org} maxLength={200} onChange={(e) => setF({ ...f, org: e.target.value })} placeholder={t('td.orgPh')} /></label>

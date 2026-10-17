@@ -26,8 +26,8 @@ describe('round 15 data', () => {
     expect(t[0].note).toMatch(/dct-lines/);
     expect(recalls.find((r) => r.id === 'dct-lines')!.note).toMatch(/Corroborated by Ford TSB 24-2327/);
   });
-  it('part prices: exactly the oil and filter, with date seen and conflicts', () => {
-    expect(partNumbers.filter((p) => p.price).map((p) => p.id)).toEqual(['fl-2087', 'xo-5w50-qgt']);
+  it('part prices: the oil and filter (round 15) plus the round 16 DCT fluid and Hawk pads, with date seen and conflicts', () => {
+    expect(partNumbers.filter((p) => p.price).map((p) => p.id)).toEqual(['fl-2087', 'xo-5w50-qgt', 'xt-14-l', 'hb928b-644', 'hb928g-644', 'hb928u-644']);
     expect(byId('xo-5w50-qgt').price).toMatchObject({ value: 14.94, per: 'quart', dateSeen: '2026-10-17', confidence: 'reported' });
     expect(byId('xo-5w50-qgt').price!.conflicts!.map((c) => c.value)).toEqual([12.21, 14.18, 12.67, 16.33, 22.76, 25.95]);
     expect(byId('fl-2087').price).toMatchObject({ value: 22.79, per: 'each', confidence: 'unverified' });

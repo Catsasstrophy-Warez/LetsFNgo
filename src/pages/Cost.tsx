@@ -96,8 +96,8 @@ export default function Cost() {
                         </label>
                         {l.unitPrice != null && <div>{t('cost.each', { a: usdFixed(l.unitPrice) })} <Origin o={l.priceOrigin!} /></div>}
                         {servicePricing(l.id).parts.filter((p) => p.price).map((p) => (
-                          <div key={p.part.id} className="muted">{t(p.price!.per === 'quart' ? 'cost.partPerQt' : 'cost.partEach', { n: p.part.number, a: usdFixed(p.price!.value!), d: p.price!.dateSeen })} <Cite c={p.price!.confidence} url={p.price!.source} />
-                            {p.reason === 'no-capacity' && <> {t('cost.noCapacity')}</>}</div>
+                          <div key={p.part.id} className="muted">{t(p.price!.per === 'quart' ? 'cost.partPerQt' : p.price!.per === 'listing' ? 'cost.partListing' : 'cost.partEach', { n: p.part.number, a: usdFixed(p.price!.value!), d: p.price!.dateSeen })} <Cite c={p.price!.confidence} url={p.price!.source} />
+                            {p.reason === 'no-capacity' && <> {t('cost.noCapacity')}</>}{p.reason === 'unclear-pack' && <> {t('cost.unclearPack')}</>}</div>
                         ))}
                         {l.priceOrigin !== 'sourced' && servicePricing(l.id).parts.some((p) => !p.price) && <div className="muted">{t('cost.partsUnpriced', { n: servicePricing(l.id).parts.filter((p) => !p.price).map((p) => p.part.number).join(', ') })}</div>}
                       </>}

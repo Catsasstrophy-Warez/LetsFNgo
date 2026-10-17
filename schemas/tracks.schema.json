@@ -98,6 +98,51 @@
           -1
         ]
       },
+      "noiseLimit": {
+        "type": "object",
+        "required": [
+          "value",
+          "source",
+          "confidence"
+        ],
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source": {
+            "$ref": "#/$defs/source"
+          },
+          "confidence": {
+            "$ref": "#/$defs/confidence"
+          },
+          "context": {
+            "type": "string",
+            "minLength": 1
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/numberValue"
+            },
+            "minItems": 1
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1
+          },
+          "originalUrl": {
+            "$ref": "#/$defs/source"
+          }
+        },
+        "additionalProperties": false
+      },
       "note": {
         "type": "string",
         "minLength": 1

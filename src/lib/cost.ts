@@ -45,7 +45,7 @@ const RANK: Confidence[] = ['unverified', 'reported', 'confirmed'];
 const lowest = (cs: Confidence[]): Confidence => cs.reduce((a, c) => (RANK.indexOf(c) < RANK.indexOf(a) ? c : a), 'confirmed' as Confidence);
 
 /** One part of a service with its sourced price (null when unpriced) and why. */
-export interface ServicePart { part: PartNumber; price: PartPrice | null; qty: number | null; cost: number | null; reason: 'priced' | 'no-price' | 'no-capacity' }
+export interface ServicePart { part: PartNumber; price: PartPrice | null; qty: number | null; cost: number | null; reason: 'priced' | 'no-price' | 'no-capacity' | 'unclear-pack' }
 export interface ServicePricing { id: string; parts: ServicePart[]; price: SourcedValue<number> | null }
 
 /**
@@ -58,6 +58,7 @@ export function servicePricing(id: string, parts: PartNumber[] = partNumbers, fa
   const sp: ServicePart[] = used.map((part) => {
     const price = part.price && part.price.value !== null ? part.price : null;
     if (!price) return { part, price: null, qty: null, cost: null, reason: 'no-price' };
+    if (price.per === 'listing') return { part, price, qty: null, cost: null, reason: 'unclear-pack' };
     if (price.per === 'each') return { part, price, qty: 1, cost: price.value as number, reason: 'priced' };
     const cap = sourcedQuarts(facts.find((f) => f.id === CAPACITY_FACT[part.id]));
     return cap ? { part, price, qty: cap.qt, cost: (price.value as number) * cap.qt, reason: 'priced' } : { part, price, qty: null, cost: null, reason: 'no-capacity' };
