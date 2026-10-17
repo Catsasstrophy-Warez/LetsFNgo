@@ -36,6 +36,7 @@ const tools: SearchHit[] = [
   { title: 'Share card', text: 'share card PNG garage spec card', route: '/garage' },
   { title: 'Service history report', text: 'resale report service history print pdf odometer recalls checklist buyer', route: '/report' },
   { title: "Buyer's guide", text: 'buyer buying used pre-purchase inspection checklist vin recalls asking price sanity check comprar usado inspeccion guia del comprador', route: '/buy' },
+  { title: 'Build & sticker', text: 'build sheet window sticker monroney original msrp options packages total price configurator etiqueta de ventana precio original configuracion paquetes', route: '/build-sheet' },
   { title: 'Market value', text: 'auction results market value price mileage bring a trailer mecum barrett-jackson median', route: '/market' },
   { title: 'Achievements', text: 'achievements milestones badges first track day drag passes miles', route: '/achievements' },
   { title: 'Calendar export', text: 'ics calendar export maintenance reminders ical google apple outlook', route: '/garage' },

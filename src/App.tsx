@@ -65,6 +65,7 @@ export const PAGES = {
   TrackDays: () => import('./pages/TrackDays'),
   Diagnostics: () => import('./pages/Diagnostics'),
   Buy: () => import('./pages/Buy'),
+  BuildSheet: () => import('./pages/BuildSheet'),
 };
 /** Dev-only component gallery: `import.meta.env.DEV` is false in production, so the chunk is never built. */
 const Gallery = import.meta.env.DEV ? lazy(() => import('./pages/Gallery')) : null;
@@ -78,7 +79,7 @@ const ROUTE_LOADERS: Record<string, () => Promise<unknown>> = {
   '/welcome': PAGES.Welcome, '/dyno': PAGES.Dyno, '/tires': PAGES.Tires, '/share': PAGES.Share, '/parts': PAGES.Parts,
   '/report': PAGES.Report, '/market': PAGES.Market, '/achievements': PAGES.Achievements,
   '/editions': PAGES.Editions, '/history': PAGES.History, '/help': PAGES.Help, '/coverage': PAGES.Coverage,
-  '/obd': PAGES.Obd, '/tree': PAGES.Tree, '/ask': PAGES.Ask, '/trackdays': PAGES.TrackDays, '/diagnostics': PAGES.Diagnostics, '/buy': PAGES.Buy,
+  '/obd': PAGES.Obd, '/tree': PAGES.Tree, '/ask': PAGES.Ask, '/trackdays': PAGES.TrackDays, '/diagnostics': PAGES.Diagnostics, '/buy': PAGES.Buy, '/build-sheet': PAGES.BuildSheet,
   '/guides': () => Promise.all([PAGES.Guides(), PAGES.Guide()]),
 };
 const L = Object.fromEntries(Object.entries(PAGES).map(([k, f]) => [k, lazy(f as () => Promise<{ default: () => JSX.Element }>)])) as Record<keyof typeof PAGES, React.LazyExoticComponent<() => JSX.Element>>;
@@ -94,6 +95,7 @@ export const NAV = [
   { to: '/packages', label: 'Packages & Pricing', key: 'nav.packages' as MsgKey },
   { to: '/market', label: 'Market Value', key: 'nav.market' as MsgKey },
   { to: '/buy', label: "Buyer's Guide", key: 'nav.buy' as MsgKey },
+  { to: '/build-sheet', label: 'Build & Sticker', key: 'nav.build' as MsgKey },
   { to: '/performance', label: 'Performance', key: 'nav.performance' as MsgKey },
   { to: '/vin', label: 'VIN Decoder', key: 'nav.vin' as MsgKey },
   { to: '/ownership', label: 'Ownership', key: 'nav.ownership' as MsgKey },
@@ -251,6 +253,7 @@ export default function App() {
           <Route path="/trackdays" element={<L.TrackDays />} />
           <Route path="/diagnostics" element={<L.Diagnostics />} />
           <Route path="/buy" element={<L.Buy />} />
+          <Route path="/build-sheet" element={<L.BuildSheet />} />
           {Gallery && <Route path="/dev/gallery" element={<Gallery />} />}
           <Route path="*" element={<Home />} />
         </Routes>
