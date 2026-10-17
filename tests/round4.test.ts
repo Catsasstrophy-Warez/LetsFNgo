@@ -166,7 +166,7 @@ describe('paint visualizer', () => {
 
 describe('backup schema 2', () => {
   it('migrates v1 and round-trips v2 stores', () => {
-    expect(migrate({ schema: 1 })).toMatchObject({ schema: 9, drag: [], fuel: [], dyno: [] });
+    expect(migrate({ schema: 1 })).toMatchObject({ schema: 10, drag: [], fuel: [], dyno: [] });
     const v1 = validateBackup({ app: 'gt500-companion', schema: 1, garage: {}, plans: [], track: [] });
     expect(v1.ok && v1.migratedFrom).toBe(1);
     const b = makeBackup(EMPTY_GARAGE, [], [], [slip({ id: 'x', quarterEt: 11 })], [fill(10, 5)], { units: 'metric', theme: 'light', lang: 'en' });

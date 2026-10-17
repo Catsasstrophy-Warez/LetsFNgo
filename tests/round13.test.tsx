@@ -220,8 +220,8 @@ describe('track day planner', () => {
 
 describe('backup v9', () => {
   it('adds trackdays and migrates v8 files', () => {
-    expect(SCHEMA_VERSION).toBe(9);
-    expect(migrate({ schema: 8 })).toMatchObject({ schema: 9, trackdays: [] });
+    expect(SCHEMA_VERSION).toBe(10);
+    expect(migrate({ schema: 8 })).toMatchObject({ schema: 10, trackdays: [] });
     const b = makeBackup(EMPTY_GARAGE, [], [], [], [], undefined, undefined, undefined, { trackdays: [{ id: 'e1', date: '2026-11-07', endDate: '', trackId: '', track: 'X', group: '', org: '', notes: '', pack: [] }] });
     const r = validateBackup(JSON.parse(JSON.stringify(b)));
     expect(r.ok && r.data.trackdays.length).toBe(1);
