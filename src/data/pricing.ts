@@ -5,17 +5,18 @@ const CS22 = 'https://www.carscoops.com/?p=2394782';
 
 export const prices: PriceRecord[] = [
   { id: 'p20-base', year: 2020, label: 'Base MSRP', kind: 'msrp', value: 70300, source: JALOP, confidence: 'confirmed' },
-  { id: 'p20-dest', year: 2020, label: 'Destination', kind: 'destination', value: 1095, source: JALOP, confidence: 'confirmed' },
+  { id: 'p20-dest', year: 2020, label: 'Destination', kind: 'destination', value: 1095, source: JALOP, confidence: 'confirmed', note: 'Motor1 also lists $1,095 (motor1.com/news/370086).' },
   { id: 'p20-gg', year: 2020, label: 'Gas guzzler tax', kind: 'gas-guzzler', value: 2600, source: JALOP, confidence: 'confirmed' },
   { id: 'p20-del', year: 2020, label: 'Delivered base price', kind: 'delivered', value: 73995, source: 'https://www.motorauthority.com/news/1125770_how-the-2020-ford-mustang-shelby-gt500-tops-100-000', confidence: 'confirmed', note: 'Hagerty quoted $74,095 ($100 difference, possibly a destination change).' },
   { id: 'p20-loaded', year: 2020, label: 'Fully loaded', kind: 'delivered', value: 107080, source: 'https://www.motor1.com/news/370086/most-expensive-mustang-shelby-gt500/', confidence: 'reported' },
   { id: 'p20-cd', year: 2020, label: 'Car and Driver as-tested', kind: 'as-tested', value: 94665, source: 'https://fordauthority.com/2020/01/2020-ford-mustang-shelby-gt500-v-2019-chevrolet-camaro-zl1-1le', confidence: 'reported' },
   { id: 'p22-heritage', year: 2022, label: 'Heritage Edition base (mustangspecs)', kind: 'msrp', value: 76695, source: 'https://www.mustangspecs.com/?p=52472', confidence: 'reported', note: 'Plus $2,140 vinyl stripes or +$10,000 hand-painted stripes, per the same source.' },
-  { id: 'p21-base', year: 2021, label: 'Base MSRP', kind: 'msrp', value: 70300, source: 'https://www.autoblog.com/buy/2021-Ford-Shelby+GT500/specs/', confidence: 'reported', note: 'Autoblog and CarGurus (secondary). No sourced 2021 destination charge.' },
+  { id: 'p21-base', year: 2021, label: 'Base MSRP', kind: 'msrp', value: 70300, source: 'https://www.autoblog.com/buy/2021-Ford-Shelby+GT500/specs/', confidence: 'reported', note: 'Autoblog and CarGurus (secondary).' },
+  { id: 'p21-dest', year: 2021, label: 'Destination', kind: 'destination', value: 1195, source: 'https://fordauthority.com/2022/02/2022-ford-mustang-shelby-gt500-gets-six-percent-price-increase', confidence: 'reported', note: 'From a Ford Authority price table seen only in a search summary; the page itself returned 403.' },
   { id: 'p21-cftp', year: 2021, label: 'Example CFTP car incl. delivery & gas guzzler', kind: 'delivered', value: 97365, source: 'https://www.stlouiscarmuseum.com/vehicles/1075/2021-ford-shelby-mustang-gt500-carbon-fiber-track-pack', confidence: 'reported' },
   { id: 'p22-base', year: 2022, label: 'Base MSRP (Carscoops)', kind: 'msrp', value: 73465, source: CS22, confidence: 'reported', note: 'Conflicts with $72,900 in Heritage coverage; likely counted differently.' },
   { id: 'p22-base-alt', year: 2022, label: 'Base MSRP (Heritage coverage)', kind: 'msrp', value: 72900, source: 'https://www.thespeedjournal.com/limited-edition-2022-mustang-shelby-gt500-heritage-edition/', confidence: 'reported', note: 'Conflicts with $73,465.' },
-  { id: 'p22-dest', year: 2022, label: 'Destination', kind: 'destination', value: 1195, source: CS22, confidence: 'reported' },
+  { id: 'p22-dest', year: 2022, label: 'Destination', kind: 'destination', value: 1195, source: CS22, confidence: 'reported', note: 'Ford Authority price table (seen in a search summary only) also lists $1,195.' },
   { id: 'p22-gg', year: 2022, label: 'Gas guzzler tax', kind: 'gas-guzzler', value: 2600, source: CS22, confidence: 'reported' },
 ];
 

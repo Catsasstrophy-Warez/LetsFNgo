@@ -10,6 +10,7 @@ export const APPLY_GROUPS: { key: NonNullable<RecallIssue['appliesToGT500']>; ti
   { key: 'yes', title: 'applies to the GT500', d: 'The recall documents name the GT500 (or its DCT). Still confirm your VIN.' },
   { key: 'likely', title: 'likely applies (VIN check)', d: 'No trim exclusion and the build window covers all 2020–22 GT500 production. Confirm by VIN.' },
   { key: 'vin', title: 'depends on VIN', d: 'The documents set no trim or engine limit; only cars in the build window or software state are affected. Check your VIN.' },
+  { key: 'unknown', title: 'GT500 scope unknown', d: 'Sources disagree on whether the GT500 is covered. Check your VIN with NHTSA.' },
   { key: 'no', title: 'not applicable to the GT500', d: 'Limited to drivetrains the GT500 does not use.' },
 ];
 

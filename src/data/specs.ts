@@ -44,11 +44,13 @@ export const specs: SpecFact[] = [
   { id: 'height', system: 'Dimensions & Weight', label: 'Height', value: 54.3, unit: 'in', source: WIKI, confidence: 'confirmed' },
   {
     id: 'curb-weight', system: 'Dimensions & Weight', label: 'Curb weight', value: '4,006–4,225', unit: 'lb', source: MA_DEEP, confidence: 'reported',
-    note: 'Sources conflict. 4,225 lb has the most authoritative origin; shown as a range until a Ford spec sheet confirms one number.',
+    note: 'Sources conflict. 4,225 lb has the most authoritative origin; shown as a range until a Ford spec sheet confirms one number. No Ford-published figure found.',
     conflicts: [
       { value: 4225, source: MA_DEEP, confidence: 'reported', context: 'Dealer training manual' },
       { value: 4182, source: ENCY, confidence: 'reported', context: 'Spec databases' },
       { value: 4006, source: ENCY, confidence: 'unverified', context: 'Some listings' },
+      { value: 4225, source: 'https://www.thedrive.com/news/29420/2020-ford-mustang-shelby-gt500-weighs-223-pounds-less-than-challenger-hellcat-leak-claims', confidence: 'unverified', context: 'Leaked dealer eSourceBook; Ford declined to confirm' },
+      { value: 4080, source: 'https://www.motor1.com/news/386412/2020-shelby-gt500-weight/', confidence: 'reported', context: 'Motor1 scale weight, with Handling Package' },
     ],
   },
   { id: 'top-speed', system: 'Dimensions & Weight', label: 'Top speed', value: 180, unit: 'mph (electronically limited)', source: 'https://www.motorauthority.com/news/1125737_first-drive-review-2020-ford-mustang-shelby-gt500-boasts-drag-car-speed-road-racer-moves', confidence: 'reported' },

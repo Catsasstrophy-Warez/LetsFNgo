@@ -35,6 +35,7 @@ const tools: SearchHit[] = [
   { title: 'Maintenance reminders', text: 'service reminders interval oil change due soon overdue odometer garage', route: '/garage' },
   { title: 'Share card', text: 'share card PNG garage spec card', route: '/garage' },
   { title: 'Service history report', text: 'resale report service history print pdf odometer recalls checklist buyer', route: '/report' },
+  { title: "Buyer's guide", text: 'buyer buying used pre-purchase inspection checklist vin recalls asking price sanity check comprar usado inspeccion guia del comprador', route: '/buy' },
   { title: 'Market value', text: 'auction results market value price mileage bring a trailer mecum barrett-jackson median', route: '/market' },
   { title: 'Achievements', text: 'achievements milestones badges first track day drag passes miles', route: '/achievements' },
   { title: 'Calendar export', text: 'ics calendar export maintenance reminders ical google apple outlook', route: '/garage' },

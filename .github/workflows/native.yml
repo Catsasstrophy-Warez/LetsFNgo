@@ -27,6 +27,9 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: android-actions/setup-android@v3
+        with:
+          # The default list includes the retired 'tools' package, which current sdkmanager rejects.
+          packages: platform-tools
       - run: npm ci
       - run: npm run build
       - run: npx cap add android

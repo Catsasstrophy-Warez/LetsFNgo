@@ -65,7 +65,8 @@
           "yes",
           "likely",
           "no",
-          "vin"
+          "vin",
+          "unknown"
         ]
       },
       "evidence": {

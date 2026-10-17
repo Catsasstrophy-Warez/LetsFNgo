@@ -41,7 +41,7 @@ describe('round 2 data', () => {
   it('lists NHTSA campaigns with VIN-check framing', () => {
     const n = recalls.filter((r) => r.kind === 'nhtsa-recall');
     expect(n.length).toBe(16);
-    for (const r of n) { expect(r.campaign).toMatch(/^\d{2}V\d{6}$/); expect(r.appliesToGT500).toMatch(/^(yes|likely|no|vin)$/); }
+    for (const r of n) { expect(r.campaign).toMatch(/^\d{2}V\d{6}$/); expect(r.appliesToGT500).toMatch(/^(yes|likely|no|vin|unknown)$/); }
     expect(recalls.some((r) => r.campaign === 'ODI 11522730')).toBe(true);
   });
   it('credits every Commons photo and audio clip', () => {

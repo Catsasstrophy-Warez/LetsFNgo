@@ -57,7 +57,7 @@ const ITEMS: Record<string, JsonSchema> = {
   performance: rec({ id: str, category: en('acceleration', 'quarter-mile', 'lap', 'drag-record'), label: str, result: str,
     car: en('stock', 'stock (CFTP)', 'modified', 'Shelby American'), date: nul(date) }),
   recalls: rec({ id: str, title: str, kind: en('recall', 'nhtsa-recall', 'service-action', 'tsb', 'complaint', 'owner-report', 'vendor-claim'), campaign: nul(str), summary: str },
-    { years: str, appliesToGT500: en('yes', 'likely', 'no', 'vin'), evidence: str, buildWindow: nul(str) }),
+    { years: str, appliesToGT500: en('yes', 'likely', 'no', 'vin', 'unknown'), evidence: str, buildWindow: nul(str) }),
   maintenance: sv(strnum, { id: str, item: str, group: en('Fluids', 'Service', 'Warranty', 'Ownership') },
     { unit: str, conflicts: arr({ $ref: '#/$defs/conflict' }, 1), warning: str }),
   vinPositions: rec({ positions: str, meaning: str }),

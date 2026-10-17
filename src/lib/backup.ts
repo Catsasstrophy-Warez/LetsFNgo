@@ -18,6 +18,7 @@ import { MAX_PER_OWNER, MAX_PHOTOS, MAX_TOTAL_BYTES, type PhotoBackup } from './
 import { MAX_EVENTS, TRACKDAYS_KEY, loadTrackDays, normTrackDay, type TrackDay } from './trackdays';
 import { TREE_KEY } from './tree';
 import { DIAG_KEY } from './diag';
+import { BUYER_KEY, loadBuyer, normBuyer, type BuyerState } from './buyer';
 
 /**
  * Schema history:
@@ -37,8 +38,9 @@ import { DIAG_KEY } from './diag';
  *      MAX_IMPORT_BYTES_PHOTOS). v7 files migrate with no checklist items; a file without `photos` keeps this
  *      device's photos on import, one with `photos` replaces them.
  *  9 — adds `trackdays` (track day planner events with packing lists). v8 files migrate with no events.
+ * 10 — adds `buyer` (Buyer's guide checklist ticks: { checked: [item ids] }). v9 files migrate with nothing ticked.
  */
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 export const APP_ID = 'gt500-companion';
 /** Largest backup file accepted for import. */
 export const MAX_IMPORT_BYTES = 4 * 1024 * 1024;
@@ -48,7 +50,7 @@ export const MAX_IMPORT_BYTES_PHOTOS = 64 * 1024 * 1024;
 export interface Backup {
   app: typeof APP_ID; schema: number; exported: string;
   cars: CarStore; plans: Plan[]; track: TrackSession[]; drag: Timeslip[]; fuel: FillUp[]; settings: Settings; onboarding: Onboarding;
-  dyno: DynoPull[]; notify: NotifyPrefs; dashboard: DashLayout; achievements: AchState; ptc: PtcTemplate; trackdays: TrackDay[];
+  dyno: DynoPull[]; notify: NotifyPrefs; dashboard: DashLayout; achievements: AchState; ptc: PtcTemplate; trackdays: TrackDay[]; buyer: BuyerState;
   /** Present only in an export made with "Include photos". */
   photos?: PhotoBackup[];
 }
@@ -57,14 +59,14 @@ export interface Backup {
 export const asStore = (g: GarageState | CarStore): CarStore => ('cars' in g && Array.isArray(g.cars) ? g : { active: DEFAULT_CAR_ID, cars: [{ ...(g as GarageState), id: DEFAULT_CAR_ID }] });
 
 export function makeBackup(garage: GarageState | CarStore, plans: Plan[], track: TrackSession[], drag: Timeslip[] = [], fuel: FillUp[] = [], settings: Settings = normalizeSettings({}), exported = new Date().toISOString(), onboarding: Onboarding = { ...DEFAULT_ONBOARDING },
-  extra: { dyno?: DynoPull[]; notify?: NotifyPrefs; dashboard?: DashLayout; achievements?: AchState; ptc?: PtcTemplate; trackdays?: TrackDay[]; photos?: PhotoBackup[] } = {}): Backup {
+  extra: { dyno?: DynoPull[]; notify?: NotifyPrefs; dashboard?: DashLayout; achievements?: AchState; ptc?: PtcTemplate; trackdays?: TrackDay[]; buyer?: BuyerState; photos?: PhotoBackup[] } = {}): Backup {
   return { app: APP_ID, schema: SCHEMA_VERSION, exported, cars: asStore(garage), plans, track, drag, fuel, settings, onboarding,
     dyno: extra.dyno ?? [], notify: extra.notify ?? { ...DEFAULT_NOTIFY, sent: {} }, dashboard: extra.dashboard ?? { ...DEFAULT_DASH, order: [...DEFAULT_DASH.order] }, achievements: extra.achievements ?? { seen: [] },
-    ptc: extra.ptc ?? { items: [] }, trackdays: extra.trackdays ?? [], ...(extra.photos ? { photos: extra.photos } : {}) };
+    ptc: extra.ptc ?? { items: [] }, trackdays: extra.trackdays ?? [], buyer: extra.buyer ?? { checked: [] }, ...(extra.photos ? { photos: extra.photos } : {}) };
 }
 
 /** Everything currently stored on this device. */
-export const currentBackup = () => makeBackup(loadCars(), loadPlans(), loadTrack(), loadDrag(), loadFuel(), loadSettings(), undefined, loadOnboarding(), { dyno: loadDyno(), notify: loadNotify(), dashboard: loadDash(), achievements: loadAch(), ptc: loadPtc(), trackdays: loadTrackDays() });
+export const currentBackup = () => makeBackup(loadCars(), loadPlans(), loadTrack(), loadDrag(), loadFuel(), loadSettings(), undefined, loadOnboarding(), { dyno: loadDyno(), notify: loadNotify(), dashboard: loadDash(), achievements: loadAch(), ptc: loadPtc(), trackdays: loadTrackDays(), buyer: loadBuyer() });
 
 type Obj = Record<string, unknown>;
 const isObj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -91,6 +93,7 @@ export function migrate(v: Obj): Obj {
   if (o.schema === 6) o = { ...o, schema: 7 };
   if (o.schema === 7) o = { ...o, schema: 8, ptc: o.ptc ?? { items: [] } };
   if (o.schema === 8) o = { ...o, schema: 9, trackdays: o.trackdays ?? [] };
+  if (o.schema === 9) o = { ...o, schema: 10, buyer: o.buyer ?? { checked: [] } };
   return o;
 }
 
@@ -127,6 +130,8 @@ export function validateBackup(raw: unknown): { ok: true; data: Backup; migrated
   if (trackdays.length > MAX_EVENTS) errs.push(`"trackdays" has more than ${MAX_EVENTS} events`);
   // Two events with one id would be edited and deleted together in the planner.
   if (new Set(trackdays.map((d) => d.id)).size !== trackdays.length) errs.push('"trackdays" repeats an event id');
+  const buyer = normBuyer(v.buyer);
+  if (!buyer) errs.push('"buyer" is malformed');
   let photos: PhotoBackup[] | undefined;
   if (v.photos !== undefined) {
     photos = strictList(v.photos, 'photos', normPhotoBackup, errs);
@@ -146,7 +151,7 @@ export function validateBackup(raw: unknown): { ok: true; data: Backup; migrated
     ok: true, migratedFrom: from < SCHEMA_VERSION ? from : null,
     data: { app: APP_ID, schema: SCHEMA_VERSION, exported: typeof v.exported === 'string' ? v.exported : '', cars: cars ?? { active: DEFAULT_CAR_ID, cars: [{ ...EMPTY_GARAGE, id: DEFAULT_CAR_ID }] }, plans, track: home(track), drag: home(drag), fuel: home(fuel), settings: normalizeSettings(v.settings), onboarding: onboarding ?? { ...DEFAULT_ONBOARDING },
       dyno: home(dyno), notify: notify ?? { ...DEFAULT_NOTIFY, sent: {} }, dashboard: dashboard ?? { ...DEFAULT_DASH }, achievements: achievements ?? { seen: [] },
-      ptc: ptc ?? { items: [] }, trackdays, ...(photos ? { photos } : {}) },
+      ptc: ptc ?? { items: [] }, trackdays, buyer: buyer ?? { checked: [] }, ...(photos ? { photos } : {}) },
   };
 }
 
@@ -178,10 +183,10 @@ export function restoreBackup(b: Backup): boolean {
   return [
     save(KEYS.cars, b.cars), save(KEYS.plans, b.plans), save(KEYS.track, b.track),
     save(DRAG_KEY, b.drag), save(FUEL_KEY, b.fuel), save(SETTINGS_KEY, b.settings), save(ONBOARDING_KEY, b.onboarding),
-    save(DYNO_KEY, b.dyno), save(NOTIFY_KEY, b.notify), save(DASH_KEY, b.dashboard), save(ACH_KEY, b.achievements), save(PTC_KEY, b.ptc), save(TRACKDAYS_KEY, b.trackdays),
+    save(DYNO_KEY, b.dyno), save(NOTIFY_KEY, b.notify), save(DASH_KEY, b.dashboard), save(ACH_KEY, b.achievements), save(PTC_KEY, b.ptc), save(TRACKDAYS_KEY, b.trackdays), save(BUYER_KEY, b.buyer),
   ].every(Boolean);
 }
 
 /** Every key this app writes. */
-export const ALL_KEYS = [WEATHER_KEY, 'gt500.recentSearches.v1' /* search.ts RECENT_KEY; not imported to keep the data index out of this chunk */, KEYS.garage, KEYS.cars, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, DYNO_KEY, NOTIFY_KEY, DASH_KEY, ACH_KEY, INSTALL_KEY, PTC_KEY, TRACKDAYS_KEY, TREE_KEY, 'gt500.sflDir.v1' /* lapTimer.ts SFL_DIR_KEY; kept out of this chunk */, DIAG_KEY, 'gt500.theme'];
+export const ALL_KEYS = [WEATHER_KEY, 'gt500.recentSearches.v1' /* search.ts RECENT_KEY; not imported to keep the data index out of this chunk */, KEYS.garage, KEYS.cars, KEYS.plans, KEYS.track, DRAG_KEY, FUEL_KEY, SETTINGS_KEY, QUIZ_KEY, ONBOARDING_KEY, DYNO_KEY, NOTIFY_KEY, DASH_KEY, ACH_KEY, INSTALL_KEY, PTC_KEY, TRACKDAYS_KEY, BUYER_KEY, TREE_KEY, 'gt500.sflDir.v1' /* lapTimer.ts SFL_DIR_KEY; kept out of this chunk */, DIAG_KEY, 'gt500.theme'];
 export function resetAll(): void { ALL_KEYS.forEach(remove); }
