@@ -1,0 +1,22 @@
+{
+ "round": 13,
+ "date": "2026-10-17",
+ "facts": [
+  {"topic":"recall25V455","value":"850,318 units total; MY2021-2022 Mustang listed; PCM software update remedy; Ford 25S75; NHTSA text says letters mailed July 27, 2026","source":"https://api.nhtsa.gov/recalls/campaignNumber?campaignNumber=25V455","confidence":"high"},
+  {"topic":"recall25V455MustangScope","value":"2021-2022 Mustang GT 5.0L, 24,790 units; GT500 not mentioned","source":"https://tfltruck.com/2025/07/ford-recall-fuel-pump-trucks-suv-news/","confidence":"medium"},
+  {"topic":"destination2020","value":"$1,095","source":"https://www.motor1.com/news/370086/most-expensive-mustang-shelby-gt500/","confidence":"medium"},
+  {"topic":"destination2021_2022","value":"$1,195","source":"https://fordauthority.com/2022/02/2022-ford-mustang-shelby-gt500-gets-six-percent-price-increase","confidence":"medium","note":"seen via search summary; page 403"},
+  {"topic":"handlingPackage2020","value":"$1,500; adjustable strut top mounts (plant), catch can, Gurney flap and splitter wickers (shipped loose), wheel lock kit per Ford Authority table","source":"https://www.musclecarsandtrucks.com/2021-ford-mustang-shelby-gt500-carbon-fiber-handling-package-costs-10000/","confidence":"medium"},
+  {"topic":"carbonFiberHandlingPackage2021","value":"$10,000; black CF 20in wheels, adjustable strut top mounts, catch can, Gurney flap, wickers, wheel locks; 2021 only","source":"https://fordauthority.com/2021/11/2022-ford-mustang-shelby-gt500-drops-carbon-fiber-handling-package/","confidence":"medium"},
+  {"topic":"technologyPackage2021","value":"$3,000; B&O 12 speakers, BLIS with cross-traffic alert, navigation","source":"https://www.americanmusclecarz.com/vehicles/20512/2021-ford-shelby-mustang-gt500-carbon-fiber-track-pack","confidence":"medium"},
+  {"topic":"recaro2020","value":"$1,595","source":"https://www.motor1.com/news/370086/most-expensive-mustang-shelby-gt500/","confidence":"medium"},
+  {"topic":"heritageStripes2022","value":"vinyl $2,140; painted $12,140; Wimbledon White or Absolute Black (painted)","source":"https://theshopmag.com/features/ford-expands-mustang-lineup-with-coastal-gt500-heritage-editions/","confidence":"medium"},
+  {"topic":"tirePressure","value":"32 psi F/R (third-party)","source":"https://tirepressure.com/2022-ford-mustang-tire-pressure","confidence":"low"}
+ ],
+ "conflicts": [
+  {"topic":"heritageEditionCount","values":[{"value":225,"source":"https://www.mustangspecs.com/?p=64873","confidence":"medium"},{"value":255,"source":"https://barrett-jackson.com/Events/Event/Details/2022-FORD-SHELBY-GT500-HERITAGE-EDITION-266929","confidence":"medium"}]},
+  {"topic":"carbonFiberTrackPackPrice","values":[{"value":"$18,500 (2021 dealer listing)","source":"https://www.americanmusclecarz.com/vehicles/20512/2021-ford-shelby-mustang-gt500-carbon-fiber-track-pack","confidence":"medium"},{"value":"$18,900 (2020 leaked guide)","source":"https://www.thedrive.com/news/29420/2020-ford-mustang-shelby-gt500-weighs-223-pounds-less-than-challenger-hellcat-leak-claims","confidence":"medium"}]},
+  {"topic":"curbWeight","values":[{"value":"4,225 lb (leaked dealer guide, Ford declined comment)","source":"https://www.thedrive.com/news/29420/2020-ford-mustang-shelby-gt500-weighs-223-pounds-less-than-challenger-hellcat-leak-claims","confidence":"low"},{"value":"4,080 lb (Motor1 scale, Handling Pkg)","source":"https://www.motor1.com/news/386412/2020-shelby-gt500-weight/","confidence":"medium"}]}
+ ],
+ "notFound": ["2020 and 2022 owner supplements (fluids, intervals, break-in, placard pressures)","2021/2022 production totals and splits","Wimbledon White paint code","2021 stripe/Convenience/Recaro prices from a window sticker","Ford-published curb weight","GT500 applicability of 25V455"]
+}
