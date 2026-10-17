@@ -1,0 +1,14 @@
+{"supplementFacts":[],
+"auctionResults":[
+{"date":"2025-09","venue":"Bring a Trailer","year":2020,"miles":666,"cftp":null,"price_usd":189901,"note":"Edsel Ford II owned; outlier","url":"https://fordauthority.com/2025/09/edsel-ford-iis-2020-ford-mustang-shelby-gt500-sets-new-auction-record/","confidence":"medium"},
+{"date":"2026-07-25","venue":"Bring a Trailer","year":2021,"miles":2500,"cftp":true,"price_usd":null,"price_gbp":91166,"url":"https://bringatrailer.com/listing/2021-ford-mustang-shelby-gt500-127/","source":"https://www.theclassicvaluer.com/vehicle-details/bring-a-trailer-2026-07-25-ford-mustang-sixth-generation-gt500-0f5d54","confidence":"medium"},
+{"date":"2025-12-05","venue":"Mecum","year":2020,"miles":null,"price_usd":null,"note":"conflicting: $88,000/1,900mi (DriveIndex) vs GBP61,620/7,398mi (classicvaluer)","url":"https://www.theclassicvaluer.com/vehicle-details/mecum-2025-12-05-ford-mustang-sixth-generation-gt500-9efa60","confidence":"low"},
+{"date":"2025-01","venue":"Barrett-Jackson Scottsdale","year":2020,"miles":2553,"price_usd":null,"url":"https://www.barrett-jackson.com/scottsdale-2025/docket/vehicle/2020-ford-mustang-shelby-gt500-281241","confidence":"medium"}
+],
+"driveIndex2020":{"url":"https://driveindex.com/cars/ford/mustang-shelby-gt500/2020","venueUnstated":true,"sales":[["2026-10-07",110000,776],["2026-09-05",94000,4400],["2026-08-22",84500,1700],["2026-08-17",114000,2800],["2026-07-22",112000,2000],["2026-07-14",90500,2300],["2026-06-18",80000,13000],["2026-06-11",83500,10000],["2026-04-20",97000,1900],["2026-04-13",104000,3800],["2026-03-06",87500,1600],["2026-02-12",77500,2800],["2026-02-01",96000,479],["2026-01-12",101000,215],["2025-12-30",78501,4200]],"medians":{"2024":86500,"2025":88000,"2026":95000}},
+"gapFills":[
+{"field":"Wimbledon White paint code","value":"N4","source":"https://shop.paintscratch.com/colors/ford/wimbledon-white-n4","confidence":"low","note":"compatibility list lacks 2020-2022"},
+{"field":"2020/2022 supplement","value":null,"note":"not publicly found"},
+{"field":"Option prices","value":null,"note":"no window sticker found; CFTP ~$18k per classicvaluer only (low)"},
+{"field":"Hagerty valuation","value":null}
+]}

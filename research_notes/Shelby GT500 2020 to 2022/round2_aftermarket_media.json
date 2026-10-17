@@ -1,0 +1,326 @@
+{
+ "mods": [
+  {
+   "name": "Lund tune + ID1300x + E85 (Evolution 'Villain')",
+   "result": "940-945 rwhp / 753 rwtq vs 684/591 stock",
+   "price": null,
+   "source": "https://www.nmradigital.com/the-story-behind-the-first-9-second-20-gt500/",
+   "confidence": "high"
+  },
+  {
+   "name": "Lund-tuned HPJ twin turbo",
+   "result": "1103 rwhp / 869 rwtq MS109",
+   "price": null,
+   "source": "https://www.nmradigital.com/hpj-performance-releases-final-pictures-of-its-first-mustang-shelby-gt500/",
+   "confidence": "high"
+  },
+  {
+   "name": "PBD 93 tune only",
+   "result": "+56 whp",
+   "price": null,
+   "source": "https://themustangsource.com/?p=34098",
+   "confidence": "high"
+  },
+  {
+   "name": "Borla ATAK cat-back",
+   "result": "no dyno found",
+   "price": "$2,799.99-$3,569.99",
+   "source": "https://shopronayers.com/products/borla-2020-ford-gt500-5-2l-at-3in-atak-catback-exhaust-w-chrome-tips",
+   "confidence": "high"
+  },
+  {
+   "name": "Corsa 3.0in active cat-back",
+   "result": "~20% more flow (mfr claim)",
+   "price": "~$2,610",
+   "source": "https://makperformance.com/products/corsa-20-22-ford-mustang-gt500-3-0in-dual-rear-exit-catback-w-twin-5-0in-black-carbon-fiber-tips",
+   "confidence": "medium"
+  },
+  {
+   "name": "Dodson Superstock DCT clutch (C8 Corvette only, not GT500)",
+   "result": "700+ whp rated",
+   "price": null,
+   "source": "https://boostdistrict.com/products/dodson-superstock-clutch-upgrade-c8-corvette-dct",
+   "confidence": "high"
+  }
+ ],
+ "records": [
+  {
+   "car": "Shelby GT500 Code Red (twin turbo)",
+   "et": 8.59,
+   "mph": 161.81,
+   "date": "2024-09",
+   "source": "https://robbreport.hk/posts/shelby-gt500-code-red-runs-quarter-mile-8-59-seconds",
+   "confidence": "medium-manufacturer-claim"
+  },
+  {
+   "car": "Lethal Performance bolt-on Whipple 3.8 2020 GT500",
+   "et": 8.86,
+   "mph": 163,
+   "date": "2022-02",
+   "source": "https://www.fordmuscle.com/?p=6714",
+   "confidence": "high"
+  },
+  {
+   "car": "PBD stock-engine stock-DCT GT500 (Whipple)",
+   "et": 8.8,
+   "mph": 158,
+   "date": null,
+   "source": "https://www.fordmuscle.com/?p=7158",
+   "confidence": "medium"
+  },
+  {
+   "car": "Bone-stock 2020 GT500",
+   "et": 10.66,
+   "mph": null,
+   "date": "2019-12",
+   "source": "https://www.carscoops.com/2019/12/bone-stock-2020-ford-mustang-shelby-gt500-runs-the-quarter-mile-in/",
+   "confidence": "high"
+  }
+ ],
+ "competitors": [
+  {
+   "car": "Shelby GT500 2020",
+   "hp": 760,
+   "torque": 625,
+   "weightLb": 4170,
+   "zeroTo60": 3.3,
+   "quarterMile": 10.7,
+   "priceUsd": 72900,
+   "source": "https://en.wikipedia.org/wiki/Ford_Mustang_(sixth_generation)",
+   "confidence": "medium-unverified-this-round"
+  },
+  {
+   "car": "Camaro ZL1 1LE",
+   "hp": 650,
+   "torque": 650,
+   "weightLb": 3900,
+   "zeroTo60": 3.5,
+   "quarterMile": 11.4,
+   "priceUsd": 71500,
+   "source": "https://en.wikipedia.org/wiki/Chevrolet_Camaro_(sixth_generation)",
+   "confidence": "medium-unverified-this-round"
+  },
+  {
+   "car": "Challenger SRT Hellcat",
+   "hp": 717,
+   "torque": 656,
+   "weightLb": 4450,
+   "zeroTo60": 3.6,
+   "quarterMile": 11.2,
+   "priceUsd": 60000,
+   "source": "https://en.wikipedia.org/wiki/Dodge_Challenger",
+   "confidence": "medium-unverified-this-round"
+  },
+  {
+   "car": "Challenger Hellcat Redeye",
+   "hp": 797,
+   "torque": 707,
+   "weightLb": 4450,
+   "zeroTo60": 3.4,
+   "quarterMile": 10.8,
+   "priceUsd": 73000,
+   "source": "https://en.wikipedia.org/wiki/Dodge_Challenger",
+   "confidence": "medium-unverified-this-round"
+  },
+  {
+   "car": "Challenger Jailbreak",
+   "hp": 807,
+   "torque": 707,
+   "weightLb": 4450,
+   "zeroTo60": 3.4,
+   "quarterMile": 10.8,
+   "priceUsd": 78000,
+   "source": "https://en.wikipedia.org/wiki/Dodge_Challenger",
+   "confidence": "medium-unverified-this-round"
+  },
+  {
+   "car": "Challenger Super Stock",
+   "hp": 807,
+   "torque": 707,
+   "weightLb": 4400,
+   "zeroTo60": 3.25,
+   "quarterMile": 10.5,
+   "priceUsd": 83000,
+   "source": "https://en.wikipedia.org/wiki/Dodge_Challenger",
+   "confidence": "medium-unverified-this-round"
+  },
+  {
+   "car": "Corvette C8 Stingray Z51",
+   "hp": 495,
+   "torque": 470,
+   "weightLb": 3650,
+   "zeroTo60": 2.9,
+   "quarterMile": 11.2,
+   "priceUsd": 65000,
+   "source": "https://en.wikipedia.org/wiki/Chevrolet_Corvette_(C8)",
+   "confidence": "medium-unverified-this-round"
+  },
+  {
+   "car": "Corvette C8 Z06",
+   "hp": 670,
+   "torque": 460,
+   "weightLb": 3450,
+   "zeroTo60": 2.6,
+   "quarterMile": 10.5,
+   "priceUsd": 106000,
+   "source": "https://en.wikipedia.org/wiki/Chevrolet_Corvette_(C8)",
+   "confidence": "medium-unverified-this-round"
+  },
+  {
+   "car": "Porsche 911 Carrera S 992",
+   "hp": 443,
+   "torque": 390,
+   "weightLb": 3380,
+   "zeroTo60": 3.3,
+   "quarterMile": 11.2,
+   "priceUsd": 114000,
+   "source": "https://en.wikipedia.org/wiki/Porsche_911_(992)",
+   "confidence": "medium-unverified-this-round"
+  },
+  {
+   "car": "Porsche 911 GT3 992",
+   "hp": 502,
+   "torque": 346,
+   "weightLb": 3160,
+   "zeroTo60": 3.2,
+   "quarterMile": 11.0,
+   "priceUsd": 162000,
+   "source": "https://en.wikipedia.org/wiki/Porsche_911_(992)",
+   "confidence": "medium-unverified-this-round"
+  }
+ ],
+ "communities": [
+  {
+   "name": "GT500 Track Attack (Ford Performance Racing School, Charlotte/zMAX)",
+   "url": "https://fordauthority.com/2019/12/gt500-track-attack-is-free-to-all-2020-gt500-buyers/",
+   "confidence": "high"
+  },
+  {
+   "name": "Shelby American forums",
+   "url": "https://forums.shelby.com/",
+   "confidence": "high"
+  },
+  {
+   "name": "Mustang6G DCT thread",
+   "url": "https://www.mustang6g.com/forums/threads/dct-performance.128063/",
+   "confidence": "high"
+  },
+  {
+   "name": "TREMEC GT500 Shootout",
+   "url": "https://tremec-blog.com/?p=2264",
+   "confidence": "high"
+  },
+  {
+   "name": "SVTPerformance (root; subforum URL unverified)",
+   "url": "https://www.svtperformance.com/",
+   "confidence": "low"
+  },
+  {
+   "name": "SAAC (unverified)",
+   "url": "https://www.saac.com/",
+   "confidence": "low"
+  }
+ ],
+ "commonsImages": [
+  {
+   "file": "2020-shelby-gt500-grabber-lime.jpg",
+   "license": "CC BY-SA 4.0",
+   "author": "Joe.sanchez1631",
+   "url": "https://commons.wikimedia.org/wiki/File:2020-shelby-gt500-grabber-lime.jpg",
+   "source": "Commons API extmetadata",
+   "confidence": "high"
+  },
+  {
+   "file": "2020_Ford_Mustang_Shelby_GT500_Coupe,_Cleveland_Auto_Show.jpg",
+   "license": "CC BY-SA 4.0",
+   "author": "Syntaxlord",
+   "url": "https://commons.wikimedia.org/wiki/File:2020_Ford_Mustang_Shelby_GT500_Coupe,_Cleveland_Auto_Show.jpg",
+   "source": "Commons API extmetadata",
+   "confidence": "high"
+  },
+  {
+   "file": "2020_Ford_Mustang_Shelby_GT500_Coupe,_Cleveland_Auto_Show_(Rear).jpg",
+   "license": "CC BY-SA 4.0",
+   "author": "Syntaxlord",
+   "url": "https://commons.wikimedia.org/wiki/File:2020_Ford_Mustang_Shelby_GT500_Coupe,_Cleveland_Auto_Show_(Rear).jpg",
+   "source": "Commons API extmetadata",
+   "confidence": "high"
+  },
+  {
+   "file": "2020_Ford_Mustang_Shelby_GT500_GT101.jpg",
+   "license": "CC BY-SA 4.0",
+   "author": "MrWalkr",
+   "url": "https://commons.wikimedia.org/wiki/File:2020_Ford_Mustang_Shelby_GT500_GT101.jpg",
+   "source": "Commons API extmetadata",
+   "confidence": "high"
+  },
+  {
+   "file": "2020_Ford_Mustang_Shelby_GT500_in_Oxford_White,_05-31-2024.jpg",
+   "license": "CC BY-SA 4.0",
+   "author": "Ethan Llamas",
+   "url": "https://commons.wikimedia.org/wiki/File:2020_Ford_Mustang_Shelby_GT500_in_Oxford_White,_05-31-2024.jpg",
+   "source": "Commons API extmetadata",
+   "confidence": "high"
+  },
+  {
+   "file": "2020%E2%80%932022_Ford_Mustang_Shelby_GT500,_red,_Golden_Super_Cruise_2026-05-02.jpg",
+   "license": "CC BY-SA 4.0",
+   "author": "Xnatedawgx",
+   "url": "https://commons.wikimedia.org/wiki/File:2020%E2%80%932022_Ford_Mustang_Shelby_GT500,_red,_Golden_Super_Cruise_2026-05-02.jpg",
+   "source": "Commons API extmetadata",
+   "confidence": "high"
+  },
+  {
+   "file": "2020%E2%80%932022_Ford_Mustang_Shelby_GT500,_white,_Golden_Super_Cruise_2026-05-02.jpg",
+   "license": "CC BY-SA 4.0",
+   "author": "Xnatedawgx",
+   "url": "https://commons.wikimedia.org/wiki/File:2020%E2%80%932022_Ford_Mustang_Shelby_GT500,_white,_Golden_Super_Cruise_2026-05-02.jpg",
+   "source": "Commons API extmetadata",
+   "confidence": "high"
+  },
+  {
+   "file": "Ford_Mustang_Shelby_GT500_(1).jpg",
+   "license": "CC BY-SA 4.0",
+   "author": "Vincent van Zeijst",
+   "url": "https://commons.wikimedia.org/wiki/File:Ford_Mustang_Shelby_GT500_(1).jpg",
+   "source": "Commons API extmetadata",
+   "confidence": "low-generation-unconfirmed"
+  },
+  {
+   "file": "Ford_Mustang_Shelby_GT500_(2).jpg",
+   "license": "CC BY-SA 4.0",
+   "author": "Vincent van Zeijst",
+   "url": "https://commons.wikimedia.org/wiki/File:Ford_Mustang_Shelby_GT500_(2).jpg",
+   "source": "Commons API extmetadata",
+   "confidence": "low-generation-unconfirmed"
+  }
+ ],
+ "audio": [
+  {
+   "title": "Mustang Engine Rev",
+   "author": "Acekat13X31",
+   "license": "CC BY 4.0",
+   "url": "https://freesound.org/people/Acekat13X31/sounds/517882/",
+   "confidence": "high",
+   "note": "generic, not GT500"
+  },
+  {
+   "title": "Muscle Car Revving",
+   "author": "FlaxGod",
+   "license": "CC0",
+   "url": "https://freesound.org/people/FlaxGod/sounds/653226/",
+   "confidence": "high",
+   "note": "generic"
+  },
+  {
+   "title": "mustang 8.wav",
+   "author": "VacekH",
+   "license": "CC0",
+   "url": "https://freesound.org/people/VacekH/sounds/205509/",
+   "confidence": "high",
+   "note": "generic"
+  }
+ ],
+ "videos": [],
+ "videosNote": "No new IDs verified; see media_catalog.md for 23 previously verified IDs."
+}

@@ -1,0 +1,230 @@
+{
+ "gapFills": [
+  {
+   "field": "paintCode.EruptionGreen",
+   "value": "FA (M7476)",
+   "unit": null,
+   "source": "https://fordauthority.com/2022/05/2022-ford-mustang-gains-new-eruption-green-metallic-color-first-look",
+   "confidence": "high",
+   "note": "FA confirmed by Ford Authority + Steeda; M7476 from PaintScratch snippet"
+  },
+  {
+   "field": "paintCode.DarkMatterGray",
+   "value": "HY (M7470)",
+   "unit": null,
+   "source": "https://fordauthority.com/2022/05/2022-ford-mustang-gains-new-dark-matter-gray-metallic-color-first-look",
+   "confidence": "high",
+   "note": "M7470 from PaintScratch snippet"
+  },
+  {
+   "field": "paintCode.BrittanyBlue",
+   "value": "EB",
+   "unit": null,
+   "source": "https://www.steeda.com/2022-mustang-paint-colors-codes",
+   "confidence": "medium",
+   "note": "Single aftermarket source; no M-code"
+  },
+  {
+   "field": "paintCode.WimbledonWhite",
+   "value": null,
+   "unit": null,
+   "source": null,
+   "confidence": "none",
+   "note": "Not found; do not assume YZ (that is Oxford White)"
+  },
+  {
+   "field": "msrp.2021.base",
+   "value": 70300,
+   "unit": "USD",
+   "source": "https://www.autoblog.com/buy/2021-Ford-Shelby+GT500/specs/",
+   "confidence": "medium",
+   "note": "Also CarGurus; excludes destination/guzzler"
+  },
+  {
+   "field": "msrp.2021.destination",
+   "value": null,
+   "unit": "USD",
+   "source": null,
+   "confidence": "none",
+   "note": "2020 $1,095 and 2022 $1,195 per Motor1; 2021 unsourced"
+  },
+  {
+   "field": "msrp.2020.gasGuzzler",
+   "value": 2600,
+   "unit": "USD",
+   "source": "https://www.motor1.com/news/568984/2022-ford-mustang-shelby-gt500/",
+   "confidence": "medium",
+   "note": "snippet"
+  },
+  {
+   "field": "msrp.2022.destination",
+   "value": 1195,
+   "unit": "USD",
+   "source": "https://www.motor1.com/news/568984/2022-ford-mustang-shelby-gt500/",
+   "confidence": "medium",
+   "note": "snippet"
+  },
+  {
+   "field": "optionPrices.recaro/stripes/convenience/technology",
+   "value": null,
+   "unit": "USD",
+   "source": null,
+   "confidence": "none",
+   "note": "Not found"
+  },
+  {
+   "field": "production.2021",
+   "value": null,
+   "unit": null,
+   "source": null,
+   "confidence": "none",
+   "note": "Not found"
+  },
+  {
+   "field": "production.2022",
+   "value": null,
+   "unit": null,
+   "source": null,
+   "confidence": "none",
+   "note": "Not found"
+  },
+  {
+   "field": "production.2020to2022.estimate",
+   "value": 9000,
+   "unit": "units",
+   "source": "https://www.automotiveaddicts.com/89664/how-many-shelby-gt500-cars-were-manufactured-over-the-years",
+   "confidence": "low",
+   "note": "Unsourced estimate; ~1,000 CFTP"
+  },
+  {
+   "field": "maint.oil.max",
+   "value": "1 yr / 10,000",
+   "unit": "mi",
+   "source": "https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf",
+   "confidence": "high",
+   "note": "IOLM; severe 3,000 mi"
+  },
+  {
+   "field": "maint.brakeFluid",
+   "value": "3",
+   "unit": "years",
+   "source": "https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf",
+   "confidence": "high",
+   "note": ""
+  },
+  {
+   "field": "maint.cabinAirFilter",
+   "value": 20000,
+   "unit": "mi",
+   "source": "https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf",
+   "confidence": "high",
+   "note": ""
+  },
+  {
+   "field": "maint.engineAirFilter",
+   "value": 30000,
+   "unit": "mi",
+   "source": "https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf",
+   "confidence": "high",
+   "note": ""
+  },
+  {
+   "field": "maint.dctSideFilterTopOff",
+   "value": 20000,
+   "unit": "mi",
+   "source": "https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf",
+   "confidence": "high",
+   "note": ""
+  },
+  {
+   "field": "maint.dctFluidAndSideFilter",
+   "value": 40000,
+   "unit": "mi",
+   "source": "https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf",
+   "confidence": "high",
+   "note": "main filter no service"
+  },
+  {
+   "field": "maint.fuelFilter",
+   "value": 50000,
+   "unit": "mi",
+   "source": "https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf",
+   "confidence": "high",
+   "note": "layout extraction"
+  },
+  {
+   "field": "maint.sparkPlugs",
+   "value": 100000,
+   "unit": "mi",
+   "source": "https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf",
+   "confidence": "high",
+   "note": "Resolves 50k vs 100k; 2021 supplement only"
+  },
+  {
+   "field": "maint.diffFluid",
+   "value": 150000,
+   "unit": "mi",
+   "source": "https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf",
+   "confidence": "high",
+   "note": "track: every 500 mi or over-temp warning"
+  },
+  {
+   "field": "maint.coolant",
+   "value": "10 yr/200k then 5 yr/100k",
+   "unit": "mi",
+   "source": "https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf",
+   "confidence": "high",
+   "note": ""
+  },
+  {
+   "field": "maint.track.oil",
+   "value": "4 hours / one track weekend",
+   "unit": null,
+   "source": "https://autooutlet.cz/wp-content/uploads/2022/11/21-mustang-shelby-en.pdf",
+   "confidence": "high",
+   "note": ""
+  }
+ ],
+ "dynoBaselines": [
+  {
+   "shop": "LMR",
+   "whp": 668,
+   "wtq": 560,
+   "dyno": null,
+   "note": "4th gear; 7160/4130 rpm; snippet",
+   "source": "https://lmr.com/products/how-much-power-does-a-stock-2020-gt500-make"
+  },
+  {
+   "shop": "Hennessey",
+   "whp": 708,
+   "wtq": null,
+   "dyno": "in-house",
+   "note": "~7300 rpm",
+   "source": "https://ca.news.yahoo.com/2020-ford-mustang-shelby-gt500-201200865.html"
+  },
+  {
+   "shop": "Evolution Performance",
+   "whp": 684,
+   "wtq": 591,
+   "dyno": null,
+   "note": "stock baseline",
+   "source": "https://www.nmradigital.com/the-story-behind-the-first-9-second-20-gt500/"
+  },
+  {
+   "shop": "Barrett-Jackson listing",
+   "whp": 664,
+   "wtq": null,
+   "dyno": null,
+   "note": "seller claim",
+   "source": "https://barrett-jackson.com/Events/Event/Details/2020-FORD-SHELBY-GT500-252024"
+  },
+  {
+   "shop": "Whipple build (EngineLabs)",
+   "whp": 723,
+   "wtq": null,
+   "dyno": null,
+   "note": "outlier high",
+   "source": "https://www.enginelabs.com/?p=299250"
+  }
+ ]
+}

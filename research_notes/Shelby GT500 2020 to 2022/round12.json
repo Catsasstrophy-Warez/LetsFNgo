@@ -1,0 +1,259 @@
+{
+ "round": 12,
+ "date": "2026-10-17",
+ "overpassEndpoint": "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+ "osmBase": "2026-10-17T07:01-07:11Z",
+ "startFinishLines": [],
+ "noLineFound": [
+  "virginia-international-raceway",
+  "watkins-glen-international",
+  "sebring-international-raceway",
+  "michelin-raceway-road-atlanta",
+  "sonoma-raceway",
+  "mid-ohio-sports-car-course",
+  "nola-motorsports-park",
+  "gainesville-raceway",
+  "in-n-out-burger-pomona-dragstrip",
+  "atco-dragway",
+  "summit-point-motorsports-park",
+  "carolina-motorsports-park",
+  "brainerd-international-raceway",
+  "utah-motorsports-campus",
+  "new-jersey-motorsports-park"
+ ],
+ "queryFailed": [
+  "buttonwillow-raceway-park",
+  "willow-springs-international-motorsports-park",
+  "barber-motorsports-park",
+  "texas-motorplex",
+  "pittsburgh-international-race-complex",
+  "las-vegas-motor-speedway"
+ ],
+ "noCentroid": [
+  "zmax-dragway"
+ ],
+ "wayGeometry": [
+  {
+   "trackId": "weathertech-raceway-laguna-seca",
+   "osmWay": 10464852,
+   "bearingDeg": 216.3,
+   "oneway": true,
+   "nodeOrderNote": "line node 8866453726 is index 37 of 51 (open way); bearing prev node 7215279273 -> next node 89865258; oneway tag: yes. Matches startFinishLines.ts.",
+   "source": "https://www.openstreetmap.org/way/10464852",
+   "confidence": "high"
+  },
+  {
+   "trackId": "charlotte-motor-speedway",
+   "osmWay": 402168709,
+   "bearingDeg": 195.3,
+   "oneway": true,
+   "nodeOrderNote": "line node 9668619996 is index 1 of 3 (open way); bearing prev node 4040735196 -> next node 4040734683; oneway tag: yes. Matches startFinishLines.ts.",
+   "source": "https://www.openstreetmap.org/way/402168709",
+   "confidence": "high"
+  },
+  {
+   "trackId": "chuckwalla-valley-raceway",
+   "osmWay": 218017846,
+   "bearingDeg": 38.3,
+   "oneway": false,
+   "nodeOrderNote": "line node 2273254970 is index 142 of 157 (closed way); bearing prev node 2273254943 -> next node 2273255047; oneway tag: (untagged). Matches startFinishLines.ts.",
+   "source": "https://www.openstreetmap.org/way/218017846",
+   "confidence": "medium"
+  },
+  {
+   "trackId": "circuit-of-the-americas",
+   "osmWay": 118258939,
+   "bearingDeg": 128.1,
+   "oneway": true,
+   "nodeOrderNote": "line node 7909207460 is index 2 of 4 (open way); bearing prev node 13826373967 -> next node 1330333420; oneway tag: yes. Matches startFinishLines.ts.",
+   "source": "https://www.openstreetmap.org/way/118258939",
+   "confidence": "high"
+  },
+  {
+   "trackId": "circuit-of-the-americas",
+   "osmWay": 118258939,
+   "bearingDeg": 128.1,
+   "oneway": true,
+   "nodeOrderNote": "line node 13826373967 is index 1 of 4 (open way); bearing prev node 1330333594 -> next node 7909207460; oneway tag: yes. Matches startFinishLines.ts.",
+   "source": "https://www.openstreetmap.org/way/118258939",
+   "confidence": "high"
+  },
+  {
+   "trackId": "lime-rock-park",
+   "osmWay": 293189369,
+   "bearingDeg": 114.0,
+   "oneway": true,
+   "nodeOrderNote": "line node 4314687370 is index 4 of 7 (open way); bearing prev node 178375033 -> next node 414255318; oneway tag: yes. Matches startFinishLines.ts.",
+   "source": "https://www.openstreetmap.org/way/293189369",
+   "confidence": "high"
+  },
+  {
+   "trackId": "road-america",
+   "osmWay": 122090289,
+   "bearingDeg": 178.8,
+   "oneway": true,
+   "nodeOrderNote": "line node 4317202676 is index 5 of 11 (open way); bearing prev node 1262000220 -> next node 1261999916; oneway tag: yes. Matches startFinishLines.ts.",
+   "source": "https://www.openstreetmap.org/way/122090289",
+   "confidence": "high"
+  },
+  {
+   "trackId": "thunderhill-raceway-park",
+   "osmWay": 28825115,
+   "bearingDeg": 179.6,
+   "oneway": true,
+   "nodeOrderNote": "line node 316914551 is index 3 of 260 (closed way); bearing prev node 9375286052 -> next node 316914552; oneway tag: yes. Matches startFinishLines.ts.",
+   "source": "https://www.openstreetmap.org/way/28825115",
+   "confidence": "high"
+  },
+  {
+   "trackId": "thunderhill-raceway-park",
+   "osmWay": 756822999,
+   "bearingDeg": 353.3,
+   "oneway": true,
+   "nodeOrderNote": "line node 9372293077 is index 197 of 232 (closed way); bearing prev node 9375286057 -> next node 9375286058; oneway tag: yes. Matches startFinishLines.ts.",
+   "source": "https://www.openstreetmap.org/way/756822999",
+   "confidence": "high"
+  }
+ ],
+ "linkReplacements": [
+  {
+   "field": "dyno.ts hennessey",
+   "old": "https://ca.news.yahoo.com/2020-ford-mustang-shelby-gt500-201200865.html",
+   "replacement": "https://fordauthority.com/2020/01/hennessey-performance-straps-a-2020-shelby-gt500-to-the-dyno",
+   "evidence": "Same Hennessey stock-car dyno story (about 708.5 hp / 589.5 lb-ft at wheels) per search snippet; returned 403 to curl (bot block), so liveness is not confirmed by a full page load. Archives returned 429.",
+   "confidence": "medium"
+  },
+  {
+   "field": "dyno.ts enginelabs",
+   "old": "https://www.enginelabs.com/?p=299250",
+   "replacement": "https://www.fordmuscle.com/news/whipple-upgrade-pushes-a-gt500s-predator-v8-past-four-digits/",
+   "evidence": "HTTP 200 on 2026-10-17; title \"Whipple Upgrade Pushes A GT500\u2019s Predator V8 Past Four Digits\"; page text contains \"723 rear-wheel horsepower\". Same article, Power Automedia sister site.",
+   "confidence": "high"
+  },
+  {
+   "field": "mods.ts borla",
+   "old": "https://shopronayers.com/products/borla-2020-ford-gt500-5-2l-at-3in-atak-catback-exhaust-w-chrome-tips",
+   "replacement": "https://azproperformance.com/products/borla-2020-ford-gt500-5-2l-at-3in-atak-catback-exhaust-w-chrome-tips",
+   "evidence": "HTTP 200; Shopify product JSON: title \"Borla 2020 Ford GT500 5.2L AT 3in ATAK CatBack Exhaust w/ Chrome Tips\", SKU BOR140837, price 2799.99 (matches stored minimum). Carbon-tip price $3,569.99 not re-verified. Alt: fswerks.com same handle (200).",
+   "confidence": "high"
+  },
+  {
+   "field": "mods.ts x-pbd1100 and performance.ts rec-lethal",
+   "old": "https://www.fordmuscle.com/?p=938086",
+   "replacement": "https://www.fordmuscle.com/news/bolt-on-stock-motor-shelby-gt500-breaks-into-the-8-second-zone/",
+   "evidence": "HTTP 200; title \"Bolt-On, Stock-Motor Shelby GT500 Breaks Into The 8-Second Zone\"; text \"8.86 at 163 mph\". ?p=6714 also serves it (200). Supports rec-lethal; for x-pbd1100 it remains the reference used to reject the PBD attribution (not re-checked for PBD mention).",
+   "confidence": "high"
+  },
+  {
+   "field": "production.ts colors",
+   "old": "https://www.aol.com/ford-mustang-shelby-gt500s-10-214500277.html",
+   "replacement": null,
+   "evidence": "Article not located by title search; archives rate-limited (429). Keep marked dead.",
+   "confidence": "gap"
+  },
+  {
+   "field": "parts.ts wss-m2c931-e1 and maintenance.ts oil-type",
+   "old": "https://www.motorcraft.com/content/dam/ford-motorcraft/es_mx/inicio/ecatalog/pdf/f-t-sae-5W-50-full-synthetic-motor-oil.pdf",
+   "replacement": "https://fcsdchemicalsandlubricants.com/products/motor-oil/productdetails?id=69",
+   "evidence": "Ford FCSD Chemicals & Lubricants product page, HTTP 200; contains \"5W-50 Full Synthetic Motor Oil\", \"API Service Category SP and Ford Specificat[ion]\" and \"WSS-M2C931-E1\". Note: a US data sheet on wwwqa.motorcraft.com lists API SN (search snippet) - older sheet.",
+   "confidence": "high"
+  },
+  {
+   "field": "performance.ts customer-stock",
+   "old": "https://www.dragzine.com/?p=1864682",
+   "replacement": "https://www.fordmuscle.com/news/stock-customer-owned-2020-gt500-quarter-mile/",
+   "evidence": "HTTP 200; title \"Stock Customer-Owned 2020 GT500 Runs 10.66 in Quarter Mile\"; datePublished 2019-12-04.",
+   "confidence": "high"
+  },
+  {
+   "field": "communities.ts reddit",
+   "old": "https://reddit.sudovanilla.org/r/GT500",
+   "replacement": "https://www.reddit.com/r/GT500/",
+   "evidence": "Old URL is a third-party Reddit frontend mirror; canonical subreddit URL. reddit.com returns 403 to curl (bot block), existence not re-verified this round.",
+   "confidence": "medium"
+  }
+ ],
+ "competitorPrices": [
+  {
+   "model": "Camaro ZL1 1LE package",
+   "year": "2020-2022",
+   "price": null,
+   "note": "No official 2020-2022 package price found. Only $7,500 from 2017 launch coverage (Autoblog tag page, motor.es). Carscoops 2022 configurator example ZL1 1LE built to $75,810 (configured, not package price).",
+   "sources": [
+    "https://www.autoblog.com/tag/camaro+1le/",
+    "https://www.carscoops.com/?p=2300085"
+   ],
+   "confidence": "gap"
+  },
+  {
+   "model": "Challenger SRT Hellcat coupe",
+   "year": 2021,
+   "price": null,
+   "candidates": {
+    "iSeeCars MSRP excl. $1,495 dest": 60150,
+    "Hendrick Dodge dealer guide": 61465,
+    "Motor Matchup": 59245
+   },
+   "note": "Sources conflict; no Stellantis release found.",
+   "sources": [
+    "https://www.iseecars.com/car/2021-dodge-challenger-price",
+    "https://www.hendrickdodge.com/2021-dodge-challenger-price/"
+   ],
+   "confidence": "low"
+  },
+  {
+   "model": "Challenger SRT Hellcat coupe",
+   "year": 2022,
+   "price": null,
+   "candidates": {
+    "iSeeCars": 64830,
+    "CarGurus": 68320,
+    "Hendrick Dodge": 69620
+   },
+   "note": "Sources conflict (destination/gas-guzzler inclusion unclear).",
+   "sources": [
+    "https://www.iseecars.com/car/2022-dodge-challenger-price",
+    "https://www.hendrickdodge.com/2022-dodge-challenger-price/",
+    "https://cargurus.com/research/2022-Dodge-Challenger-c32018"
+   ],
+   "confidence": "low"
+  },
+  {
+   "model": "Challenger SRT Hellcat Redeye coupe",
+   "year": 2022,
+   "price": null,
+   "candidates": {
+    "iSeeCars MSRP excl. $1,595 dest and $1,768 gas guzzler": 76430,
+    "Hendrick Dodge": 78225,
+    "Motor Matchup": 80940
+   },
+   "note": "Sources conflict.",
+   "sources": [
+    "https://www.iseecars.com/car/2022-dodge-challenger-price",
+    "https://www.hendrickdodge.com/2022-dodge-challenger-price/"
+   ],
+   "confidence": "low"
+  },
+  {
+   "model": "Camaro ZL1 convertible (manual)",
+   "year": 2022,
+   "price": 69000,
+   "note": "iSeeCars, said to include $1,395 destination; GM Authority coupe table ($64,395 manual incl. dest) consistent but convertible row not read directly (403).",
+   "sources": [
+    "https://www.iseecars.com/car/2022-chevrolet-camaro-price",
+    "https://gmauthority.com/blog/2022/05/2022-chevy-camaro-gets-200-price-increase/"
+   ],
+   "confidence": "medium"
+  },
+  {
+   "model": "Camaro ZL1 10-speed automatic option",
+   "year": 2022,
+   "price": 1595,
+   "note": "From ccarprice.com (non-US aggregator). Automatic convertible ~ $70,595 would be arithmetic, not published.",
+   "sources": [
+    "https://www.ccarprice.com/ir/compare-chevrolet-camaro-zl1-convertible-2022-7117.php"
+   ],
+   "confidence": "low"
+  }
+ ]
+}

@@ -1,0 +1,82 @@
+name: Data correction
+description: Fix a wrong value, fill an unknown (null) field, or add a conflicting sourced figure.
+title: "[Data] <section>: <field>"
+labels: ["data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every fact in the app needs a public **https** source. Please do not submit values from memory, forum hearsay without a link, or paywalled scans we cannot check.
+        The **Data Coverage** page (`#/coverage`) lists every gap and conflict with the section and field name.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of change?
+      options:
+        - Wrong value (correction)
+        - Fill a gap (value is currently Unknown / null)
+        - Add a conflicting source (sources disagree)
+        - Broken or moved source link
+    validations:
+      required: true
+  - type: input
+    id: section
+    attributes:
+      label: Section and record
+      description: Collection name and record id or label as shown on the Data Coverage page, e.g. "specs / curb-weight" or "colors / Grabber Lime".
+      placeholder: specs / curb-weight
+    validations:
+      required: true
+  - type: input
+    id: field
+    attributes:
+      label: Field
+      placeholder: value, code, price, production...
+    validations:
+      required: true
+  - type: input
+    id: current
+    attributes:
+      label: Current value in the app
+      placeholder: Unknown
+  - type: input
+    id: proposed
+    attributes:
+      label: Proposed value (with unit)
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source URL (https)
+      description: A page that states the value. Archive links (web.archive.org) are welcome for pages that move.
+      placeholder: https://
+    validations:
+      required: true
+  - type: textarea
+    id: quote
+    attributes:
+      label: Exact quote from the source
+      description: Copy the sentence or table cell that states the value, so a reviewer can find it quickly.
+    validations:
+      required: true
+  - type: dropdown
+    id: confidence
+    attributes:
+      label: Suggested confidence
+      description: confirmed = Ford/Shelby primary document or several independent sources; reported = one reputable secondary source; unverified = forum, database or low-quality source.
+      options:
+        - confirmed
+        - reported
+        - unverified
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: The source is public and uses https.
+          required: true
+        - label: The value applies to the 2020–2022 Mustang Shelby GT500 (say which model years in the quote box if it is year-specific).
+          required: true

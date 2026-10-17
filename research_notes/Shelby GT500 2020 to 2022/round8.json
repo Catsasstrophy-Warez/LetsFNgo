@@ -1,0 +1,202 @@
+{
+ "editions": [
+  {"name":"Shelby GT500 Signature Edition (GT500SE)","years":"2020-2022","hpClaim":"800+ (93 octane)","priceUSD":29995,"priceNote":"upgrade only, excludes car and shipping","productionCap":"100 per model year (one 2021 release cites 98 NA)","content":"pulley, intercooler/heat exchanger, adjustable springs, sway bars, caster/camber plates, 20in wheels, dry carbon vented hood, stripes, leather recovers, numbered plates; widebody optional","source":"https://shelby.com/Vehicles/GT500-Signature-Edition","confidence":"high"},
+  {"name":"Shelby GT500KR","years":"2022 (upfit available for 2020-2021 cars)","hpClaim":"900+ (93 octane)","priceUSD":127895,"upfitPriceUSD":54995,"productionCap":"225 total incl. 45 overseas (split disputed)","content":null,"source":"https://www.autoblog.com/2021/12/16/ford-shelby-mustang-gt500kr-60th-anniversary/","confidence":"medium"},
+  {"name":"Shelby GT500 Code Red","years":"2022 announcement; donors MY2020-2022","hpClaim":"1000+ hp/780 lb-ft on 93; up to 1300 hp/1000 lb-ft on E85","priceUSD":209995,"priceNote":"plus donor car","productionCap":"30 (10 per MY)","content":"twin turbo replaces supercharger, Manley pistons and rods, E85 fuel system, widebody; not street legal","source":"https://shelby.com/multimedia/News/Press-Releases/shelby-american-turns-shelby-gt500-code-red-experimental-car-into-limited-production-edition-with-up-to-1300-horsepower-1","confidence":"medium"},
+  {"name":"Shelby Super Snake (2020-22 GT500 platform)","years":null,"hpClaim":null,"priceUSD":null,"productionCap":null,"content":null,"source":null,"confidence":"none"}
+ ],
+ "fpParts": [
+{
+  "partNumber": "M-16612-C20",
+  "name": "2020-2022 GT500 Carbon Fiber Hood Vent Kit",
+  "msrpUSD": 1360,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": true,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "high"
+ },
+ {
+  "partNumber": "M-16601-MCF",
+  "name": "2020-2022 GT500 Carbon Fiber Front Splitter Kit",
+  "msrpUSD": 1990,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": true,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "high"
+ },
+ {
+  "partNumber": "M-17750-MCF",
+  "name": "2020-22 GT500 Carbon Fiber Bumper Insert",
+  "msrpUSD": 1255,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": true,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "high"
+ },
+ {
+  "partNumber": "M-16600-MCF",
+  "name": "2020-2022 GT500 Carbon Fiber Rear Deck Lid Trim Panel",
+  "msrpUSD": 725,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": true,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "high"
+ },
+ {
+  "partNumber": "M-9926-M5292",
+  "name": "2020-2021 GT500 Throttle Body 92MM",
+  "msrpUSD": 475,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": true,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "high"
+ },
+ {
+  "partNumber": "M-6766-A52",
+  "name": "2020-2022 GT500 5.2L Oil-Air Separator",
+  "msrpUSD": 625,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": true,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "high"
+ },
+ {
+  "partNumber": "M-6017-M52SC",
+  "name": "5.2L Mustang GT500 Engine Control Pack",
+  "msrpUSD": 2730,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": false,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "medium"
+ },
+ {
+  "partNumber": "M-6675-M52S",
+  "name": "5.0L/5.2L GT500 Aluminum Oil Pan and Pump Kit",
+  "msrpUSD": 1485,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": false,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "medium"
+ },
+ {
+  "partNumber": "M-8501-M58",
+  "name": "High Performance Intercooler Pump Kit, Cobra Jet/GT500",
+  "msrpUSD": 415,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": false,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "medium"
+ },
+ {
+  "partNumber": "M-3A331-GT500A",
+  "name": "GT500 LH Inner Half Shaft Seal",
+  "msrpUSD": 180,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": false,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "medium"
+ },
+ {
+  "partNumber": "M-1620001-HATBW",
+  "name": "Mustang Shelby GT500 Underhood Rain Hat Graphic",
+  "msrpUSD": 65,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": false,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "medium"
+ },
+ {
+  "partNumber": "M-6564-M52A",
+  "name": "5.2L Predator Roller Finger Follower Kit",
+  "msrpUSD": 600,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": false,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "medium"
+ },
+ {
+  "partNumber": "M-9407-M52SC",
+  "name": "High Performance Dual Fuel Pump Kit",
+  "msrpUSD": 220,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": false,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "medium"
+ },
+ {
+  "partNumber": "M-12029-M52",
+  "name": "5.0L/5.2L Hi-Energy Engine Ignition Coils (8)",
+  "msrpUSD": 645,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": false,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "medium"
+ },
+ {
+  "partNumber": "M-6500-M50R",
+  "name": "2011-2024 5.0L/5.2L Coyote High Performance Lash Adjusters",
+  "msrpUSD": 475,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": false,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "medium"
+ },
+ {
+  "partNumber": "M-6303-M52B",
+  "name": "Coyote 5.2L Forged Crankshaft",
+  "msrpUSD": 1440,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": false,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "medium"
+ },
+ {
+  "partNumber": "M-16600-FP",
+  "name": "2015-23 Mustang Rear Spoiler w/ Gurney Flap",
+  "msrpUSD": 700,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": false,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "medium"
+ },
+ {
+  "partNumber": "M-4130-MA",
+  "name": "2015-2026 Mustang Half Shaft Upgrade Kit",
+  "msrpUSD": 2575,
+  "priceAsOf": "2026-10-16",
+  "explicit2020_22GT500Fitment": false,
+  "emissionsStatus": null,
+  "source": "https://performanceparts.ford.com/search/GT500",
+  "confidence": "medium"
+ }],
+ "events": [
+  {"name":"Ford Performance Racing School GT500 Track Attack","location":"Charlotte Motor Speedway","yearsActive":null,"cost":"free to owners (travel/hotel at owner expense)","source":"https://jalopnik.com/ford-offers-free-program-to-teach-you-how-to-drive-your-1840391534","confidence":"medium"},
+  {"name":"SAAC-46","date":"2021","location":"Sonoma Raceway","source":"https://www.supercars.net/blog/saac-46-shelby-cars-converge-on-sears-point/","confidence":"medium"},
+  {"name":"SAAC-47","date":"2022 (early June, approx.)","location":"Indianapolis Motor Speedway","source":"https://thegentlemanracer.com/2022/06/shelby-american-automobile-club-at-indy/","confidence":"medium"},
+  {"name":"SAAC-48","date":"2023","location":"Pittsburgh Vintage Grand Prix","source":"https://www.supercars.net/blog/shelby-convention-to-be-held-at-pittsburgh-vintage-grand-prix/","confidence":"medium"},
+  {"name":"First production GT500KR charity auction","date":"2022-01 (Barrett-Jackson Scottsdale)","location":"Scottsdale, AZ","source":"https://fordauthority.com/2022/01/first-production-2022-ford-shelby-gt500kr-heading-to-auction","confidence":"medium"}
+ ],
+ "milestones": [
+  {"date":"2019-01-14","event":"Public reveal at NAIAS Detroit (Cobo Center)","source":"https://www.bloomberg.com/news/articles/2019-01-14/ford-debuts-most-powerful-mustang-ever-2020-ford-shelby-gt500","confidence":"high"},
+  {"date":"2020-12","event":"Road & Track 2021 Performance Car of the Year","source":"https://tremec.com/ford-mustang-shelby-gt500-awarded-2021-performance-car-of-the-year-by-road-track/","confidence":"high"},
+  {"date":"2020","event":"MotorTrend Best Driver's Car 2020 contender (CFTP); reportedly best Laguna Seca lap; final placement unknown","placement":null,"source":"https://themustangsource.com/?p=37078","confidence":"low"},
+  {"date":null,"event":"Car and Driver 10Best","placement":null,"source":null,"confidence":"none"}
+ ]
+}

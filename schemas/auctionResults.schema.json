@@ -1,0 +1,322 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Catsasstrophy-Warez/LetsFNgo/schemas/auctionResults.schema.json",
+  "title": "GT500 Companion — auctionResults",
+  "description": "Array of auctionResults records (src/data). Every record cites an https source and a confidence level; unknowns are null with a note.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "date",
+      "venue",
+      "year",
+      "mileage",
+      "price",
+      "outcome",
+      "cftp",
+      "heritage",
+      "description",
+      "source",
+      "confidence"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "minLength": 1
+      },
+      "date": {
+        "anyOf": [
+          {
+            "type": "string",
+            "pattern": "^\\d{4}(-\\d{2}(-\\d{2})?)?$"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "venue": {
+        "anyOf": [
+          {
+            "type": "string",
+            "minLength": 1
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "year": {
+        "enum": [
+          2020,
+          2021,
+          2022
+        ]
+      },
+      "mileage": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "price": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "outcome": {
+        "enum": [
+          "sold",
+          "offer",
+          "no-sale"
+        ]
+      },
+      "cftp": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "heritage": {
+        "anyOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "description": {
+        "type": "string",
+        "minLength": 1
+      },
+      "source": {
+        "$ref": "#/$defs/source"
+      },
+      "confidence": {
+        "$ref": "#/$defs/confidence"
+      },
+      "localPrice": {
+        "type": "object",
+        "required": [
+          "amount",
+          "currency"
+        ],
+        "properties": {
+          "amount": {
+            "type": "number"
+          },
+          "currency": {
+            "enum": [
+              "GBP",
+              "EUR",
+              "CAD"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "outlier": {
+        "type": "string",
+        "minLength": 1
+      },
+      "conflicts": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/stringValue"
+        },
+        "minItems": 1
+      },
+      "note": {
+        "type": "string",
+        "minLength": 1
+      },
+      "originalUrl": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "additionalProperties": false
+  },
+  "$defs": {
+    "source": {
+      "type": "string",
+      "pattern": "^https://\\S+$"
+    },
+    "confidence": {
+      "enum": [
+        "confirmed",
+        "reported",
+        "unverified"
+      ]
+    },
+    "conflict": {
+      "type": "object",
+      "required": [
+        "value",
+        "source",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": [
+                "string",
+                "number"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "context": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        },
+        "originalUrl": {
+          "$ref": "#/$defs/source"
+        }
+      },
+      "additionalProperties": false
+    },
+    "numberValue": {
+      "type": "object",
+      "required": [
+        "value",
+        "source",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "context": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        },
+        "originalUrl": {
+          "$ref": "#/$defs/source"
+        }
+      },
+      "additionalProperties": false
+    },
+    "stringValue": {
+      "type": "object",
+      "required": [
+        "value",
+        "source",
+        "confidence"
+      ],
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "context": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        },
+        "originalUrl": {
+          "$ref": "#/$defs/source"
+        }
+      },
+      "additionalProperties": false
+    },
+    "geoPoint": {
+      "type": "object",
+      "required": [
+        "lat",
+        "lon"
+      ],
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      },
+      "additionalProperties": false
+    },
+    "geoLine": {
+      "type": "object",
+      "required": [
+        "a",
+        "b"
+      ],
+      "properties": {
+        "a": {
+          "$ref": "#/$defs/geoPoint"
+        },
+        "b": {
+          "$ref": "#/$defs/geoPoint"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

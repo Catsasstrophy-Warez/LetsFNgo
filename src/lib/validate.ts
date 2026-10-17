@@ -1,0 +1,276 @@
+/**
+ * Strict normalizers for everything kept in localStorage or imported from a backup.
+ * Each rebuilds the object from an allow-list of known keys and returns null if any present field
+ * has the wrong type, so nothing unexpected can reach React as a child or be re-exported.
+ */
+import { DEFAULT_REMINDERS, EMPTY_GARAGE, MAX_CARS, type Car, type CarStore, type GarageState, type LogEntry, type Plan, type Reminder, type TrackSession } from './garage';
+import type { GpsRun, Timeslip } from './drag';
+import type { GpsLap, GpsSession } from './garage';
+import { MAX_SECTORS, MAX_SESSION_LAPS, MAX_TRACE_POINTS, type TimingLine, type TracePt } from './lapTimer';
+import type { FillUp } from './fuel';
+import { OWNER_ID_RE, PHOTO_ID_RE, PHOTO_KINDS, MAX_DIM, MAX_PHOTO_BYTES, type PhotoBackup, type PhotoKind } from './photoLimits';
+import { MAX_CURVE_POINTS, type CurvePoint, type DynoPull } from './dyno';
+
+type Obj = Record<string, unknown>;
+const isObj = (v: unknown): v is Obj => !!v && typeof v === 'object' && !Array.isArray(v);
+const BAD = Symbol('bad');
+/** Optional string: undefined → default; non-string → BAD. */
+const str = (v: unknown, d = ''): string | typeof BAD => (v === undefined || v === null ? d : typeof v === 'string' ? v : BAD);
+const req = (v: unknown): string | typeof BAD => (typeof v === 'string' ? v : BAD);
+/** Optional finite number or null. */
+const num = (v: unknown): number | null | typeof BAD => (v === undefined || v === null ? null : typeof v === 'number' && Number.isFinite(v) ? v : BAD);
+const reqNum = (v: unknown): number | typeof BAD => (typeof v === 'number' && Number.isFinite(v) ? v : BAD);
+
+/** Optional owning-car id: absent → {}, valid → { carId }, anything else → null. */
+function carField(v: Obj): { carId?: string } | null {
+  if (v.carId === undefined || v.carId === null || v.carId === '') return {};
+  return typeof v.carId === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(v.carId) ? { carId: v.carId } : null;
+}
+
+function build<T>(fields: Record<string, unknown>): T | null {
+  return Object.values(fields).some((x) => x === BAD) ? null : (fields as T);
+}
+
+/** Normalize a list: invalid items are dropped (for loaders). */
+export function normList<T>(v: unknown, f: (x: unknown) => T | null): T[] {
+  return Array.isArray(v) ? v.map(f).filter((x): x is T => x !== null) : [];
+}
+
+export function normLog(v: unknown): LogEntry | null {
+  if (!isObj(v)) return null;
+  return build<LogEntry>({ id: req(v.id), date: req(v.date), title: req(v.title), notes: str(v.notes), miles: str(v.miles), cost: str(v.cost) });
+}
+
+export function normReminder(v: unknown): Reminder | null {
+  if (!isObj(v)) return null;
+  return build<Reminder>({ id: req(v.id), item: req(v.item), everyMiles: num(v.everyMiles), everyMonths: num(v.everyMonths), lastMiles: num(v.lastMiles), lastDate: str(v.lastDate) });
+}
+
+/** Garage: top-level strings must be strings; log/reminder arrays must contain only valid entries. */
+export function normGarage(v: unknown): GarageState | null {
+  if (!isObj(v)) return null;
+  const lists = { mods: v.mods ?? [], service: v.service ?? [], reminders: v.reminders ?? DEFAULT_REMINDERS };
+  if (!Array.isArray(lists.mods) || !Array.isArray(lists.service) || !Array.isArray(lists.reminders)) return null;
+  const mods = lists.mods.map(normLog), service = lists.service.map(normLog), reminders = lists.reminders.map(normReminder);
+  if ([...mods, ...service, ...reminders].some((x) => x === null)) return null;
+  const g = build<Omit<GarageState, 'mods' | 'service' | 'reminders'>>({
+    vin: str(v.vin, EMPTY_GARAGE.vin), year: str(v.year), color: str(v.color), nickname: str(v.nickname), odometer: str(v.odometer),
+  });
+  return g ? { ...g, mods: mods as LogEntry[], service: service as LogEntry[], reminders: reminders as Reminder[] } : null;
+}
+
+/** Multi-car store: 1–MAX_CARS cars with unique ids; an unknown active id falls back to the first car. */
+export function normCarStore(v: unknown): CarStore | null {
+  if (!isObj(v) || !Array.isArray(v.cars) || v.cars.length < 1 || v.cars.length > MAX_CARS) return null;
+  const cars: Car[] = [];
+  for (const x of v.cars) {
+    if (!isObj(x) || typeof x.id !== 'string' || !/^[A-Za-z0-9_-]{1,40}$/.test(x.id) || cars.some((c) => c.id === x.id)) return null;
+    const g = normGarage(x);
+    if (!g) return null;
+    cars.push({ ...g, id: x.id });
+  }
+  const active = typeof v.active === 'string' && cars.some((c) => c.id === v.active) ? v.active : cars[0].id;
+  return { active, cars };
+}
+
+export function normPlan(v: unknown): Plan | null {
+  if (!isObj(v) || !Array.isArray(v.modIds) || !v.modIds.every((x) => typeof x === 'string')) return null;
+  const p = build<Omit<Plan, 'modIds'>>({ id: req(v.id), name: req(v.name), created: str(v.created) });
+  return p ? { ...p, modIds: [...(v.modIds as string[])] } : null;
+}
+
+export function normTrack(v: unknown): TrackSession | null {
+  if (!isObj(v)) return null;
+  const pr = v.pressures ?? {};
+  if (!isObj(pr)) return null;
+  const pressures = build<TrackSession['pressures']>({ fl: str(pr.fl), fr: str(pr.fr), rl: str(pr.rl), rr: str(pr.rr) });
+  const t = build<Omit<TrackSession, 'pressures'>>({ id: req(v.id), date: req(v.date), track: req(v.track), conditions: str(v.conditions), airTemp: str(v.airTemp), laps: req(v.laps), notes: str(v.notes) });
+  const c = carField(v);
+  let gps: GpsSession | undefined;
+  if (v.gps !== undefined) {
+    const g = normGpsSession(v.gps);
+    if (!g) return null;
+    gps = g;
+  }
+  let checklist: CheckItem[] | undefined;
+  if (v.checklist !== undefined) {
+    const l = normChecklist(v.checklist);
+    if (!l) return null;
+    checklist = l;
+  }
+  return t && pressures && c ? { ...t, pressures, ...c, ...(gps ? { gps } : {}), ...(checklist ? { checklist } : {}) } : null;
+}
+
+const finite = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
+const isLat = (x: unknown) => finite(x) && Math.abs(x) <= 90;
+const isLon = (x: unknown) => finite(x) && Math.abs(x) <= 180;
+function normPoint(v: unknown): { lat: number; lon: number } | null {
+  return isObj(v) && isLat(v.lat) && isLon(v.lon) ? { lat: v.lat as number, lon: v.lon as number } : null;
+}
+export function normLine(v: unknown): TimingLine | null {
+  if (!isObj(v) || (v.dir !== 1 && v.dir !== -1 && v.dir !== 0)) return null;
+  const a = normPoint(v.a), b = normPoint(v.b);
+  return a && b ? { a, b, dir: v.dir } : null;
+}
+/** GPS session: lines valid, laps and trace within their caps, every number finite and in range. */
+export function normGpsSession(v: unknown): GpsSession | null {
+  if (!isObj(v) || typeof v.startIso !== 'string' || v.startIso.length > 40) return null;
+  const line = normLine(v.line);
+  if (!line || !Array.isArray(v.sectors) || v.sectors.length > MAX_SECTORS || !Array.isArray(v.laps) || v.laps.length > MAX_SESSION_LAPS || !Array.isArray(v.trace) || v.trace.length > MAX_TRACE_POINTS) return null;
+  const sectors: TimingLine[] = [];
+  for (const x of v.sectors) { const l = normLine(x); if (!l) return null; sectors.push(l); }
+  const laps: GpsLap[] = [];
+  for (const x of v.laps) {
+    if (!isObj(x) || typeof x.valid !== 'boolean' || !finite(x.n) || !finite(x.seconds) || x.seconds <= 0 || !finite(x.accuracyM) || x.accuracyM < 0 || !finite(x.startMs) || !finite(x.endMs) || x.startMs < 0 || x.endMs <= x.startMs) return null;
+    let sec: number[] | null = null;
+    if (x.sectors !== null && x.sectors !== undefined) {
+      if (!Array.isArray(x.sectors) || x.sectors.length > MAX_SECTORS + 1 || !x.sectors.every((y) => finite(y) && y >= 0)) return null;
+      sec = [...(x.sectors as number[])];
+    }
+    laps.push({ n: x.n, seconds: x.seconds, sectors: sec, accuracyM: x.accuracyM, startMs: x.startMs, endMs: x.endMs, valid: x.valid });
+  }
+  const trace: TracePt[] = [];
+  for (const p of v.trace) {
+    if (!Array.isArray(p) || p.length !== 5 || !p.every(finite) || p[0] < 0 || !isLat(p[1]) || !isLon(p[2]) || p[3] < 0 || p[4] < 0) return null;
+    trace.push([p[0], p[1], p[2], p[3], p[4]]);
+  }
+  return { startIso: v.startIso, line, sectors, laps, trace };
+}
+
+export function normSlip(v: unknown): Timeslip | null {
+  if (!isObj(v)) return null;
+  const w = v.weather ?? {};
+  if (!isObj(w)) return null;
+  if (v.mods !== undefined && !(Array.isArray(v.mods) && v.mods.every((x) => typeof x === 'string'))) return null;
+  if (w.pressureIsStation !== undefined && typeof w.pressureIsStation !== 'boolean') return null;
+  const weather = build<Omit<Timeslip['weather'], 'pressureIsStation'>>({ tempF: num(w.tempF), pressureInHg: num(w.pressureInHg), humidity: num(w.humidity), elevationFt: num(w.elevationFt) });
+  const s = build<Omit<Timeslip, 'weather' | 'mods'>>({
+    id: req(v.id), date: req(v.date), track: str(v.track), rt: num(v.rt), sixty: num(v.sixty), threeThirty: num(v.threeThirty),
+    eighthEt: num(v.eighthEt), eighthMph: num(v.eighthMph), quarterEt: num(v.quarterEt), quarterMph: num(v.quarterMph), da: num(v.da), notes: str(v.notes),
+  });
+  let gps: Timeslip['gps'];
+  if (v.gps !== undefined) {
+    const g = v.gps;
+    if (!isObj(g) || (g.kind !== '0-60' && g.kind !== '60-130' && g.kind !== 'quarter')) return null;
+    const b = build<Omit<GpsRun, 'kind'>>({ seconds: reqNum(g.seconds), trapMph: num(g.trapMph), accuracyM: reqNum(g.accuracyM) });
+    if (!b || b.seconds <= 0) return null;
+    gps = { kind: g.kind, ...b };
+  }
+  const c = carField(v);
+  return s && weather && c ? { ...s, ...c, weather: { ...weather, pressureIsStation: w.pressureIsStation === true }, mods: [...((v.mods as string[] | undefined) ?? [])], ...(gps ? { gps } : {}) } : null;
+}
+
+export function normFill(v: unknown): FillUp | null {
+  if (!isObj(v)) return null;
+  if (v.fuel !== '93' && v.fuel !== 'E85' && v.fuel !== 'blend') return null;
+  if (typeof v.full !== 'boolean') return null;
+  const c = carField(v);
+  const f = build<FillUp>({ id: req(v.id), date: req(v.date), odometer: reqNum(v.odometer), gallons: reqNum(v.gallons), price: reqNum(v.price), fuel: v.fuel, blend: num(v.blend), full: v.full, notes: str(v.notes) });
+  return f && c ? { ...f, ...c } : null;
+}
+
+export interface QuizScore { answered: number; correct: number; bestStreak: number; streak: number }
+export const EMPTY_SCORE: QuizScore = { answered: 0, correct: 0, bestStreak: 0, streak: 0 };
+export function normScore(v: unknown): QuizScore {
+  if (!isObj(v)) return { ...EMPTY_SCORE };
+  const n = (x: unknown) => (typeof x === 'number' && Number.isInteger(x) && x >= 0 ? x : 0);
+  const s = { answered: n(v.answered), correct: n(v.correct), bestStreak: n(v.bestStreak), streak: n(v.streak) };
+  return s.correct > s.answered ? { ...EMPTY_SCORE } : s;
+}
+
+/** First-run intro state. */
+export interface Onboarding { done: boolean; completed: string }
+export const DEFAULT_ONBOARDING: Onboarding = { done: false, completed: '' };
+export function normOnboarding(v: unknown): Onboarding | null {
+  if (!isObj(v) || typeof v.done !== 'boolean') return null;
+  const c = str(v.completed);
+  return c === BAD ? null : { done: v.done, completed: c };
+}
+
+const DYNO_TYPES = ['dynojet', 'mustang', 'hub', 'other'] as const;
+const CORRS = ['sae', 'std', 'uncorrected'] as const;
+const inRange = (x: number | null, lo: number, hi: number) => x === null || (x >= lo && x <= hi);
+
+/** Dyno pull: enums allow-listed, power/torque/rpm range-checked, curve capped. */
+export function normDyno(v: unknown): DynoPull | null {
+  if (!isObj(v)) return null;
+  if (!DYNO_TYPES.includes(v.dynoType as never) || !CORRS.includes(v.correction as never)) return null;
+  const w = v.weather ?? {};
+  if (!isObj(w)) return null;
+  if (w.pressureIsStation !== undefined && typeof w.pressureIsStation !== 'boolean') return null;
+  if (v.mods !== undefined && !(Array.isArray(v.mods) && v.mods.every((x) => typeof x === 'string'))) return null;
+  const rawCurve = v.curve ?? [];
+  if (!Array.isArray(rawCurve) || rawCurve.length > MAX_CURVE_POINTS) return null;
+  const curve: CurvePoint[] = [];
+  for (const c of rawCurve) {
+    if (!isObj(c)) return null;
+    const p = build<CurvePoint>({ rpm: reqNum(c.rpm), hp: num(c.hp), tq: num(c.tq) });
+    if (!p || p.rpm <= 0 || p.rpm > 12000 || !inRange(p.hp, 0, 5000) || !inRange(p.tq, 0, 5000)) return null;
+    curve.push(p);
+  }
+  const weather = build<Omit<DynoPull['weather'], 'pressureIsStation'>>({ tempF: num(w.tempF), pressureInHg: num(w.pressureInHg), humidity: num(w.humidity), elevationFt: num(w.elevationFt) });
+  if (weather && (!inRange(weather.humidity, 0, 100) || !inRange(weather.pressureInHg, 1, 40))) return null;
+  const d = build<Omit<DynoPull, 'weather' | 'mods' | 'curve' | 'dynoType' | 'correction'>>({
+    id: req(v.id), date: req(v.date), shop: str(v.shop), whp: reqNum(v.whp), wtq: num(v.wtq), notes: str(v.notes),
+  });
+  const c = carField(v);
+  if (!c || !d || !weather || d.whp <= 0 || d.whp > 5000 || !inRange(d.wtq, 0, 5000)) return null;
+  return { ...d, ...c, dynoType: v.dynoType as DynoPull['dynoType'], correction: v.correction as DynoPull['correction'], weather: { ...weather, pressureIsStation: w.pressureIsStation === true }, mods: [...((v.mods as string[] | undefined) ?? [])], curve: curve.sort((a, b) => a.rpm - b.rpm) };
+}
+
+/** Local notification preference and which reminder due-keys were already announced. */
+export interface NotifyPrefs { enabled: boolean; sent: Record<string, string> }
+export const DEFAULT_NOTIFY: NotifyPrefs = { enabled: false, sent: {} };
+export function normNotify(v: unknown): NotifyPrefs | null {
+  if (!isObj(v) || typeof v.enabled !== 'boolean') return null;
+  const s = v.sent ?? {};
+  if (!isObj(s)) return null;
+  const sent: Record<string, string> = {};
+  for (const [k, x] of Object.entries(s).slice(0, 200)) {
+    if (typeof x !== 'string') return null;
+    // Keys come from imported JSON: never let one reach an object's prototype slot.
+    if (k === '__proto__' || k === 'constructor' || k === 'prototype' || k.length > 100 || x.length > 200) continue;
+    sent[k] = x;
+  }
+  return { enabled: v.enabled, sent };
+}
+
+/** Home dashboard layout: card order and hidden cards, unknown ids dropped, missing ids appended. */
+export interface DashLayout { order: string[]; hidden: string[] }
+export function normDash(v: unknown, known: readonly string[]): DashLayout | null {
+  if (!isObj(v) || !Array.isArray(v.order) || !Array.isArray(v.hidden)) return null;
+  if (![...v.order, ...v.hidden].every((x) => typeof x === 'string')) return null;
+  const order = [...new Set((v.order as string[]).filter((x) => known.includes(x)))];
+  for (const k of known) if (!order.includes(k)) order.push(k);
+  return { order, hidden: [...new Set((v.hidden as string[]).filter((x) => known.includes(x)))] };
+}
+
+/** Base64 that decodes to a JPEG (starts with FF D8 FF → "/9j/"). */
+const JPEG_B64 = /^\/9j\/[A-Za-z0-9+/]*={0,2}$/;
+/** A photo in a backup: ids and owner allow-listed, JPEG only, dimensions and decoded size within the photo limits. */
+export function normPhotoBackup(v: unknown): PhotoBackup | null {
+  if (!isObj(v)) return null;
+  const { id, kind, ownerId, created, w, h, data } = v;
+  if (typeof id !== 'string' || !PHOTO_ID_RE.test(id) || !PHOTO_KINDS.includes(kind as PhotoKind) || typeof ownerId !== 'string' || !OWNER_ID_RE.test(ownerId)) return null;
+  if (typeof created !== 'string' || created.length > 40 || Number.isNaN(Date.parse(created))) return null;
+  if (!Number.isInteger(w) || !Number.isInteger(h) || (w as number) < 1 || (h as number) < 1 || (w as number) > MAX_DIM || (h as number) > MAX_DIM) return null;
+  if (typeof data !== 'string' || data.length % 4 !== 0 || (data.length / 4) * 3 > MAX_PHOTO_BYTES + 3 || !JPEG_B64.test(data)) return null;
+  return { id, kind: kind as PhotoKind, ownerId, created, w: w as number, h: h as number, data };
+}
+
+/** One item of a Track session's pre-track checklist copy. */
+export interface CheckItem { id: string; label: string; done: boolean; kind: 'sourced' | 'user'; factId?: string }
+export const MAX_SAVED_ITEMS = 40;
+const ITEM_ID = /^[A-Za-z0-9_-]{1,40}$/;
+/** Validate a saved per-session checklist (import and storage). */
+export function normChecklist(v: unknown): CheckItem[] | null {
+  if (!Array.isArray(v) || v.length > MAX_SAVED_ITEMS) return null;
+  const out: CheckItem[] = [];
+  for (const x of v) {
+    if (!isObj(x)) return null;
+    if (typeof x.id !== 'string' || !ITEM_ID.test(x.id) || typeof x.label !== 'string' || x.label.length > 200 || typeof x.done !== 'boolean' || (x.kind !== 'sourced' && x.kind !== 'user')) return null;
+    if (x.factId !== undefined && (typeof x.factId !== 'string' || !ITEM_ID.test(x.factId))) return null;
+    out.push({ id: x.id, label: x.label, done: x.done, kind: x.kind, ...(typeof x.factId === 'string' ? { factId: x.factId } : {}) });
+  }
+  return out;
+}
