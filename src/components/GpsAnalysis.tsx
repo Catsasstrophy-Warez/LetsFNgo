@@ -63,7 +63,7 @@ export function GpsAnalysis({ gps, name, date }: { gps: GpsSession; name: string
           <caption>{t('ga.table')}</caption>
           <thead><tr><th scope="col">{t('lt.lap')}</th><th scope="col">{t('ga.time')}</th><th scope="col">{t('ga.min')} ({su})</th><th scope="col">{t('ga.max')} ({su})</th><th scope="col">{t('gps.accuracy')}</th></tr></thead>
           <tbody>{traces.map(({ lap, pts }) => { const mm = minMax(pts.map((p) => sp(p.mps))); return (
-            <tr key={lap.n}><td>{lap.n}{!lap.valid ? ` (${t('lt.refused')})` : ''}</td><td className="mono">{fmtLap(lap.seconds)}</td><td>{mm ? mm.min.toFixed(0) : '—'}</td><td>{mm ? mm.max.toFixed(0) : '—'}</td><td>±{lap.accuracyM} m</td></tr>); })}</tbody>
+            <tr key={lap.n}><td>{lap.n}{!lap.valid ? ` (${t('lt.refused')})` : ''}</td><td className="mono">{fmtLap(lap.seconds)}</td><td>{mm ? mm.min.toFixed(0) : '—'}</td><td>{mm ? mm.max.toFixed(0) : '—'}</td><td>±{fmtQty('shortLength', lap.accuracyM / 0.3048, u, 0)}</td></tr>); })}</tbody>
         </table>
       </div>
       {exportBtns}

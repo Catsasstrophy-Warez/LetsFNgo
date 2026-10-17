@@ -3,11 +3,12 @@ import { normLang, type Lang } from './i18n';
 
 export type Units = 'imperial' | 'metric';
 export type ThemePref = 'dark' | 'light' | 'system';
-export interface Settings { units: Units; theme: ThemePref; lang: Lang }
+export type AccentPref = 'default' | 'car';
+export interface Settings { units: Units; theme: ThemePref; lang: Lang; /** Accent colour from the active car's paint (optional, AA-checked). Missing = 'default'. */ accent?: AccentPref }
 
 export const SETTINGS_KEY = 'gt500.settings.v1';
 const LEGACY_THEME_KEY = 'gt500.theme';
-export const DEFAULT_SETTINGS: Settings = { units: 'imperial', theme: 'dark', lang: 'en' };
+export const DEFAULT_SETTINGS: Settings = { units: 'imperial', theme: 'dark', lang: 'en', accent: 'default' };
 
 /** Read settings, migrating the pre-settings `gt500.theme` key once. */
 export function loadSettings(): Settings {
@@ -24,6 +25,7 @@ export function normalizeSettings(v: unknown): Settings {
     units: o.units === 'metric' ? 'metric' : 'imperial',
     theme: o.theme === 'light' || o.theme === 'system' ? o.theme : 'dark',
     lang: normLang(o.lang),
+    accent: o.accent === 'car' ? 'car' : 'default',
   };
 }
 

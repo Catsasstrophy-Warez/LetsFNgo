@@ -19,12 +19,13 @@ import { events, milestones } from './history';
 import { guides } from './guides';
 import { auctionResults, marketStats } from './auctions';
 import { tracks } from './tracks';
+import { startFinishLines } from './startFinishLines';
 import type { Sourced } from './types';
 
 /** Every collection of sourced records, keyed by name. Used by search, Sources page and tests. */
 export const collections: Record<string, Sourced[]> = {
   specs, modelYears, colors, packages, prices, marketSales, production, performance,
-  recalls, maintenance, vinPositions, modStages, competitors, communities, media, photos, audio, dynoBaselines, partNumbers, guides, auctionResults, marketStats, editions, fpCatalog, events, milestones, tracks,
+  recalls, maintenance, vinPositions, modStages, competitors, communities, media, photos, audio, dynoBaselines, partNumbers, guides, auctionResults, marketStats, editions, fpCatalog, events, milestones, tracks, startFinishLines,
   notes: [performanceWarning, warrantyNote, ...licensingNotes],
 };
 

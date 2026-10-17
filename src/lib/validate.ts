@@ -8,6 +8,7 @@ import type { GpsRun, Timeslip } from './drag';
 import type { GpsLap, GpsSession } from './garage';
 import { MAX_SECTORS, MAX_SESSION_LAPS, MAX_TRACE_POINTS, type TimingLine, type TracePt } from './lapTimer';
 import type { FillUp } from './fuel';
+import { OWNER_ID_RE, PHOTO_ID_RE, PHOTO_KINDS, MAX_DIM, MAX_PHOTO_BYTES, type PhotoBackup, type PhotoKind } from './photoLimits';
 import { MAX_CURVE_POINTS, type CurvePoint, type DynoPull } from './dyno';
 
 type Obj = Record<string, unknown>;
@@ -91,7 +92,13 @@ export function normTrack(v: unknown): TrackSession | null {
     if (!g) return null;
     gps = g;
   }
-  return t && pressures && c ? { ...t, pressures, ...c, ...(gps ? { gps } : {}) } : null;
+  let checklist: CheckItem[] | undefined;
+  if (v.checklist !== undefined) {
+    const l = normChecklist(v.checklist);
+    if (!l) return null;
+    checklist = l;
+  }
+  return t && pressures && c ? { ...t, pressures, ...c, ...(gps ? { gps } : {}), ...(checklist ? { checklist } : {}) } : null;
 }
 
 const finite = (x: unknown): x is number => typeof x === 'number' && Number.isFinite(x);
@@ -114,7 +121,7 @@ export function normGpsSession(v: unknown): GpsSession | null {
   for (const x of v.sectors) { const l = normLine(x); if (!l) return null; sectors.push(l); }
   const laps: GpsLap[] = [];
   for (const x of v.laps) {
-    if (!isObj(x) || typeof x.valid !== 'boolean' || !finite(x.n) || !finite(x.seconds) || x.seconds <= 0 || !finite(x.accuracyM) || x.accuracyM < 0 || !finite(x.startMs) || !finite(x.endMs)) return null;
+    if (!isObj(x) || typeof x.valid !== 'boolean' || !finite(x.n) || !finite(x.seconds) || x.seconds <= 0 || !finite(x.accuracyM) || x.accuracyM < 0 || !finite(x.startMs) || !finite(x.endMs) || x.startMs < 0 || x.endMs <= x.startMs) return null;
     let sec: number[] | null = null;
     if (x.sectors !== null && x.sectors !== undefined) {
       if (!Array.isArray(x.sectors) || x.sectors.length > MAX_SECTORS + 1 || !x.sectors.every((y) => finite(y) && y >= 0)) return null;
@@ -124,7 +131,7 @@ export function normGpsSession(v: unknown): GpsSession | null {
   }
   const trace: TracePt[] = [];
   for (const p of v.trace) {
-    if (!Array.isArray(p) || p.length !== 5 || !p.every(finite) || !isLat(p[1]) || !isLon(p[2]) || p[3] < 0 || p[4] < 0) return null;
+    if (!Array.isArray(p) || p.length !== 5 || !p.every(finite) || p[0] < 0 || !isLat(p[1]) || !isLon(p[2]) || p[3] < 0 || p[4] < 0) return null;
     trace.push([p[0], p[1], p[2], p[3], p[4]]);
   }
   return { startIso: v.startIso, line, sectors, laps, trace };
@@ -236,4 +243,34 @@ export function normDash(v: unknown, known: readonly string[]): DashLayout | nul
   const order = [...new Set((v.order as string[]).filter((x) => known.includes(x)))];
   for (const k of known) if (!order.includes(k)) order.push(k);
   return { order, hidden: [...new Set((v.hidden as string[]).filter((x) => known.includes(x)))] };
+}
+
+/** Base64 that decodes to a JPEG (starts with FF D8 FF → "/9j/"). */
+const JPEG_B64 = /^\/9j\/[A-Za-z0-9+/]*={0,2}$/;
+/** A photo in a backup: ids and owner allow-listed, JPEG only, dimensions and decoded size within the photo limits. */
+export function normPhotoBackup(v: unknown): PhotoBackup | null {
+  if (!isObj(v)) return null;
+  const { id, kind, ownerId, created, w, h, data } = v;
+  if (typeof id !== 'string' || !PHOTO_ID_RE.test(id) || !PHOTO_KINDS.includes(kind as PhotoKind) || typeof ownerId !== 'string' || !OWNER_ID_RE.test(ownerId)) return null;
+  if (typeof created !== 'string' || created.length > 40 || Number.isNaN(Date.parse(created))) return null;
+  if (!Number.isInteger(w) || !Number.isInteger(h) || (w as number) < 1 || (h as number) < 1 || (w as number) > MAX_DIM || (h as number) > MAX_DIM) return null;
+  if (typeof data !== 'string' || data.length % 4 !== 0 || (data.length / 4) * 3 > MAX_PHOTO_BYTES + 3 || !JPEG_B64.test(data)) return null;
+  return { id, kind: kind as PhotoKind, ownerId, created, w: w as number, h: h as number, data };
+}
+
+/** One item of a Track session's pre-track checklist copy. */
+export interface CheckItem { id: string; label: string; done: boolean; kind: 'sourced' | 'user'; factId?: string }
+export const MAX_SAVED_ITEMS = 40;
+const ITEM_ID = /^[A-Za-z0-9_-]{1,40}$/;
+/** Validate a saved per-session checklist (import and storage). */
+export function normChecklist(v: unknown): CheckItem[] | null {
+  if (!Array.isArray(v) || v.length > MAX_SAVED_ITEMS) return null;
+  const out: CheckItem[] = [];
+  for (const x of v) {
+    if (!isObj(x)) return null;
+    if (typeof x.id !== 'string' || !ITEM_ID.test(x.id) || typeof x.label !== 'string' || x.label.length > 200 || typeof x.done !== 'boolean' || (x.kind !== 'sourced' && x.kind !== 'user')) return null;
+    if (x.factId !== undefined && (typeof x.factId !== 'string' || !ITEM_ID.test(x.factId))) return null;
+    out.push({ id: x.id, label: x.label, done: x.done, kind: x.kind, ...(typeof x.factId === 'string' ? { factId: x.factId } : {}) });
+  }
+  return out;
 }

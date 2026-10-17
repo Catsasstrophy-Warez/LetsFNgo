@@ -3,6 +3,7 @@ import { NavLink, Route, Routes, useLocation, useNavigate } from 'react-router';
 import { needsOnboarding } from './lib/onboarding';
 import { checkReminders } from './lib/notify';
 import { loadSettings, resolveTheme, saveSettings, type Settings } from './lib/units';
+import { deriveAccent } from './lib/accent';
 import { SettingsContext } from './components/SettingsContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { StatusBar } from './components/StatusBar';
@@ -153,6 +154,13 @@ export default function App() {
   // Local maintenance notifications (opt-in, permission-gated) are checked once per app open.
   useEffect(() => { checkReminders().catch(() => undefined); }, []);
   useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  // Optional car-paint accent (AA-checked; falls back to the default accent). Set through the CSSOM, which the CSP allows.
+  const accent = settings.accent === 'car' ? deriveAccent(car.swatch, theme) : null;
+  useEffect(() => {
+    const st = document.documentElement.style;
+    if (accent) { st.setProperty('--accent', accent.accent); st.setProperty('--accent-btn', accent.accentBtn); }
+    else { st.removeProperty('--accent'); st.removeProperty('--accent-btn'); }
+  }, [accent?.accent, accent?.accentBtn]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { document.documentElement.lang = settings.lang; }, [settings.lang]);
   useEffect(() => { saveSettings(settings); }, [settings]);
   useEffect(() => { setMenu(false); window.scrollTo(0, 0); }, [loc.pathname]);

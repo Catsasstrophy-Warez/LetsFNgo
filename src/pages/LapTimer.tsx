@@ -3,6 +3,8 @@ import { Link } from 'react-router';
 import { Cite, Note } from '../components/Facts';
 import { useT, useUnits } from '../components/SettingsContext';
 import { tracks } from '../data/tracks';
+import { startFinishLines } from '../data/startFinishLines';
+import { SourcedLinePicker } from '../components/SourcedLine';
 import { cleanFixes, MPH, type Fix } from '../lib/gps';
 import { KEYS, activeCarId, loadTrack, today, uid, type TrackSession } from '../lib/garage';
 import { save } from '../lib/storage';
@@ -28,6 +30,7 @@ export default function LapTimer() {
   const [sectors, setSectors] = useState<TimingLine[]>([]);
   const [pts, setPts] = useState({ aLat: '', aLon: '', bLat: '', bLon: '' });
   const [name, setName] = useState('');
+  const [trackId, setTrackId] = useState('');
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const watchId = useRef<number | null>(null);
 
@@ -68,7 +71,7 @@ export default function LapTimer() {
   /** Stop and auto-save the session into the Track log (only when at least one lap was completed). */
   const stop = () => {
     stopWatch(); setPhase('idle');
-    if (!line) return;
+    if (!line) return setMsg({ ok: false, text: t('lt.stopNoLine') });
     const s = sessionFromFixes(fixes, line, sectors);
     if (!s || !s.laps.length) return setMsg({ ok: false, text: t('lt.noLaps') });
     const valid = s.laps.filter((l) => l.valid).length;
@@ -94,10 +97,16 @@ export default function LapTimer() {
       <section className="card">
         <h2>{t('lt.session')}</h2>
         <label>{t('track.track')}<input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('track.trackPh')} /></label>
+        <label>{t('sfl.known')}
+          <select className="input" value={trackId} onChange={(e) => { const id = e.target.value; setTrackId(id); const tr = tracks.find((x) => x.id === id); if (tr) setName(tr.name); }}>
+            <option value="">{t('sfl.pick')}</option>
+            {tracks.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+          </select>
+        </label>
         {hint && (
           <p className="muted" role="status">
             {t('lt.near', { name: hint.track.name, d: fmtQty('distance', hint.distM / 1609.344, u, 1) })}{' '}
-            <button className="link-btn" onClick={() => setName(hint.track.name)}>{t('lt.useName')}</button> <Cite c={hint.track.confidence} url={hint.track.source} />
+            <button className="link-btn" onClick={() => { setName(hint.track.name); setTrackId(hint.track.id); }}>{t('lt.useName')}</button> <Cite c={hint.track.confidence} url={hint.track.source} />
             <br /><span className="small">{t('lt.facilityNote')}</span>
           </p>
         )}
@@ -118,6 +127,7 @@ export default function LapTimer() {
       <section className="card">
         <h2>{t('lt.line')}</h2>
         <p className="muted">{line ? t('lt.lineSet', { s: sectors.length }) : t('lt.noLine')}</p>
+        <SourcedLinePicker trackId={trackId} lines={startFinishLines} onUse={(l) => { setLine(l.line); setSectors(l.sectors); setMsg(null); }} />
         <div className="btn-row">
           <button className="btn" onClick={() => dropHere(false)} disabled={!running}>{t('lt.dropHere')}</button>
           <button className="btn ghost" onClick={() => dropHere(true)} disabled={!running || !line || sectors.length >= MAX_SECTORS}>{t('lt.addSector')}</button>
@@ -150,7 +160,7 @@ export default function LapTimer() {
               {live.laps.map((l) => (
                 <li key={l.n}>
                   <strong className="mono">{fmtLap(l.seconds)}</strong>{l.sectors && <span className="muted mono"> | {l.sectors.map((x) => x.toFixed(2)).join(' ')}</span>}
-                  {' '}<span className="muted">±{l.worstAccuracyM.toFixed(1)} m</span>
+                  {' '}<span className="muted">±{fmtQty('shortLength', l.worstAccuracyM / 0.3048, u, 0)}</span>
                   {!l.valid && <span className="err"> — {l.reason === 'accuracy' ? t('lt.refAcc', { m: LAP_MAX_ACCURACY_M }) : t('lt.refGap', { s: LAP_MAX_GAP_MS / 1000 })}</span>}
                 </li>
               ))}

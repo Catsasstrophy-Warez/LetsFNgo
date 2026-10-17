@@ -8,10 +8,12 @@ import { GO } from '../lib/shortcuts';
 import type { MsgKey } from '../lib/i18n';
 import { LANGS, type Lang } from '../lib/i18n';
 import { Note } from '../components/Facts';
-import { MAX_IMPORT_BYTES, SCHEMA_VERSION, currentBackup, parseBackup, resetAll, restoreBackup } from '../lib/backup';
+import { MAX_IMPORT_BYTES, MAX_IMPORT_BYTES_PHOTOS, SCHEMA_VERSION, buildExport, parseBackup, resetAll, restoreBackup } from '../lib/backup';
+import { clearPhotos, photosToBackup, restorePhotos } from '../lib/photos';
 import { today } from '../lib/garage';
 import { checkReminders, loadNotify, notifySupport, requestPermission, saveNotify, type Support } from '../lib/notify';
-import type { ThemePref, Units } from '../lib/units';
+import { resolveTheme, type AccentPref, type ThemePref, type Units } from '../lib/units';
+import { deriveAccent } from '../lib/accent';
 
 function Seg<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: [T, string][]; onChange: (v: T) => void }) {
   return (
@@ -28,12 +30,18 @@ export function DataManagement() {
   const t = useT();
   const { refresh } = useCar();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  const exportAll = () => {
-    downloadText(JSON.stringify(currentBackup(), null, 2), `gt500-companion-backup-${today()}.json`, 'application/json');
-    setMsg({ ok: true, text: t('data.downloaded') });
+  const [withPhotos, setWithPhotos] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const exportAll = async () => {
+    setBusy(true);
+    const r = await buildExport(withPhotos, () => photosToBackup());
+    setBusy(false);
+    if (!r.ok) return setMsg({ ok: false, text: r.error === 'tooBig' ? t('data.exportTooBig', { mb: (withPhotos ? MAX_IMPORT_BYTES_PHOTOS : MAX_IMPORT_BYTES) / 1024 / 1024 }) : t('data.photosUnavailable') });
+    downloadText(r.text, `gt500-companion-backup-${today()}${withPhotos ? '-photos' : ''}.json`, 'application/json');
+    setMsg({ ok: true, text: withPhotos ? t('data.downloadedPhotos', { n: r.photos, mb: (r.text.length / 1024 / 1024).toFixed(1) }) : t('data.downloaded') });
   };
   const importFile = async (file: File) => {
-    if (file.size > MAX_IMPORT_BYTES) return setMsg({ ok: false, text: t('data.tooBig', { mb: MAX_IMPORT_BYTES / 1024 / 1024 }) });
+    if (file.size > MAX_IMPORT_BYTES_PHOTOS) return setMsg({ ok: false, text: t('data.tooBig', { mb: MAX_IMPORT_BYTES_PHOTOS / 1024 / 1024 }) });
     const r = parseBackup(await file.text());
     if (!r.ok) return setMsg({ ok: false, text: t('data.failed', { e: r.errors.slice(0, 4).join('; ') }) });
     if (!confirm(t('data.confirm'))) return;
@@ -41,17 +49,23 @@ export function DataManagement() {
     setSettings(r.data.settings);
     refresh();
     const d = r.data;
-    setMsg({ ok: true, text: t('data.imported', { cars: d.cars.cars.length, plans: d.plans.length, track: d.track.length, drag: d.drag.length, fuel: d.fuel.length }) + (r.migratedFrom ? ` ${t('data.upgraded', { v: r.migratedFrom })}` : '') });
+    let photoNote = '';
+    if (d.photos) {
+      try { photoNote = ` ${t('data.photosRestored', { n: await restorePhotos(d.photos) })}`; } catch { photoNote = ` ${t('data.photosFailed')}`; }
+    }
+    setMsg({ ok: true, text: t('data.imported', { cars: d.cars.cars.length, plans: d.plans.length, track: d.track.length, drag: d.drag.length, fuel: d.fuel.length }) + (r.migratedFrom ? ` ${t('data.upgraded', { v: r.migratedFrom })}` : '') + photoNote });
   };
   return (
     <section className="card" id="data">
       <h2>{t('data.title')}</h2>
       <p className="muted">{t('data.text', { v: SCHEMA_VERSION })}</p>
       <div className="btn-row">
-        <button className="btn" onClick={exportAll}>{t('data.export')}</button>
+        <button className="btn" onClick={exportAll} disabled={busy}>{busy ? t('data.exporting') : t('data.export')}</button>
         <label className="btn ghost file-btn">{t('data.import')}<input type="file" accept="application/json,.json" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ''; }} /></label>
-        <button className="btn ghost danger-btn" onClick={() => { if (confirm(t('data.resetConfirm'))) { resetAll(); setMsg({ ok: true, text: t('data.erased') }); setTimeout(() => location.reload(), 300); } }}>{t('data.reset')}</button>
+        <button className="btn ghost danger-btn" onClick={() => { if (confirm(t('data.resetConfirm'))) { resetAll(); clearPhotos(); setMsg({ ok: true, text: t('data.erased') }); setTimeout(() => location.reload(), 300); } }}>{t('data.reset')}</button>
       </div>
+      <label className="check"><input type="checkbox" checked={withPhotos} onChange={(e) => setWithPhotos(e.target.checked)} /><span>{t('data.includePhotos')}</span></label>
+      <p className="muted small">{t('data.includePhotosNote', { mb: MAX_IMPORT_BYTES_PHOTOS / 1024 / 1024 })}</p>
       {msg && <p className={msg.ok ? 'ok-t' : 'err'} role="status">{msg.text}</p>}
     </section>
   );
@@ -85,6 +99,26 @@ export function Notifications() {
   );
 }
 
+/** Optional accent from the active car's paint, with the AA contrast it reaches (or why it falls back). */
+export function AccentSettings() {
+  const { settings, setSettings } = useSettings();
+  const t = useT();
+  const car = useCar();
+  const prefersDark = typeof matchMedia !== 'undefined' && matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = resolveTheme(settings.theme, prefersDark);
+  const a = deriveAccent(car.swatch, theme);
+  return (
+    <section className="card" id="accent">
+      <h2>{t('accent.title')}</h2>
+      <Seg<AccentPref> label={t('accent.title')} value={settings.accent ?? 'default'} options={[['default', t('accent.default')], ['car', t('accent.car')]]} onChange={(accent) => setSettings({ ...settings, accent })} />
+      {(settings.accent ?? 'default') === 'car' && (a
+        ? <p className="small"><span className="accent-swatch" style={{ background: a.accent }} aria-hidden="true" /> <span className="accent-swatch" style={{ background: a.accentBtn }} aria-hidden="true" /> {t('accent.ok', { r: a.textRatio.toFixed(1), b: a.btnRatio.toFixed(1) })}</p>
+        : <p className="warn-t small" role="status">{car.swatch ? t('accent.neutral') : t('accent.noColor')} <Link to="/garage">{t('nav.garage')} →</Link></p>)}
+      <Note>{t('accent.note')}</Note>
+    </section>
+  );
+}
+
 export default function Settings() {
   const { settings, setSettings } = useSettings();
   const t = useT();
@@ -103,6 +137,7 @@ export default function Settings() {
         <h2>{t('settings.theme')}</h2>
         <Seg<ThemePref> label={t('settings.theme')} value={settings.theme} options={[['dark', t('settings.dark')], ['light', t('settings.light')], ['system', t('settings.system')]]} onChange={(theme) => setSettings({ ...settings, theme })} />
       </section>
+      <AccentSettings />
       <section className="card" id="language">
         <h2>{t('settings.language')}</h2>
         <Seg<Lang> label={t('settings.language')} value={settings.lang} options={LANGS.map(([v, l]) => [v, l])} onChange={(lang) => setSettings({ ...settings, lang })} />

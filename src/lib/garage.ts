@@ -1,5 +1,6 @@
 import { load, save } from './storage';
 import type { TimingLine, TracePt } from './lapTimer';
+import type { CheckItem } from './validate';
 import { normCarStore, normGarage, normList, normPlan, normTrack } from './validate';
 
 export interface LogEntry { id: string; date: string; title: string; notes: string; miles?: string; cost?: string }
@@ -23,6 +24,8 @@ export interface TrackSession {
   carId?: string;
   /** Present when the session was recorded by the GPS lap timer (backup schema v7). */
   gps?: GpsSession;
+  /** This event's copy of the pre-track checklist (backup schema v8). */
+  checklist?: CheckItem[];
 }
 
 /** One lap timed by GPS. `startMs`/`endMs` are relative to the trace start; accuracy is the worst fix in the lap (m). */

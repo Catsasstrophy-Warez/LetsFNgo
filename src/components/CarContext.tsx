@@ -2,17 +2,19 @@ import { createContext, useCallback, useContext, useState } from 'react';
 import { save } from '../lib/storage';
 import { activeCar, carLabel, carOf, loadCars, setActiveCar } from '../lib/garage';
 import { mergeCarList } from '../lib/carlog';
+import { colors } from '../data/colors';
 
 export interface CarSummary { id: string; label: string }
 /** `version` changes only on an explicit switch, so pages remount with the new car's data (a refresh after an import does not wipe page state). */
-export interface CarCtx { active: string; cars: CarSummary[]; version: number; switchCar: (id: string) => void; refresh: () => void }
+export interface CarCtx { active: string; cars: CarSummary[]; /** Paint swatch of the active car, or null (no / other colour). */ swatch?: string | null; version: number; switchCar: (id: string) => void; refresh: () => void }
 
 export const summarize = () => {
   const s = loadCars();
-  return { active: activeCar(s).id, cars: s.cars.map((c, i) => ({ id: c.id, label: carLabel(c, i) })) };
+  const a = activeCar(s);
+  return { active: a.id, swatch: colors.find((c) => c.id === a.color)?.swatch ?? null, cars: s.cars.map((c, i) => ({ id: c.id, label: carLabel(c, i) })) };
 };
 
-export const CarContext = createContext<CarCtx>({ active: 'car1', cars: [], version: 0, switchCar: () => undefined, refresh: () => undefined });
+export const CarContext = createContext<CarCtx>({ active: 'car1', cars: [], swatch: null, version: 0, switchCar: () => undefined, refresh: () => undefined });
 export const useCar = () => useContext(CarContext);
 
 /** App-level car state: the header switcher and every page read the active car from here. */

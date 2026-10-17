@@ -20,7 +20,7 @@ const ROUTES: Record<string, string> = {
   production: '/years', performance: '/performance', recalls: '/ownership', maintenance: '/ownership', vinPositions: '/vin',
   modStages: '/mods', competitors: '/compare', communities: '/community', media: '/media', photos: '/media', audio: '/media',
   dynoBaselines: '/dyno', partNumbers: '/parts', auctionResults: '/market', marketStats: '/market', editions: '/editions',
-  events: '/history', milestones: '/history', tracks: '/laptimer', notes: '/sources',
+  events: '/history', milestones: '/history', tracks: '/laptimer', startFinishLines: '/laptimer', notes: '/sources',
 };
 
 export function labelOf(r: Obj): string {

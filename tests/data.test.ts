@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { collections, collectSourced, allSourceUrls } from '../src/data';
 import { search } from '../src/lib/search';
+import { MAY_BE_EMPTY } from '../src/lib/dataSchema';
 
 const CONF = ['confirmed', 'reported', 'unverified'];
 
 describe('data integrity', () => {
   it('every top-level record has source + confidence', () => {
     for (const [name, recs] of Object.entries(collections)) {
-      expect(recs.length, name).toBeGreaterThan(0);
+      if (!MAY_BE_EMPTY.has(name)) expect(recs.length, name).toBeGreaterThan(0);
       for (const r of recs) {
         expect(typeof r.source, `${name}: ${JSON.stringify(r).slice(0, 80)}`).toBe('string');
         expect(CONF, name).toContain(r.confidence);

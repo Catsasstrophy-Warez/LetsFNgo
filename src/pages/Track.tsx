@@ -8,6 +8,11 @@ import { REFERENCE_TRACKS, referenceLaps } from '../lib/refLaps';
 import { LapTrend } from '../components/Trends';
 import { useT } from '../components/SettingsContext';
 import { GpsAnalysis } from '../components/GpsAnalysis';
+import { TrackMap } from '../components/TrackMap';
+import { PhotoAttach } from '../components/Photos';
+import { PreTrackChecklist, SavedChecklist } from '../components/PreTrack';
+import { deletePhotosFor } from '../lib/photos';
+import { freshChecklist } from '../lib/preTrack';
 
 const blank = (): Omit<TrackSession, 'id'> => ({ date: today(), track: '', conditions: '', airTemp: '', pressures: { fl: '', fr: '', rl: '', rr: '' }, laps: '', notes: '' });
 
@@ -23,6 +28,7 @@ export default function Track() {
   const [sessions, setSessions] = useCarLog<TrackSession>(KEYS.track, loadTrack);
   const [f, setF] = useState(blank);
   const [err, setErr] = useState('');
+  const [check, setCheck] = useState(() => freshChecklist(t));
   const preview = parseLaps(f.laps);
   const setP = (k: keyof TrackSession['pressures'], v: string) => setF({ ...f, pressures: { ...f.pressures, [k]: v } });
 
@@ -31,8 +37,9 @@ export default function Track() {
     if (!f.track.trim()) return setErr(t('track.errName'));
     if (preview.bad.length) return setErr(t('track.errLaps', { l: preview.bad.join(', ') }));
     setErr('');
-    setSessions([...sessions, { id: uid(), ...f }]);
+    setSessions([...sessions, { id: uid(), ...f, checklist: check.map((c) => ({ ...c })) }]);
     setF({ ...blank(), track: f.track, pressures: f.pressures });
+    setCheck(freshChecklist(t));
   };
 
   return (
@@ -48,7 +55,8 @@ export default function Track() {
           <label>{t('track.airTemp')}<input className="input" value={f.airTemp} onChange={(e) => setF({ ...f, airTemp: e.target.value })} placeholder="72°F" /></label>
         </div>
         <datalist id="tracks"><option value="Laguna Seca" /><option value="VIR Grand Course" /></datalist>
-        <fieldset className="pressures">
+        <PreTrackChecklist items={check} onChange={setCheck} />
+        <fieldset className="pressures" id="pressures">
           <legend>{t('track.pressures')}</legend>
           {(['fl', 'fr', 'rl', 'rr'] as const).map((k) => (
             <label key={k}>{k.toUpperCase()}<input className="input" inputMode="decimal" value={f.pressures[k]} onChange={(e) => setP(k, e.target.value)} /></label>
@@ -67,7 +75,7 @@ export default function Track() {
         const p = s.pressures;
         return (
           <section className="card" key={s.id}>
-            <div className="row-main"><h2>{s.track}</h2><button className="link-btn danger" onClick={() => { if (confirm(t('track.confirmDelete'))) setSessions(sessions.filter((x) => x.id !== s.id)); }} aria-label={t('track.deleteLabel', { t: s.track, d: s.date })}>{t('common.delete')}</button></div>
+            <div className="row-main"><h2>{s.track}</h2><button className="link-btn danger" onClick={() => { if (confirm(t('track.confirmDelete'))) { setSessions(sessions.filter((x) => x.id !== s.id)); deletePhotosFor({ kind: 'track', id: s.id }); } }} aria-label={t('track.deleteLabel', { t: s.track, d: s.date })}>{t('common.delete')}</button></div>
             <p className="muted">{s.date}{s.conditions && ` · ${s.conditions}`}{s.airTemp && ` · ${s.airTemp}`}{(p.fl || p.fr || p.rl || p.rr) && ` · psi FL ${p.fl || '—'} FR ${p.fr || '—'} RL ${p.rl || '—'} RR ${p.rr || '—'}`}</p>
             <div className="stats">
               <div className="stat"><div className="stat-v">{formatLapTime(st.best)}</div><div className="stat-l">{t('track.best')}</div></div>
@@ -89,10 +97,13 @@ export default function Track() {
             {s.gps && (
               <>
                 <div className="sub">{t('ga.heading')} <span className="tag">{t('ga.provenance')}</span></div>
+                <TrackMap gps={s.gps} />
                 <GpsAnalysis gps={s.gps} name={s.track} date={s.date} />
               </>
             )}
             {s.notes && <p>{s.notes}</p>}
+            {s.checklist && <SavedChecklist items={s.checklist} />}
+            <PhotoAttach owner={{ kind: 'track', id: s.id }} label={`${s.track} ${s.date}`} />
           </section>
         );
       })}

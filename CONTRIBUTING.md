@@ -74,7 +74,10 @@ never places a timing line from it. To contribute a start/finish line:
   of travel, for one named configuration.
 - Cite a source: the track's own map or timing documentation, or an OpenStreetMap way/node URL for the line. A line
   captured on-site with the app's "Drop line here" can be submitted as `unverified` with the date and device.
-- Lines go in as their own record with `source` and `confidence`; `npm run validate:data` checks coordinate ranges.
+- Lines go in as their own record in `src/data/startFinishLines.ts` (`id`, `trackId` = the track's id in `tracks.ts`,
+  `configuration`, points `a`/`b`, optional `direction` 1/−1, `sectors`, `source`, `confidence`). `npm run validate:data`
+  checks coordinate ranges, that `trackId` exists, one line per track + configuration, a 3–200 m line and that it lies
+  within 5 km of the facility point. Lines from OpenStreetMap are credited "© OpenStreetMap contributors" in the app.
 
 ## Code changes
 

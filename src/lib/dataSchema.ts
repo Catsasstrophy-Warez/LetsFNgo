@@ -7,6 +7,12 @@
  * type in `src/data/types.ts` must be added here too (or validation fails), which keeps the two in sync.
  */
 import type { Sourced } from '../data/types';
+import { haversine } from './gps';
+
+/** A sourced timing line must span a track: between 3 m and this many metres long. */
+export const MAX_LINE_M = 200;
+/** …and lie within this distance of its track's facility point (facility points can be ~1 km off). */
+export const MAX_LINE_FROM_FACILITY_M = 5000;
 
 export type JsonSchema = { [k: string]: unknown };
 
@@ -91,11 +97,13 @@ const ITEMS: Record<string, JsonSchema> = {
   milestones: rec({ id: str, date: nul(date), title: str, research }, { placement: nul(str) }),
   tracks: rec({ id: str, name: str, kind: en('road course', 'drag strip', 'oval + road course', 'road course + drag strip', 'oval + road course + drag strip'), configuration: str, city: str, state: { type: 'string', pattern: '^[A-Z]{2}$' },
     facility: nul({ $ref: '#/$defs/geoPoint' }), startFinish: nul({ $ref: '#/$defs/geoLine' }), sectors: arr({ $ref: '#/$defs/geoLine' }), lengthMi: nul(num) }, { direction: en(1, -1) }),
+  startFinishLines: rec({ id: str, trackId: str, configuration: str, a: { $ref: '#/$defs/geoPoint' }, b: { $ref: '#/$defs/geoPoint' }, sectors: arr({ $ref: '#/$defs/geoLine' }) },
+    { direction: en(1, -1) }),
   notes: rec({ text: str }),
 };
 
 /** Collections that may legitimately be empty (data slots waiting for sourced records). */
-export const MAY_BE_EMPTY = new Set(['tracks']);
+export const MAY_BE_EMPTY = new Set(['tracks', 'startFinishLines']);
 
 const DEFS: Record<string, JsonSchema> = {
   source: https,
@@ -222,5 +230,33 @@ export function checkCollections(collections: Record<string, Sourced[]>): Issue[
       }
     });
   }
+  issues.push(...checkLines(collections));
   return issues;
+}
+
+type Pt = { lat: number; lon: number };
+const isPt = (p: unknown): p is Pt => !!p && typeof (p as Pt).lat === 'number' && typeof (p as Pt).lon === 'number';
+
+/** Start/finish lines: `trackId` names an existing track, ids are unique per track + configuration, and the line is a plausible gate. */
+function checkLines(collections: Record<string, Sourced[]>): Issue[] {
+  const out: Issue[] = [];
+  const lines = (collections.startFinishLines ?? []) as unknown as Record<string, unknown>[];
+  const tracks = new Map(((collections.tracks ?? []) as unknown as Record<string, unknown>[]).map((t) => [t.id, t]));
+  const seen = new Set<string>();
+  lines.forEach((l, i) => {
+    const push = (path: string, message: string) => out.push({ collection: 'startFinishLines', path: `$[${i}]${path}`, message });
+    const t = tracks.get(l.trackId);
+    if (!t) { push('.trackId', `unknown track id ${JSON.stringify(l.trackId)} (must match an id in tracks)`); }
+    const key = `${String(l.trackId)}|${String(l.configuration).toLowerCase()}`;
+    if (seen.has(key)) push('.configuration', 'two lines for the same track and configuration'); else seen.add(key);
+    const gates: [string, unknown, unknown][] = [['', l.a, l.b], ...(Array.isArray(l.sectors) ? l.sectors.map((s, k) => [`.sectors[${k}]`, (s as Record<string, unknown>)?.a, (s as Record<string, unknown>)?.b] as [string, unknown, unknown]) : [])];
+    for (const [path, a, b] of gates) {
+      if (!isPt(a) || !isPt(b)) continue;
+      const len = haversine(a, b);
+      if (len < 3 || len > MAX_LINE_M) push(path || '.b', `line is ${Math.round(len)} m long; a timing line spans the track (3–${MAX_LINE_M} m)`);
+      const f = t?.facility;
+      if (isPt(f) && haversine(f, a) > MAX_LINE_FROM_FACILITY_M) push(path || '.a', `line is more than ${MAX_LINE_FROM_FACILITY_M / 1000} km from the track's facility point`);
+    }
+  });
+  return out;
 }

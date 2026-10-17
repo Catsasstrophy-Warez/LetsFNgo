@@ -403,3 +403,21 @@ export interface TrackDef extends Sourced {
   /** Lap / strip length in miles, or null. */
   lengthMi: number | null;
 }
+
+/**
+ * A sourced start/finish timing line for one track configuration, linked to `tracks` by `trackId`. Only from a source
+ * that publishes the line (track map / timing documentation, or an OpenStreetMap way). Never derived from `facility`.
+ */
+export interface StartFinishLine extends Sourced {
+  id: string;
+  /** `TrackDef.id` this line belongs to. */
+  trackId: string;
+  /** Named configuration (e.g. "Full Course"). */
+  configuration: string;
+  a: GeoPoint;
+  b: GeoPoint;
+  /** Counted crossing direction (+1 / −1 as in the lap timer); absent = either direction, the first crossing sets it. */
+  direction?: 1 | -1;
+  /** Sector split lines in lap order (may be empty). */
+  sectors: GeoLine[];
+}

@@ -399,3 +399,29 @@ kbd { font: 600 .8rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; border: 
 .search-group { margin: 1rem 0 .25rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .recent { display: flex; flex-wrap: wrap; gap: .4rem; list-style: none; padding: 0; }
 .rows li.active-hit { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+/* Track map (round 12) */
+.tm-svg { cursor: crosshair; touch-action: manipulation; }
+.tm-all { fill: none; stroke: var(--border); stroke-width: 2; }
+.tm-under { fill: none; stroke: var(--muted); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; opacity: .55; }
+.tm-seg { fill: none; stroke-width: 4; stroke-linecap: round; }
+.spd-0 { stroke: #3e4a89; background: #3e4a89; } .spd-1 { stroke: #26828e; background: #26828e; } .spd-2 { stroke: #35b779; background: #35b779; }
+.spd-3 { stroke: #90d743; background: #90d743; } .spd-4 { stroke: #fde725; background: #fde725; }
+.tm-key { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; border: 1px solid var(--border); }
+.tm-sf line { stroke: var(--text); stroke-width: 3; }
+.tm-sector line { stroke: var(--text); stroke-width: 2; stroke-dasharray: 5 3; }
+.tm-label { fill: var(--text); font-size: 12px; font-weight: 700; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.tm-pt { fill: none; stroke: var(--text); stroke-width: 3; }
+.tm-range { width: 100%; min-height: 24px; }
+.tm-best { font-weight: 700; color: var(--ok); }
+/* Photos (round 12) */
+.photo-strip { display: flex; flex-wrap: wrap; gap: .4rem; margin: .4rem 0; padding: 0; list-style: none; }
+.photo-thumb { width: 72px; height: 72px; padding: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface-2); cursor: zoom-in; }
+.photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lightbox { max-width: min(96vw, 1000px); max-height: 94vh; padding: .75rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); }
+.lightbox::backdrop { background: rgb(0 0 0 / .8); }
+.lightbox img { display: block; max-width: 100%; max-height: 74vh; margin: 0 auto .5rem; border-radius: 8px; }
+.photo-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+/* Checklist (round 12) */
+.ptc { border: 1px solid var(--border); border-radius: 10px; padding: .5rem .75rem; margin: .5rem 0; }
+.ptc .check { align-items: flex-start; }
+.accent-swatch { display: inline-block; width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); vertical-align: middle; }

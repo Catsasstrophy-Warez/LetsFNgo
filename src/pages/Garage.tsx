@@ -23,8 +23,10 @@ import { ShareLink } from '../components/ShareLink';
 import { carLogCounts, deleteCar } from '../lib/carlog';
 import { remindersToIcs } from '../lib/ics';
 import { downloadText } from '../lib/download';
+import { PhotoAttach } from '../components/Photos';
+import { deletePhotosFor } from '../lib/photos';
 
-function Log({ title, items, onAdd, onDelete }: { title: string; items: LogEntry[]; onAdd: (e: LogEntry) => void; onDelete: (id: string) => void }) {
+function Log({ title, kind, items, onAdd, onDelete }: { title: string; kind: 'service' | 'mod'; items: LogEntry[]; onAdd: (e: LogEntry) => void; onDelete: (id: string) => void }) {
   const u = useUnits();
   const t = useT();
   const [f, setF] = useState({ date: today(), title: '', notes: '', miles: '', cost: '' });
@@ -44,8 +46,9 @@ function Log({ title, items, onAdd, onDelete }: { title: string; items: LogEntry
           {[...items].sort((a, b) => b.date.localeCompare(a.date)).map((i) => (
             <li key={i.id}>
               <div className="row-main"><span><strong>{i.title}</strong> <span className="muted">{i.date}{toNum(i.miles ?? '') !== null && ` · ${fmtQty('distance', toNum(i.miles ?? ''), u)}`}{i.cost && ` · $${i.cost}`}</span></span>
-                <button className="link-btn" onClick={() => onDelete(i.id)} aria-label={t('common.deleteX', { x: i.title })}>{t('common.delete')}</button></div>
+                <button className="link-btn" onClick={() => { onDelete(i.id); deletePhotosFor({ kind, id: i.id }); }} aria-label={t('common.deleteX', { x: i.title })}>{t('common.delete')}</button></div>
               {i.notes && <p className="wrap">{i.notes}</p>}
+              <PhotoAttach owner={{ kind, id: i.id }} label={i.title} />
             </li>
           ))}
         </ul>
@@ -156,7 +159,9 @@ function Cars() {
     const i = s.cars.findIndex((c) => c.id === car.active);
     const c = carLogCounts(car.active, { track: loadTrack(), drag: loadDrag(), fuel: loadFuel(), dyno: loadDyno() });
     if (!confirm(t('cars.confirmDelete', { name: carLabel(s.cars[i], i), track: c.track, drag: c.drag, fuel: c.fuel, dyno: c.dyno }))) return;
-    if (deleteCar(car.active)) car.switchCar(loadCars().active);
+    const gone = s.cars[i];
+    const owners = [...gone.service.map((e) => ({ kind: 'service' as const, id: e.id })), ...gone.mods.map((e) => ({ kind: 'mod' as const, id: e.id })), ...forCar(loadTrack(), car.active).map((e) => ({ kind: 'track' as const, id: e.id }))];
+    if (deleteCar(car.active)) { owners.forEach((o) => { deletePhotosFor(o); }); car.switchCar(loadCars().active); }
     else setMsg(t('cars.deleteFailed'));
   };
   return (
@@ -217,8 +222,8 @@ export default function Garage() {
         </div>
       </section>
       <Reminders g={g} setG={setG} />
-      <Log title={t('garage.modsLog')} items={g.mods} onAdd={(e) => setG((s) => ({ ...s, mods: [...s.mods, e] }))} onDelete={(x) => setG((s) => ({ ...s, mods: s.mods.filter((m) => m.id !== x) }))} />
-      <Log title={t('garage.serviceLog')} items={g.service} onAdd={(e) => setG((s) => ({ ...s, service: [...s.service, e] }))} onDelete={(x) => setG((s) => ({ ...s, service: s.service.filter((m) => m.id !== x) }))} />
+      <Log title={t('garage.modsLog')} kind="mod" items={g.mods} onAdd={(e) => setG((s) => ({ ...s, mods: [...s.mods, e] }))} onDelete={(x) => setG((s) => ({ ...s, mods: s.mods.filter((m) => m.id !== x) }))} />
+      <Log title={t('garage.serviceLog')} kind="service" items={g.service} onAdd={(e) => setG((s) => ({ ...s, service: [...s.service, e] }))} onDelete={(x) => setG((s) => ({ ...s, service: s.service.filter((m) => m.id !== x) }))} />
       <section className="card">
         <h2>{t('report.cardTitle')}</h2>
         <p className="muted">{t('report.cardText')}</p>

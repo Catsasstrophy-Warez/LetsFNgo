@@ -55,7 +55,7 @@ describe('new pages render with data', () => {
   });
   it('Settings has units, theme and data management', async () => {
     const h = await render('Settings');
-    for (const t of ['Imperial', 'Metric', 'Match device', 'Export JSON', 'Import JSON', 'Reset all data', 'schema v7']) expect(h).toContain(t);
+    for (const t of ['Imperial', 'Metric', 'Match device', 'Export JSON', 'Import JSON', 'Reset all data', 'schema v8']) expect(h).toContain(t);
   });
   it('Visualizer, print sheet and quiz', async () => {
     const v = await render('Visualizer');

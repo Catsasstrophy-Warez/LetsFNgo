@@ -46,9 +46,9 @@ describe('units', () => {
     expect(convertSpec(107.1, 'in', 'imperial')).toEqual({ value: 107.1, unit: 'in' });
   });
   it('normalizes settings and theme', () => {
-    expect(normalizeSettings({ units: 'metric', theme: 'system' })).toEqual({ units: 'metric', theme: 'system', lang: 'en' });
-    expect(normalizeSettings({ units: 5, theme: {} })).toEqual({ units: 'imperial', theme: 'dark', lang: 'en' });
-    expect(normalizeSettings(null)).toEqual({ units: 'imperial', theme: 'dark', lang: 'en' });
+    expect(normalizeSettings({ units: 'metric', theme: 'system' })).toEqual({ units: 'metric', theme: 'system', lang: 'en', accent: 'default' });
+    expect(normalizeSettings({ units: 5, theme: {} })).toEqual({ units: 'imperial', theme: 'dark', lang: 'en', accent: 'default' });
+    expect(normalizeSettings(null)).toEqual({ units: 'imperial', theme: 'dark', lang: 'en', accent: 'default' });
     expect(resolveTheme('system', false)).toBe('light');
     expect(resolveTheme('dark', false)).toBe('dark');
   });
@@ -166,7 +166,7 @@ describe('paint visualizer', () => {
 
 describe('backup schema 2', () => {
   it('migrates v1 and round-trips v2 stores', () => {
-    expect(migrate({ schema: 1 })).toMatchObject({ schema: 7, drag: [], fuel: [], dyno: [] });
+    expect(migrate({ schema: 1 })).toMatchObject({ schema: 8, drag: [], fuel: [], dyno: [] });
     const v1 = validateBackup({ app: 'gt500-companion', schema: 1, garage: {}, plans: [], track: [] });
     expect(v1.ok && v1.migratedFrom).toBe(1);
     const b = makeBackup(EMPTY_GARAGE, [], [], [slip({ id: 'x', quarterEt: 11 })], [fill(10, 5)], { units: 'metric', theme: 'light', lang: 'en' });

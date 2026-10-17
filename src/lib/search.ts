@@ -1,14 +1,9 @@
 import { collections } from '../data';
 import { load, save } from './storage';
+import { routeFor } from './coverage';
 
 export interface SearchHit { collection: string; title: string; text: string; route: string; source: string }
 
-const ROUTES: Record<string, string> = {
-  specs: '/specs', modelYears: '/years', colors: '/colors', packages: '/packages', prices: '/packages',
-  marketSales: '/packages', auctionResults: '/market', marketStats: '/market', production: '/years', performance: '/performance', recalls: '/ownership',
-  maintenance: '/ownership', vinPositions: '/vin', modStages: '/mods', competitors: '/compare',
-  communities: '/community', tracks: '/laptimer', partNumbers: '/parts', guides: '/guides', media: '/media', photos: '/media', audio: '/media', notes: '/sources',
-};
 
 function flatten(v: unknown): string {
   if (v == null) return '';
@@ -20,7 +15,7 @@ const index = Object.entries(collections).flatMap(([collection, recs]) =>
   recs.map((r) => {
     const o = r as unknown as Record<string, unknown>;
     const title = String(o.label ?? o.name ?? o.title ?? o.number ?? o.item ?? o.stage ?? o.positions ?? o.text ?? o.description ?? collection);
-    return { collection, title, text: flatten(r), route: ROUTES[collection] ?? '/', source: r.source };
+    return { collection, title, text: flatten(r), route: routeFor(collection, o), source: r.source };
   }),
 );
 

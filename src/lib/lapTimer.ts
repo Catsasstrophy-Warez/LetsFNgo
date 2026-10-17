@@ -337,7 +337,9 @@ export function nearestFacility<T extends { facility: LatLon | null }>(pos: LatL
 /* ---------- session building ---------- */
 
 /** Format seconds as m:ss.mmm (laps are stored in the Track log's text format). */
-export function fmtLap(s: number): string {
+export function fmtLap(sec: number): string {
+  // Round to the millisecond first so 59.9996 s carries into the minute ("1:00.000", not "0:60.000").
+  const s = Math.round(sec * 1000) / 1000;
   const m = Math.floor(s / 60);
   const r = s - m * 60;
   return `${m}:${r.toFixed(3).padStart(6, '0')}`;
@@ -365,4 +367,21 @@ export function pruneTraces<T extends { date: string; gps?: { trace: TracePt[]; 
   const withTrace = list.filter((s) => s.gps && s.gps.trace.length).sort((a, b) => (b.gps?.startIso ?? '').localeCompare(a.gps?.startIso ?? ''));
   const drop = new Set(withTrace.slice(keep));
   return list.map((s) => (drop.has(s) && s.gps ? { ...s, gps: { ...s.gps, trace: [] } } : s));
+}
+
+/* ---------- sourced start/finish lines ---------- */
+
+/** Sourced lines for one track (optionally one configuration, case-insensitive). */
+export function linesForTrack<T extends { trackId: string; configuration: string }>(list: T[], trackId: string, configuration?: string): T[] {
+  return list.filter((l) => l.trackId === trackId && (configuration === undefined || l.configuration.toLowerCase() === configuration.toLowerCase()));
+}
+
+/** A sourced line record as lap-timer lines (start/finish + sectors). A missing direction counts both ways. */
+export function sourcedTimingLines(l: { a: LatLon; b: LatLon; direction?: 1 | -1; sectors: { a: LatLon; b: LatLon }[] }): { line: TimingLine; sectors: TimingLine[] } {
+  return { line: { a: { ...l.a }, b: { ...l.b }, dir: l.direction ?? 0 }, sectors: l.sectors.slice(0, MAX_SECTORS).map((s) => ({ a: { ...s.a }, b: { ...s.b }, dir: 0 })) };
+}
+
+/** True when a source URL is OpenStreetMap (its data needs the "© OpenStreetMap contributors" credit). */
+export function isOsmSource(url: string): boolean {
+  try { const h = new URL(url).hostname.toLowerCase(); return h === 'openstreetmap.org' || h.endsWith('.openstreetmap.org') || h === 'osm.org' || h.endsWith('.osm.org'); } catch { return false; }
 }
