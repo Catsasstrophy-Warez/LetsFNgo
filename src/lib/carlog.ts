@@ -3,6 +3,7 @@ import { KEYS, activeCarId, carOf, forCar, loadCars, removeCarFromStore, saveCar
 import { DRAG_KEY } from './drag';
 import { FUEL_KEY } from './fuel';
 import { DYNO_KEY } from './dyno';
+import { loadCost, saveCost } from './costStore';
 
 /** Every per-car log key (entries carry an optional `carId`). */
 export const CAR_LOG_KEYS = [KEYS.track, DRAG_KEY, FUEL_KEY, DYNO_KEY] as const;
@@ -25,7 +26,9 @@ export function appendForActiveCar<T extends WithCar>(key: string, all: T[], ent
 
 /** Drop one car's entries from every log. Raw lists are filtered so even unreadable entries of other cars survive. */
 export function purgeCarLogs(carId: string): boolean {
-  return CAR_LOG_KEYS.map((k) => {
+  const cost = loadCost();
+  const costOk = carId in cost.cars ? saveCost({ cars: Object.fromEntries(Object.entries(cost.cars).filter(([id]) => id !== carId)) }) : true;
+  return costOk && CAR_LOG_KEYS.map((k) => {
     const raw = load<unknown>(k, []);
     if (!Array.isArray(raw)) return true;
     return save(k, raw.filter((e) => !(e && typeof e === 'object' && carOf(e as WithCar) === carId)));
