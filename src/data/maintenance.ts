@@ -15,6 +15,7 @@ export const maintenance: MaintenanceItem[] = [
     conflicts: [
       { value: '11.5 qt (Motorcraft FL-2087 filter)', source: LMR, confidence: 'reported', context: 'Most-cited (LMR)' },
       { value: '11 qt pan', source: LMR, confidence: 'unverified', context: 'Ford media material, per LMR summary' },
+      { value: '11.5 qt (2020 supplement per secondary sources)', source: LMR, confidence: 'unverified', context: 'Research round 16: parts/forum sources attribute it to the 2020 GT500 supplement; seen only in a search summary' },
       { value: '10 qt (FL2062 filter)', source: 'https://lmr.com/products/mustang-fluid-capacity-2018-2020', confidence: 'unverified', context: 'ALLDATA list via search snippet' },
     ],
   },
@@ -25,7 +26,7 @@ export const maintenance: MaintenanceItem[] = [
     id: 'dct-fluid', group: 'Fluids', item: 'DCT fluid', value: 'Motorcraft XT-14-L GT500 Dual Clutch Transmission Fluid', source: MC_DCT, confidence: 'confirmed',
     warning: 'XT-11-QDC (WSS-M2C200-D2) is a dry-clutch fluid and is NOT correct for the GT500 TR-9070.',
   },
-  { id: 'dct-cap', group: 'Fluids', item: 'DCT fluid capacity', value: '8.0 qt total (drain/fill ≈ 3–4 qt per owners)', source: LMR, confidence: 'unverified', note: 'ALLDATA via LMR; not confirmed by Ford.' },
+  { id: 'dct-cap', group: 'Fluids', item: 'DCT fluid capacity', value: '8.0 qt total (drain/fill ≈ 3–4 qt per owners)', source: LMR, confidence: 'unverified', note: 'ALLDATA via LMR; not confirmed by Ford. Research round 16 found no Ford or Motorcraft capacity figure either.' },
   { id: 'coolant', group: 'Fluids', item: 'Engine coolant type & capacity', value: 'Motorcraft Yellow Prediluted VC-13DL-G (WSS-M97B57-A2) · 15.2 qt (14.4 L)', source: SUPP21, confidence: 'reported', note: SUPP_NOTE },
   { id: 'ic-coolant', group: 'Fluids', item: 'Intercooler coolant', value: 'Motorcraft Yellow VC-13DL-G (WSS-M97B57-A2) · 2.5 qt (2.4 L)', source: SUPP21, confidence: 'reported', note: SUPP_NOTE },
   { id: 'diff-fluid', group: 'Fluids', item: 'Rear differential fluid interval', value: 'Every 150,000 mi; every 500 mi of track use or on an axle over-temperature warning', source: SUPP21, confidence: 'reported', note: SUPP_NOTE },

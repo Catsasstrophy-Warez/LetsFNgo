@@ -37,6 +37,8 @@ export const DIFF_SPEC = spec('diff');
 export const REDLINE_SPEC = spec('redline');
 export const TOP_SPEED_SPEC = spec('top-speed');
 export const TIRE_SPECS = [spec('tire-r'), spec('tire-f')];
+/** OEM fitment with load / speed index (Michelin fitment pages, research round 16). */
+export const TIRE_OEM_SPECS = [spec('tire-f-oem'), spec('tire-r-oem')];
 
 export const GT500_RATIOS = parseRatios(String(RATIO_SPEC.value));
 export const GT500_FINAL = Number(/[\d.]+/.exec(String(DIFF_SPEC.value))![0]);

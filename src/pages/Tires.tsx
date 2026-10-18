@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router';
 import { Cite, Note } from '../components/Facts';
 import { useT, useUnits } from '../components/SettingsContext';
-import { GT500_FINAL, GT500_RATIOS, GT500_REAR_TIRE, GT500_REDLINE, TIRE_SPECS } from '../lib/gearing';
+import { GT500_FINAL, GT500_RATIOS, GT500_REAR_TIRE, GT500_REDLINE, TIRE_OEM_SPECS, TIRE_SPECS } from '../lib/gearing';
 import { compareTires } from '../lib/tires';
 import { fmtQty } from '../lib/units';
 
@@ -33,6 +33,9 @@ export default function Tires() {
           <label>{t('tires.alt')}<input className="input mono" value={alt} onChange={(e) => setAlt(e.target.value)} /></label>
         </div>
         <ul className="rows small">{TIRE_SPECS.map((s) => <li key={s.id}>{s.label}: {String(s.value)} <Cite c={s.confidence} url={s.source} /></li>)}</ul>
+        <h2>{t('tires.oem')}</h2>
+        <ul className="rows small" data-testid="tire-oem">{TIRE_OEM_SPECS.map((s) => <li key={s.id}>{s.label}: <span className="mono">{String(s.value)}</span> <Cite c={s.confidence} url={s.source} /></li>)}</ul>
+        <Note>{t('tires.oemNote')}</Note>
       </section>
       {!c ? <p className="err" role="alert">{t('tires.err')}</p> : (
         <>

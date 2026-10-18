@@ -1651,6 +1651,19 @@ export const en = {
   "cost.svc.r-plugs": "Spark plugs",
   "cost.svc.r-diff": "Differential fluid",
   "cost.svc.r-coolant": "Engine coolant (first change)",
+  "cost.partListing": "{n}: {a} per listing, pack size unclear (seen {d})",
+  "cost.unclearPack": "The listing does not say whether the price is for one quart or a case, so this service is not priced.",
+  "tires.oem": "OEM fitment (load / speed index)",
+  "tires.oemNote": "Same sizes with the Carbon Fiber Track Package. The Pilot Sport Cup 2 load index for the GT500 is not confirmed.",
+  "parts.aftermarket": "Aftermarket, not a Ford OEM part.",
+  "parts.priceEach": "Price seen: {a} each ({c}, {d})",
+  "parts.priceQuart": "Price seen: {a} per quart ({c}, {d})",
+  "parts.priceListing": "Price seen: {a} per listing, pack size unclear ({c}, {d})",
+  "parts.otherPrices": "Other prices seen:",
+  "noise.label": "Noise limit: {db} dB",
+  "noise.other": "Other event days:",
+  "noise.none": "No sourced noise limit for this track. Check with the organizer.",
+  "ptc.noise": "Checked the track's noise limit for this event.",
 } as const;
 export type MsgKey = keyof typeof en;
 

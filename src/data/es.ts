@@ -35,6 +35,8 @@ export const esOverlay: { specs: Record<string, FactTextEs> } = {
     tires: { label: 'Llantas' },
     'tire-f': { label: 'Medida de llanta delantera' },
     'tire-r': { label: 'Medida de llanta trasera', note: 'De un anuncio de venta; aún no confirmado por una hoja técnica de Ford.' },
+    'tire-f-oem': { label: 'Llanta delantera, medida de fábrica (índice de carga / velocidad)', note: 'Investigación ronda 16: páginas de medidas de Michelin. El índice de carga del Pilot Sport Cup 2 para el GT500 no está confirmado (el Cup 2 R indica 103Y / 104Y).' },
+    'tire-r-oem': { label: 'Llanta trasera, medida de fábrica (índice de carga / velocidad)', note: 'Investigación ronda 16: páginas de medidas de Michelin. El índice de carga del Pilot Sport Cup 2 para el GT500 no está confirmado (el Cup 2 R indica 103Y / 104Y).' },
     wheels: { label: 'Medidas de rin' },
     wheelbase: { label: 'Distancia entre ejes' },
     length: { label: 'Largo' },

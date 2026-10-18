@@ -37,6 +37,7 @@ export function freshChecklist(tr: (k: MsgKey) => string, tpl: PtcTemplate = loa
   return [
     ...SOURCED_CHECKS.filter((c) => factFor(c.factId)).map((c) => ({ id: c.id, label: tr(c.key), done: false, kind: 'sourced' as const, factId: c.factId })),
     { id: 'ptc-tires', label: tr(tirePressuresSourced() ? 'ptc.tiresSourced' : 'ptc.tiresOwn'), done: false, kind: 'user' as const },
+    { id: 'ptc-noise', label: tr('ptc.noise'), done: false, kind: 'user' as const },
     ...tpl.items.map((label, i) => ({ id: `ptc-u${i}`, label, done: false, kind: 'user' as const })),
   ];
 }

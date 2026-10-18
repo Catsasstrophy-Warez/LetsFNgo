@@ -108,14 +108,14 @@ test('pre-track checklist is saved with the session', async ({ page }, info) => 
   await box.getByRole('button', { name: 'Add item' }).click();
   await box.getByLabel(/Brake fluid replaced/).check();
   await box.getByRole('checkbox', { name: 'Torque lug nuts' }).check();
-  await expect(box).toContainText('2 of 6 done');
+  await expect(box).toContainText('2 of 7 done');
   await shot(page, 'pretrack-checklist', info.project.name);
   expect(await serious(page)).toEqual([]);
   await page.getByLabel('Track', { exact: true }).fill('VIR');
   await page.getByRole('button', { name: 'Save session' }).click();
-  await expect(page.getByText('Pre-track checklist: 2 of 6 done')).toBeVisible();
+  await expect(page.getByText('Pre-track checklist: 2 of 7 done')).toBeVisible();
   // The next session starts unticked but keeps the owner's own item.
-  await expect(box).toContainText('0 of 6 done');
+  await expect(box).toContainText('0 of 7 done');
   await expect(box.getByRole('checkbox', { name: 'Torque lug nuts' })).not.toBeChecked();
 });
 

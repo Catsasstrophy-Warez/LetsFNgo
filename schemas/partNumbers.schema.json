@@ -41,7 +41,8 @@
           "Fluid",
           "Ignition",
           "Fluid spec",
-          "Performance part"
+          "Performance part",
+          "Brake pad (aftermarket)"
         ]
       },
       "kind": {
@@ -84,7 +85,8 @@
           "per": {
             "enum": [
               "each",
-              "quart"
+              "quart",
+              "listing"
             ]
           },
           "dateSeen": {

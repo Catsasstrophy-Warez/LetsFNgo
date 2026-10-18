@@ -4,7 +4,7 @@ import { Cite, Note } from '../components/Facts';
 import { FITMENT_INFERRED, fpCatalog, partSlots } from '../data/parts';
 import type { FpCatalogItem, ModelYear } from '../data/types';
 import { DEFAULT_FP_FILTER, filterFp, type FpFilter } from '../lib/catalog';
-import { usdWhole } from '../lib/format';
+import { usdFixed, usdWhole } from '../lib/format';
 import type { MsgKey } from '../lib/i18n';
 import { maintenance } from '../data/maintenance';
 import { copyText, filterParts } from '../lib/parts';
@@ -46,6 +46,11 @@ export default function Parts({ fp = fpCatalog }: { fp?: FpCatalogItem[] }) {
               </div>
               <p>{p.kind === 'avoid' && <strong className="err">{t('parts.avoid')}</strong>}{p.description}</p>
               <p className="small"><Cite c={p.confidence} url={p.source} />{p.note && <span className="muted"> {p.note}</span>}</p>
+              {p.category === 'Brake pad (aftermarket)' && <p className="small"><strong>{t('parts.aftermarket')}</strong></p>}
+              {p.price && p.price.value !== null && (
+                <p className="small" data-testid="part-price">{t(p.price.per === 'quart' ? 'parts.priceQuart' : p.price.per === 'listing' ? 'parts.priceListing' : 'parts.priceEach', { a: usdFixed(p.price.value), c: p.price.context ?? p.brand, d: p.price.dateSeen })} <Cite c={p.price.confidence} url={p.price.source} />
+                  {p.price.conflicts && p.price.conflicts.length > 0 && <span className="muted"> {t('parts.otherPrices')} {p.price.conflicts.map((c, i) => <span key={i}>{i ? '; ' : ''}{c.value !== null ? usdFixed(c.value) : ''}{c.context ? ` (${c.context})` : ''}</span>)}</span>}</p>
+              )}
               {facts.length > 0 && <p className="small muted">{t('parts.related')} {facts.map((f, i) => <span key={f.id}>{i ? ', ' : ''}<Link to="/ownership">{f.item}</Link></span>)}</p>}
             </li>
           );

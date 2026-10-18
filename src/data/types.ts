@@ -237,8 +237,11 @@ export interface DynoBaseline extends Sourced {
 
 /** A retail price for a part, seen on a given date. Shown on the Cost page as a sourced price; never a default. */
 export interface PartPrice extends SourcedValue<number> {
-  /** What one `value` buys: one part, or one US quart of a fluid. */
-  per: 'each' | 'quart';
+  /**
+   * What one `value` buys: one part, one US quart of a fluid, or one seller listing whose pack size is unclear
+   * ('listing': never turned into a per-part or per-quart price; the context says what is unclear).
+   */
+  per: 'each' | 'quart' | 'listing';
   /** YYYY-MM-DD the price was seen. */
   dateSeen: string;
   /** Other sourced prices (other sellers / snapshots). */
@@ -252,7 +255,7 @@ export interface PartNumber extends Sourced {
   number: string;
   brand: string;
   description: string;
-  category: 'Filter' | 'Fluid' | 'Ignition' | 'Fluid spec' | 'Performance part';
+  category: 'Filter' | 'Fluid' | 'Ignition' | 'Fluid spec' | 'Performance part' | 'Brake pad (aftermarket)';
   /** 'avoid' marks a number a source says is wrong for this car. */
   kind: 'part' | 'spec' | 'avoid';
   /** Related `maintenance` fact ids. */
@@ -423,6 +426,13 @@ export interface TrackDef extends Sourced {
   sectors: GeoLine[];
   /** Lap / strip length in miles, or null. */
   lengthMi: number | null;
+  /** Typical drive-by / static noise limit in dB, only where a source states one (research round 16). Event-day variants go in `conflicts`. */
+  noiseLimit?: NoiseLimit;
+}
+
+/** A track noise limit in dB. `context` names how it applies; other sourced limits (event days) are kept in `conflicts`. */
+export interface NoiseLimit extends SourcedValue<number> {
+  conflicts?: SourcedValue<number>[];
 }
 
 /**

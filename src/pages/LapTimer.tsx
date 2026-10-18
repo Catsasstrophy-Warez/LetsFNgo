@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { Cite, Note } from '../components/Facts';
 import { useT, useUnits } from '../components/SettingsContext';
 import { tracks } from '../data/tracks';
+import { TrackNoise } from '../components/TrackNoise';
 import { startFinishLines } from '../data/startFinishLines';
 import { OsmCredit, SourcedLinePicker } from '../components/SourcedLine';
 import { SFL_DIR_KEY, applyDirPref, isOsmSource, normDirPrefs, sourcedTimingLines, type DirPref } from '../lib/lapTimer';
@@ -146,6 +147,7 @@ export default function LapTimer() {
             {tracks.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
           </select>
         </label>
+        {(() => { const sel = tracks.find((x) => x.id === trackId); return sel ? <TrackNoise track={sel} /> : null; })()}
         {hint && (
           <p className="muted" role="status">
             {t('lt.near', { name: hint.track.name, d: fmtQty('distance', hint.distM / 1609.344, u, 1) })}{' '}
