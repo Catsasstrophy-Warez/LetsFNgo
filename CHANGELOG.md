@@ -3,6 +3,10 @@
 All notable changes to GT500 Companion, newest first. Research notes for each round live in
 `research_notes/Shelby GT500 2020 to 2022/`.
 
+## Round 19 — review fixes for rounds 15–18
+- **Cost inputs of deleted cars:** deleting a Garage car now also removes its Cost of ownership inputs (`purgeCarLogs`). Before, they stayed in `gt500.cost.v1`; after enough add/delete cycles the store passed its 12-car cap and a new car's inputs were silently dropped on save and lost on reload.
+- **Cost table accessibility:** the per-year total's live region moved inside its table cell (`<td><div role="status">`), so the cell keeps its table semantics.
+
 ## Round 18 — round 16 data: tires, DCT fluid, pads, noise limits
 - Research round 16 data and where it shows. **OEM tire fitment** (Michelin fitment pages, reported): front 305/30ZR20 XL 103Y, rear 315/30ZR20 XL 104Y, the same with the Carbon Fiber Track Package; new spec records `tire-f-oem` / `tire-r-oem`, listed on the Tire & Wheel Calc page. The Cup 2 load index is not stated as confirmed. The Cup 2 305 price from a Canadian seller was not added: the currency is unclear and part prices are USD, and nothing is ever converted.
 - **DCT fluid:** Motorcraft XT-14-L (1 qt bottles, cases of 12) gets the IBSPOT $117.59 price (unverified, seen 2026-10-17). `PartPrice.per` gains `'listing'` (a seller listing whose pack size is unclear): it is shown on the Parts page with a "pack size unclear" caveat and the Cost page never prices a DCT service from it (no per-quart figure is computed). The DCT capacity is still not sourced by Ford or Motorcraft.

@@ -114,8 +114,8 @@ export default function Cost() {
               </tbody>
               <tfoot>
                 <tr><th scope="row" colSpan={2}>{t('cost.perYear')}</th>
-                  <td role="status"><strong>{est.atLeast ? t('cost.atLeast', { a: usdWhole(est.perYear) }) : usdWhole(est.perYear)}</strong>
-                    {est.unpriced > 0 && <div className="small muted">{t('cost.unpricedCount', { n: est.unpriced })}</div>}</td></tr>
+                  <td><div role="status"><strong>{est.atLeast ? t('cost.atLeast', { a: usdWhole(est.perYear) }) : usdWhole(est.perYear)}</strong>
+                    {est.unpriced > 0 && <div className="small muted">{t('cost.unpricedCount', { n: est.unpriced })}</div>}</div></td></tr>
                 <tr><th scope="row" colSpan={2}>{t('cost.totalYears', { y: inp.years! })}</th>
                   <td><strong>{est.atLeast ? t('cost.atLeast', { a: usdWhole(est.total) }) : usdWhole(est.total)}</strong></td></tr>
                 <tr><th scope="row" colSpan={2}>{t('cost.perMile')}</th>
